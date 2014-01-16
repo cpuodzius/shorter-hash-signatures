@@ -33,10 +33,11 @@ int get_rand() {
 void _print_node(struct node_t node) {
 	short i;
 	printf("[");
-	for(i = 0; i < NODE_VALUE_SIZE; i++) {
+	/*for(i = 0; i < NODE_VALUE_SIZE; i++) {
 		printf("%X", (node.value[i] >> 4) & 0x0F);
 		printf("%X", node.value[i] & 0x0F);
-	}
+	}*/
+	printf("%u,%u", node.height, node.pos);
 	printf("]");
 }
 
@@ -98,24 +99,25 @@ void _init_node(struct node_t *node, short index, short tree_height) {
 	node->pos = index - i;
 }
 
+void init_tree(struct merkle_t *tree) {
+	tree->height = MERKLE_TREE_HEIGHT;
+	int i;
+	for(i = 0; i < N_NODES; i++)
+		_init_node(&tree->node[i], i, MERKLE_TREE_HEIGHT);
+}
+
+
 int main() {
 	int i;
 
-	struct node_t nodes[N_NODES];
-
-	for(i = 0; i < N_NODES; i++)
-		_init_node(nodes, i, MERKLE_TREE_HEIGHT);
-
 	struct merkle_t tree;
-
-	tree.height = (short) MERKLE_TREE_HEIGHT;
-	for(i = 0; i < N_NODES; i++)
-		tree.node[i] = nodes[i];
+	init_tree(&tree);
+	
 
 	print_merkle_tree(&tree);
 	printf("\n\n\n");
 	for(i = 0; i < N_NODES; i++)
-		_print_node(nodes[i]);
+		_print_node(tree.node[i]);
 
-	return 0;	
+	return 0;
 }
