@@ -83,7 +83,7 @@ void print_merkle_tree(struct merkle_t *tree) {
 void _init_node(struct node_t *node, short index, short tree_height) {
 	short i, j;
 
-	for(i = 0; i < SEC_LVL / 8; i++)
+	for(i = 0; i < NODE_VALUE_SIZE; i++)
 		node->value[i] = get_rand();
 
 	i = 1;
