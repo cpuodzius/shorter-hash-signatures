@@ -1,5 +1,5 @@
 CC?=gcc
-CFLAGS=-std=c99 -Wall -pedantic -I include
+CFLAGS=-std=c99 -Wall -pedantic
 
 all:		blake2s blake2b
 
