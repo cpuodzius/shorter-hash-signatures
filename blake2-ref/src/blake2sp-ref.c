@@ -19,8 +19,8 @@
 #include <omp.h>
 #endif
 
-#include "blake2.h"
-#include "blake2-impl.h"
+#include "../include/blake2.h"
+#include "../include/blake2-impl.h"
 
 #define PARALLELISM_DEGREE 8
 

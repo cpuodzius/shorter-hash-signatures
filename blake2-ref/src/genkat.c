@@ -16,7 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "blake2.h"
+#include "../include/blake2.h"
 
 #define STR_(x) #x
 #define STR(x) STR_(x)
