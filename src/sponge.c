@@ -4,8 +4,8 @@
 #include "../include/sponge.h"
 
 void sinit(sponge_t *sponge, short seclevel) {
-    if (seclevel > (BLAKE2B_OUTBYTES << 3)) {
-        seclevel = (BLAKE2B_OUTBYTES << 3); // maximum
+    if (seclevel > (BLAKE2S_OUTBYTES << 3)) {
+        seclevel = (BLAKE2S_OUTBYTES << 3); // maximum
     }
     if (sponge != NULL) {
         blake2s_init(sponge, seclevel >> 3);
