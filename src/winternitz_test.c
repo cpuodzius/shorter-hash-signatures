@@ -14,25 +14,35 @@ unsigned char rand_dig_f(void) {
 int main(int argc, char *argv[]) {
 
     oneway_state f;
-    unsigned char privkey[l][(n+7)/8], pubkey[l][(n+7)/8], seed[(SEC+7)/8];
+    unsigned char privkey[L][l1], pubkey[L][l1], V[l1], seed[(SEC+7)/8], S[L][l1];
+    unsigned char M[L];
+    for(unsigned char i=0; i<l1; i++) {
+        M[i] = i;
+    }
 
-    // Note that this function is not a cryptographically secure pseudo-random function. Only used for tests.
+    printf("\n Parameters:  w=%u, n=%u, l1=%u, l2=%u, L=%u \n\n",W,n,l1,l2,L);
+
+    // Note that this function is not a secure pseudo-random function. It was only used for tests.
     //srand((unsigned int)time((time_t *)NULL));
     srand(0);
     short seedd = Rand(seed, SEC, rand_dig_f);
-    Display("\n seed",seed,seedd);
-    //printf("\n seed digits:%u",seedd);
+    Display("\n seed for keygen: ",seed,seedd);
 
-    wots_keygen(&f, privkey, pubkey, seed, seedd);
+    wots_keygen(&f, privkey, pubkey, V, seed, seedd);
 
-    //*/
-    printf("\n \n");
-    for(short i = 0; i < l; i++) {
-        Display("privkey:", privkey[i], l);
+    wots_sign(&f, M, privkey, S);
+
+    if(wots_verify(&f, M, V, S) == OK) {
+        printf("\n \n Signature is valid: \n \n");
+    } else {
+        printf("\n \n Signature is invalid: \n \n");
     }
-    for(short i = 0; i < l; i++) {
-        Display("pubkey:", pubkey[i], l);
+
+    printf("(");
+    Display("",S[0],l1);
+    for(unsigned char i=0; i<L; i++) {
+        Display(",",S[i],l1);
     }
-    //*/
+    printf(") \n \n");
 
 }

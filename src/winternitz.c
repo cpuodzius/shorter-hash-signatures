@@ -7,7 +7,7 @@
 void Display(const char *name, const unsigned char *u, short ud) {
     short i, j;
     //assert(ud >= 0);
-    printf("%s[%d]:", name, ud);
+    printf("%s", name);
     if (ud > 0) {
         for (i = ud - 1, j = 0; i >= 0; i--, j++) {
             printf("%s%02X%s", (j % (2*(n/8))) ? "" : "\t", u[i], ((j+1) % (2*(n/8))) ? "" : "\n");
@@ -33,7 +33,36 @@ short Rand(unsigned char *x, short bits, rand_dig_f_type rand_dig_f) {
     return xd;
 }
 
-void onewayfunction(oneway_state *f, unsigned char *input, short inputlen, unsigned char *output, short outputlen) {
+/**
+ * Returns -1, 0, or +1 if u < v, u = v, or u > v, respectively
+ */
+short Comp(const unsigned char *u, short ud, const unsigned char *v, short vd) {
+    short i;
+    //assert(ud >= 0);
+    //assert(vd >= 0);
+    if (ud < vd) {
+        return -1;
+    }
+    if (ud > vd) {
+        return +1;
+    }
+    // ud == vd
+    for (i = ud - 1; i >= 0; i--) {
+        if (u[i] < v[i]) {
+            return -1;
+        }
+        if (u[i] > v[i]) {
+            return +1;
+        }
+    }
+    return 0;
+}
+
+/**
+ * @param inputlen      The size of input in bytes
+ * @param outputlen     The size of output in bytes
+ */
+void onewayfunc(oneway_state *f, unsigned char *input, short inputlen, unsigned char *output, short outputlen) {
 
     sinit(f, SEC);
     absorb(f, input, inputlen);
@@ -41,16 +70,25 @@ void onewayfunction(oneway_state *f, unsigned char *input, short inputlen, unsig
     cleanup(f);
 }
 
-void onewayfunction_mult(oneway_state *f, short iter, unsigned char *input, short inputlen, unsigned char *output, short outputlen) {
+/**
+ * @param inputlen      The input size in bytes
+ * @param outputlen     The output size in bytes
+ */
+void onewayfunc_mult(oneway_state *f, short iter, unsigned char *input, short inputlen, unsigned char *output, short outputlen) {
 
-    sinit(f, SEC);
-    absorb(f, input, inputlen);
-    squeeze(f, output, outputlen);
-    for(int i=0; i<iter; i++) {
-        absorb(f, output, outputlen);
-        squeeze(f, output, outputlen);
+    unsigned char i;
+
+    if(iter == 0) {
+        for (i = 0; i < inputlen; i++) {
+            output[i] = input[i];
+        }
+        return;
     }
-    cleanup(f);
+
+    onewayfunc(f, input, inputlen, output, outputlen);
+    for(i=1; i<iter; i++) {
+        onewayfunc(f, output, outputlen, output, outputlen);
+    }
 }
 
 /**
@@ -61,23 +99,20 @@ void onewayfunction_mult(oneway_state *f, short iter, unsigned char *input, shor
  * @param seed      The seed for the oneway function. It is the actual private key to be stored.
  * @param seedd     The size of the seed in digits
  */
-void wots_getprivkey(oneway_state *f, unsigned char s[l][(n+7)/8], unsigned char *seed, short seedd) {
+void wots_getprivkey(oneway_state *f, unsigned char s[L][l1], unsigned char *seed, short seedd) {
+
+    unsigned char i;
 
     // Initializes the oneway function
     sinit(f, SEC);
 
     // Feed the sponge with the seed
     absorb(f, seed, seedd);
-    //printf("\n sponge: \n");
-    //for(unsigned char i = 0; i < f->buflen; i++) {
-    //    printf("%02x", f->buf[i]);
-    //}
-
 
     // Compute private key (s_0, ..., s_{L-1})
-    squeeze(f, &s[0], (n+7)>>3);
-    for(short i = 1; i < l; i++) {
-        squeeze(f, &s[i], (n+7)>>3);
+    squeeze(f, &s[0], l1);
+    for(i=1; i<L; i++) {
+        squeeze(f, &s[i], l1);
     }
     cleanup(f);
 }
@@ -91,17 +126,78 @@ void wots_getprivkey(oneway_state *f, unsigned char s[l][(n+7)/8], unsigned char
  * @param seed      The seed for the oneway function. It is the actual private key to be stored.
  * @param seedd     The size of the seed in digits
  */
-void wots_keygen(oneway_state *f, unsigned char s[l][(n+7)/8], unsigned char v[l][(n+7)/8], unsigned char *seed, short seedd) {
+void wots_keygen(oneway_state *f, unsigned char s[L][l1], unsigned char v[L][l1], unsigned char V[l1], unsigned char *seed, short seedd) {
 
+    unsigned char i;
 
-    // Compute private key
+    // Compute private key s from the seed
     wots_getprivkey(f, s, seed, seedd);
 
-    // Compute public key v = H(v_0 || ... || v_{l-1})
-    for(short i = 0; i < l; i++) {
-        onewayfunction(f, s[i], (n+7)>>3, v[i], (n+7)>>3);
+    // Compute public key components vi's from private key si's
+    for(i=0; i<L; i++) {
+        onewayfunc_mult(f, TwotoW-1, s[i], l1, v[i], l1);
     }
 
-    //TODO: compute v = H(v_0||v_1||...||v_{L-1})
+    // Compute v = H(v_0||v_1||...||v_{L-1})
+    sinit(f, SEC);
+    for(i=0; i<L; i++) {
+        absorb(f, v[i], l1);
+    }
+    squeeze(f, V, l1);
+    cleanup(f);
+}
 
+void wots_computechecksum(unsigned char M[L]) {
+
+    unsigned char i;
+    short cs = 0;
+
+    for(i=0; i<l1; i++) {
+        cs += TwotoW - 1 - M[i];
+    }
+
+    // Fill the message representative with the checksum
+    for(i=l1; i<L; i++) {
+        M[i] = GetWBits(cs, (i-l1)*W);
+    }
+}
+
+unsigned char wots_sign(oneway_state *f, unsigned char M[L], unsigned char s[L][l1], unsigned char S[L][l1]) {
+
+    unsigned char i;
+
+    wots_computechecksum(M);
+
+    Display("\n Message representative with checksum:",M,L);
+
+    // Compute the signature (S_0,S_1,...,S_{L-1})
+    for(i=0; i<L; i++) {
+        onewayfunc_mult(f, TwotoW-1-M[i], s[i], l1, S[i], l1);
+    }
+
+    return OK;
+}
+
+unsigned char wots_verify(oneway_state *f, unsigned char m[L], unsigned char V[l1], unsigned char S[L][l1]) {
+
+    unsigned char i, t[L][l1];
+
+    for(i=0; i<L; i++) {
+        onewayfunc_mult(f,m[i],S[i],l1,t[i],l1);
+    }
+
+    // Compute t = H(t_0||t_1||...||t_{L-1})
+    sinit(f, SEC);
+    for(i=0; i<L; i++) {
+        absorb(f, t[i], l1);
+    }
+    squeeze(f, t[0], l1); // reuse memory
+    cleanup(f);
+
+    // Compare if t equals V
+    if(Comp(t[0], l1, V, l1) != 0) {
+        return ERROR;
+    }
+
+    return OK;
 }
