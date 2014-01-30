@@ -100,8 +100,8 @@ void mt_keygen(unsigned char seed[LEN_BYTES(MERKLE_TREE_SEC_LVL)], struct node_t
 			keep[index] = node;
 		}
 #if defined(MERKLE_TREE_SELFTEST)
-		printf("h=%d, pos=%d\n", height, pos);
-		Display("Node: ", node.value, NODE_VALUE_SIZE);
+		//printf("h=%d, pos=%d\n", height, pos);
+		//Display("Node: ", node.value, NODE_VALUE_SIZE);
 #endif
 	}
 	for(i = 0; i < NODE_VALUE_SIZE; i++)
@@ -112,6 +112,8 @@ void mt_keygen(unsigned char seed[LEN_BYTES(MERKLE_TREE_SEC_LVL)], struct node_t
 unsigned char rand_dig_f(void) {
     return (unsigned char)rand();
 }
+
+#include <sys/time.h>
 
 int main() {
 	unsigned char seed[LEN_BYTES(MERKLE_TREE_SEC_LVL)];
@@ -127,9 +129,16 @@ int main() {
 	unsigned char pkey[NODE_VALUE_SIZE];
 	struct node_t keep[2 * MERKLE_TREE_HEIGHT - 1];
 
+	struct timeval t_start, t_end;
+
+	gettimeofday(&t_start, NULL);
+
 	mt_keygen(seed, keep, pkey);
 
+	gettimeofday(&t_end, NULL);
+
 	Display("Merkle Tree (pkey)\n", pkey, NODE_VALUE_SIZE);
+	printf("Tempo de execucao %lums\n", t_end.tv_usec - t_start.tv_usec);
 
 	return 0;
 }
