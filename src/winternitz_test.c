@@ -14,13 +14,13 @@ unsigned char rand_dig_f(void) {
 int main(int argc, char *argv[]) {
 
     oneway_state f;
-    unsigned char privkey[L][l1], pubkey[L][l1], V[l1], seed[(SEC+7)/8], S[L][l1];
-    unsigned char M[L];
-    for(unsigned char i=0; i<l1; i++) {
+    unsigned char privkey[WINTERNITZ_L][WINTERNITZ_l1], pubkey[WINTERNITZ_L][WINTERNITZ_l1], V[WINTERNITZ_l1], seed[(SEC+7)/8], S[WINTERNITZ_L][WINTERNITZ_l1];
+    unsigned char M[WINTERNITZ_L];
+    for(unsigned char i=0; i<WINTERNITZ_l1; i++) {
         M[i] = i;
     }
 
-    printf("\n Parameters:  w=%u, n=%u, l1=%u, l2=%u, L=%u \n\n",W,n,l1,l2,L);
+    printf("\n Parameters:  w=%u, n=%u, l1=%u, l2=%u, L=%u \n\n",WINTERNITZ_W,WINTERNITZ_N,WINTERNITZ_l1,WINTERNITZ_l2,WINTERNITZ_L);
 
     // Note that this function is not a secure pseudo-random function. It was only used for tests.
     //srand((unsigned int)time((time_t *)NULL));
@@ -39,9 +39,9 @@ int main(int argc, char *argv[]) {
     }
 
     printf("(");
-    Display("",S[0],l1);
-    for(unsigned char i=0; i<L; i++) {
-        Display(",",S[i],l1);
+    Display("",S[0],WINTERNITZ_l1);
+    for(unsigned char i=0; i<WINTERNITZ_L; i++) {
+        Display(",",S[i],WINTERNITZ_l1);
     }
     printf(") \n \n");
 
