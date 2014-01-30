@@ -5,7 +5,6 @@
 
 #include "../include/winternitz.h"
 
-
 unsigned char rand_dig_f(void) {
     return (unsigned char)rand();
 }
@@ -14,7 +13,7 @@ unsigned char rand_dig_f(void) {
 int main(int argc, char *argv[]) {
 
     oneway_state f;
-    unsigned char privkey[WINTERNITZ_L][WINTERNITZ_l1], pubkey[WINTERNITZ_L][WINTERNITZ_l1], V[WINTERNITZ_l1], seed[(SEC+7)/8], S[WINTERNITZ_L][WINTERNITZ_l1];
+    unsigned char privkey[WINTERNITZ_L][WINTERNITZ_l1], pubkey[WINTERNITZ_L][WINTERNITZ_l1], V[WINTERNITZ_l1], seed[LEN_BYTES(WINTERNITZ_SEC_LVL)], S[WINTERNITZ_L][WINTERNITZ_l1];
     unsigned char M[WINTERNITZ_L];
     for(unsigned char i=0; i<WINTERNITZ_l1; i++) {
         M[i] = i;
@@ -25,7 +24,7 @@ int main(int argc, char *argv[]) {
     // Note that this function is not a secure pseudo-random function. It was only used for tests.
     //srand((unsigned int)time((time_t *)NULL));
     srand(0);
-    short seedd = Rand(seed, SEC, rand_dig_f);
+    short seedd = Rand(seed, WINTERNITZ_SEC_LVL, rand_dig_f);
     Display("\n seed for keygen: ",seed,seedd);
 
     wots_keygen(&f, privkey, pubkey, V, seed, seedd);
