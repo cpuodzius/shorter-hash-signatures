@@ -16,7 +16,7 @@ extern "C" {
 
 // sec level: 128
 #define WINTERNITZ_SEC_LVL (128)
-#define WINTERNITZ_W (4)
+#define WINTERNITZ_W (8)
 
 
 // sec level: 82
