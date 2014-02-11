@@ -22,6 +22,7 @@ merkle_tree:	src/merkle_tree.c
 tests:		src/winternitz.c src/winternitz_test.c
 		make winternitz
 		$(CC) src/merkle_tree.c -o bin/merkle_tree -DMERKLE_TREE_SELFTEST bin/sponge.o bin/winternitz.o $(CFLAGS) -Llib -lblake2s-ref
+		$(CC) src/merkle_tree.c -o bin/merkle_tree.dbg -DDEBUG bin/sponge.o bin/winternitz.o $(CFLAGS) -Llib -lblake2s-ref
 		$(CC) src/winternitz_test.c -o bin/winternitz bin/sponge.o bin/winternitz.o $(CFLAGS) -Llib -lblake2s-ref
 
 clean:		
