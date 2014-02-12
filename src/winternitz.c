@@ -11,6 +11,48 @@
 #define assert(c)
 #endif // __PIC__wee
 
+#if WINTERNITZ_W == 2
+
+/**
+ * Compute a Winternitz public key v = H_m(x_{0:sn0}^3, x_{0:sn1}^3, x_{0:sn2}^3, x_{0:sn3}^3 ..., x_{(L-1):sn0}^3, x_{(L-1):sn1}^3, x_{(L-1):sn2}^3, x_{(L-1):sn3}^3), with L = 4*m + ceil(lg(3*4*m)/8).
+ *
+ * @param s         the m-byte private signing key.
+ * @param m         hash length (sec level is 8*m).
+ * @param v         the corresponding m-byte verification key.
+ * @param priv
+ * @param hash
+ * @param pubk
+ * @param v
+ */
+void winternitz2Gen(const byte s[/*m*/], const uint m, sponge_t *priv, sponge_t *hash, sponge_t *pubk, byte v[/*m*/]) {
+    //int sq = 0;
+    byte i, j;
+
+    byte L = 4*(byte)m + 4; // semi-nybble (sn) count, including checksum
+
+    sinit(priv, WINTERNITZ_SEC_LVL);
+    sinit(pubk, WINTERNITZ_SEC_LVL);
+    for (i = 0; i < L; i++) {
+        absorb(priv, s, m); // H(s, ...)
+        absorb(priv, &i, 1); // H(s, i) // i = nybble tag
+        squeeze(priv, v, m); // v = s_i = private block for i-th nybble
+        //sq++;
+        for (j = 0; j < 3; j++) {
+            sinit(hash, WINTERNITZ_SEC_LVL);
+            absorb(hash, v, m);
+            squeeze(hash, v, m); // v is the hash of its previous value = y_i = H^3(s_i)
+            //sq++;
+        }
+        absorb(pubk, v, m);  // y_0 || ... || y_i ...
+    }
+    squeeze(pubk, v, m); // v is finally the public key, v = H(y_0 || y_1 || ... || y_{L-1})
+    //sq++;
+    //printf("gen squeeze count: %d\n", sq);
+    cleanup(priv);
+    cleanup(hash);
+    cleanup(pubk);
+}
+#endif // WINTERNITZ_W = 2
 
 #if WINTERNITZ_W == 4
 
@@ -74,7 +116,7 @@ void winternitz8Gen(const byte s[/*m*/], const uint m, sponge_t *priv, sponge_t 
     //int sq = 0;
     byte i, j;
     // NB: for 2 <= m <= 257, the value of ceil(lg(255*m)/8) is simply 2 bytes.
-    assert(10 <= m && m <= 128); // lower bound: min sec level (80 bits), upper bound: max byte count
+    assert(10 <= m && m <= 127); // lower bound: min sec level (80 bits), upper bound: max byte count
 
     sinit(priv, WINTERNITZ_SEC_LVL);
     sinit(pubk, WINTERNITZ_SEC_LVL);
@@ -101,7 +143,10 @@ void winternitz8Gen(const byte s[/*m*/], const uint m, sponge_t *priv, sponge_t 
 #endif // WINTERNITZ_W = 8
 
 void winternitzGen(const byte s[/*m*/], const uint m, sponge_t *priv, sponge_t *hash, sponge_t *pubk, byte v[/*m*/]) {
-#if WINTERNITZ_W == 4
+
+#if WINTERNITZ_W == 2
+    winternitz2Gen(s, m, priv, hash, pubk, v);
+#elif WINTERNITZ_W == 4
     winternitz4Gen(s, m, priv, hash, pubk, v);
 #elif WINTERNITZ_W == 8
     winternitz8Gen(s, m, priv, hash, pubk, v);
@@ -426,6 +471,7 @@ bool winternitzVer(const byte v[], const uint m, const byte *M, uint len, sponge
 #elif WINTERNITZ_W == 8
     return winternitz8Ver(v, m, M, len, pubk, hash, h, sig, x);
 #endif
+    return ERROR;
 }
 
 /*
@@ -467,7 +513,7 @@ int main(int argc, char *argv[]) {
     bool ok;
     byte i;
     clock_t elapsed;
-    int test, tests = 100;
+    int test, tests = 10;
 
     printf("\n Winternitz(w = %d, sec = %d) \n\n", WINTERNITZ_W, WINTERNITZ_SEC_LVL);
     printf("l1 = %d, checksum = %d, L = %d \n\n", WINTERNITZ_l1, WINTERNITZ_CHECKSUM_SIZE, WINTERNITZ_L);
