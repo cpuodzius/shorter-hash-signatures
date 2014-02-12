@@ -452,7 +452,8 @@ taking the missing nodes from the authentication path $Q^{(j)}$. Accept iff $q_1
 \end{itemize}
 */
 
-//*
+#if defined(WINTERNITZ_SELFTEST)
+
 int main(int argc, char *argv[]) {
 
     unsigned char m = LEN_BYTES(WINTERNITZ_SEC_LVL);
@@ -508,4 +509,4 @@ int main(int argc, char *argv[]) {
     //display("verv", x, m);
     return 0;
 }
-//*/
+#endif

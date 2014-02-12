@@ -10,8 +10,8 @@ extern "C" {
 
 #if defined(MERKLE_TREE_SELFTEST) || defined(DEBUG)
 #define MERKLE_TREE_SEC_LVL                     WINTERNITZ_SEC_LVL
-#define MERKLE_TREE_HEIGHT                      5
-#define MERKLE_TREE_K		                1
+#define MERKLE_TREE_HEIGHT                      10
+#define MERKLE_TREE_K		                     1
 #else
 #define MERKLE_TREE_SEC_LVL                     WINTERNITZ_SEC_LVL
 #define MERKLE_TREE_HEIGHT                      14		// Heightst tree for this implementation (because type of index is short)
@@ -28,7 +28,7 @@ extern "C" {
 
 struct node_t {
         short height, pos;
-        unsigned char value[NODE_VALUE_SIZE];           // node's value for auth path   
+        unsigned char value[NODE_VALUE_SIZE];           // node's value for auth path
 };
 
 struct state_mt {

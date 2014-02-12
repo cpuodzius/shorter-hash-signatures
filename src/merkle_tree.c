@@ -5,6 +5,9 @@
 #define TREEHASH_INITIALIZATION	0xFF
 
 #if defined(DEBUG)
+
+#include "util.h"
+
 void _print_node(struct node_t node) {
 	printf("[");
 	//short i;
@@ -20,14 +23,16 @@ void _print_node(struct node_t node) {
 void _create_leaf(struct node_t *node, short pos, unsigned char seed[LEN_BYTES(MERKLE_TREE_SEC_LVL)]) {
 	node->height = 0;
 	node->pos = pos;
-	sponge_t h;
+	sponge_t h, priv, pubk;
 	sinit(&h, MERKLE_TREE_SEC_LVL);
 	absorb(&h, seed, NODE_VALUE_SIZE);
 	absorb(&h, &pos, sizeof(pos));
-	squeeze(&h, node->value, NODE_VALUE_SIZE);
+	//squeeze(&h, node->value, NODE_VALUE_SIZE);
 	/*
 	*	Generate here W-OTS keys
 	*/
+	squeeze(&h, seed, LEN_BYTES(MERKLE_TREE_SEC_LVL)); // seed <- H(seed, pos)
+    winternitzGen(seed, LEN_BYTES(WINTERNITZ_SEC_LVL), &priv, &h, &pubk, node->value);
 }
 
 void _keygen_stack_push(struct node_t stack[MERKLE_TREE_KEEP_SIZE], short *index, struct node_t *node) {
@@ -105,7 +110,7 @@ void _treehash_push(struct state_mt *state, short height, struct node_t *node) {
 	else {
 		_stack_push(state, node);
 		state->treehash_index[height] = state->stack_index + 1;
-	} 
+	}
 }
 
 void _treehash_pop(struct state_mt *state, short height, struct node_t *node) {
@@ -199,35 +204,31 @@ void mt_keygen(unsigned char seed[LEN_BYTES(MERKLE_TREE_SEC_LVL)], struct node_t
 
 
 #if defined(MERKLE_TREE_SELFTEST) || defined(DEBUG)
-unsigned char rand_dig_f(void) {
-    return (unsigned char)rand();
-}
 
 #include <sys/time.h>
+#include "util.h"
 
 int main() {
 	unsigned char seed[LEN_BYTES(MERKLE_TREE_SEC_LVL)];
-
-	printf("\n Parameters:  sec lvlH=%u, H=%u, #nodes=%u, node size=%u \n\n", MERKLE_TREE_SEC_LVL, MERKLE_TREE_HEIGHT, N_NODES, NODE_VALUE_SIZE);	
+    unsigned char j;
+	printf("\n Parameters:  sec lvlH=%u, H=%u, #nodes=%u, node size=%u, winternitz_w=%u \n\n", MERKLE_TREE_SEC_LVL, MERKLE_TREE_HEIGHT, N_NODES, NODE_VALUE_SIZE, WINTERNITZ_W);
 
 	unsigned char pkey[NODE_VALUE_SIZE];
 	struct state_mt state;
 	struct node_t node;
+    clock_t elapsed;
 
-	printf("RAM total: %luB\n", sizeof(pkey) + sizeof(state) + sizeof(node));
-	
-	// Note that this function is not a secure pseudo-random function. It was only used for tests.
-	//srand((unsigned int)time((time_t *)NULL));
-    	srand(0);
-    	short seedd = Rand(seed, MERKLE_TREE_SEC_LVL, rand_dig_f);
-    	Display("\n seed for keygen: ",seed,seedd);
+	printf("RAM total: %luB\n", (long unsigned int)(sizeof(pkey) + sizeof(state) + sizeof(node)));
 
+    for (j = 0; j < LEN_BYTES(MERKLE_TREE_SEC_LVL); j++) {
+        seed[j] = 0xA0 ^ j; // sample private key, for debugging only
+    }
+    Display("\n seed for keygen: ",seed,LEN_BYTES(MERKLE_TREE_SEC_LVL));
 
-
-	struct timeval t_start, t_end;
-        short i, ntest = 20;
-
-	gettimeofday(&t_start, NULL);
+	//struct timeval t_start, t_end;
+        short i, ntest = 10;
+    elapsed = -clock();
+	//gettimeofday(&t_start, NULL);
 	for(i = 0; i < ntest; i++) {
 		init_state(&state);
 		mt_keygen(seed, &node, &state, pkey);
@@ -235,9 +236,10 @@ int main() {
 		Display(" Merkle Tree (pkey)\n", pkey, NODE_VALUE_SIZE);
 #endif
 	}
-	gettimeofday(&t_end, NULL);
-
-	printf("Tempo de execucao %ld.%ldms\n", (t_end.tv_usec - t_start.tv_usec) / ntest / 1000, ((t_end.tv_usec - t_start.tv_usec) / ntest) % 1000);
+	//gettimeofday(&t_end, NULL);
+    elapsed += clock();
+	//printf("Tempo de execucao %ld.%ldms\n", (t_end.tv_usec - t_start.tv_usec) / ntest / 1000, ((t_end.tv_usec - t_start.tv_usec) / ntest) % 1000);
+	printf("KeyGen Elapsed time: %.1f ms\n", 1000*(float)elapsed/CLOCKS_PER_SEC/ntest);
 
 	return 0;
 }
