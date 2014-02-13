@@ -205,29 +205,29 @@ void mt_keygen(unsigned char seed[LEN_BYTES(MERKLE_TREE_SEC_LVL)], struct node_t
 
 #if defined(MERKLE_TREE_SELFTEST) || defined(DEBUG)
 
-#include <sys/time.h>
+#include <time.h>
 #include "util.h"
 
 int main() {
 	unsigned char seed[LEN_BYTES(MERKLE_TREE_SEC_LVL)];
-    unsigned char j;
+	unsigned char j;
 	printf("\n Parameters:  sec lvlH=%u, H=%u, #nodes=%u, node size=%u, winternitz_w=%u \n\n", MERKLE_TREE_SEC_LVL, MERKLE_TREE_HEIGHT, N_NODES, NODE_VALUE_SIZE, WINTERNITZ_W);
 
 	unsigned char pkey[NODE_VALUE_SIZE];
 	struct state_mt state;
 	struct node_t node;
-    clock_t elapsed;
+	clock_t elapsed;
 
 	printf("RAM total: %luB\n", (long unsigned int)(sizeof(pkey) + sizeof(state) + sizeof(node)));
 
-    for (j = 0; j < LEN_BYTES(MERKLE_TREE_SEC_LVL); j++) {
-        seed[j] = 0xA0 ^ j; // sample private key, for debugging only
-    }
-    Display("\n seed for keygen: ",seed,LEN_BYTES(MERKLE_TREE_SEC_LVL));
+	for (j = 0; j < LEN_BYTES(MERKLE_TREE_SEC_LVL); j++) {
+		seed[j] = 0xA0 ^ j; // sample private key, for debugging only
+	}
+	Display("\n seed for keygen: ",seed,LEN_BYTES(MERKLE_TREE_SEC_LVL));
 
 	//struct timeval t_start, t_end;
         short i, ntest = 10;
-    elapsed = -clock();
+	elapsed = -clock();
 	//gettimeofday(&t_start, NULL);
 	for(i = 0; i < ntest; i++) {
 		init_state(&state);
@@ -237,7 +237,7 @@ int main() {
 #endif
 	}
 	//gettimeofday(&t_end, NULL);
-    elapsed += clock();
+	elapsed += clock();
 	//printf("Tempo de execucao %ld.%ldms\n", (t_end.tv_usec - t_start.tv_usec) / ntest / 1000, ((t_end.tv_usec - t_start.tv_usec) / ntest) % 1000);
 	printf("KeyGen Elapsed time: %.1f ms\n", 1000*(float)elapsed/CLOCKS_PER_SEC/ntest);
 
