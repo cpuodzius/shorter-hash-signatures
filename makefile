@@ -24,7 +24,7 @@ tests:		src/winternitz.c src/util.c
 		make util
 		$(CC) src/merkle_tree.c -o bin/merkle_tree -DMERKLE_TREE_SELFTEST bin/*.o $(CFLAGS) -Llib -lblake2s-ref
 		$(CC) src/merkle_tree.c -o bin/merkle_tree.dbg -DDEBUG bin/*.o $(CFLAGS) -Llib -lblake2s-ref
-		$(CC) src/winternitz_test.c -o bin/winternitz bin/*.o $(CFLAGS) -Llib -lblake2s-ref
+		#$(CC) src/winternitz.c -o bin/winternitz -DWINTERNITZ_SELFTEST bin/*.o $(CFLAGS) -Llib -lblake2s-ref
 
 util:		src/util.c
 		$(CC) src/$@.c -c -o bin/$@.o $(CFLAGS)

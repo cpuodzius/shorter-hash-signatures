@@ -8,19 +8,25 @@
 extern "C" {
 #endif
 
+#define odd(x)	((x) % 2)
+
 #if defined(MERKLE_TREE_SELFTEST) || defined(DEBUG)
 #define MERKLE_TREE_SEC_LVL                     WINTERNITZ_SEC_LVL
-#define MERKLE_TREE_HEIGHT                      10
-#define MERKLE_TREE_K		                     1
+#define MERKLE_TREE_HEIGHT			6
+#define MERKLE_TREE_K				2
 #else
 #define MERKLE_TREE_SEC_LVL                     WINTERNITZ_SEC_LVL
 #define MERKLE_TREE_HEIGHT                      14		// Heightst tree for this implementation (because type of index is short)
 #define MERKLE_TREE_K	                      	2
 #endif
 
+#if odd(MERKLE_TREE_HEIGHT - MERKLE_TREE_K)
+#error (H - K) must be even
+#endif
+
 #define MERKLE_TREE_TREEHASH_SIZE		MERKLE_TREE_HEIGHT - MERKLE_TREE_K
 #define MERKLE_TREE_STACK_SIZE			MERKLE_TREE_HEIGHT - MERKLE_TREE_K - 2
-#define MERKLE_TREE_KEEP_SIZE			MERKLE_TREE_HEIGHT + 1 // Keep is used as stack during key generation
+#define MERKLE_TREE_KEEP_SIZE			MERKLE_TREE_HEIGHT // Keep is used as stack during key generation
 #define MERKLE_TREE_RETAIN_SIZE			(1 << MERKLE_TREE_K) - MERKLE_TREE_K - 1
 
 #define N_NODES ((1 << (MERKLE_TREE_HEIGHT + 1)) - 1)
@@ -32,7 +38,8 @@ struct node_t {
 };
 
 struct state_mt {
-	short stack_index, retain_index, treehash_index[MERKLE_TREE_TREEHASH_SIZE];
+	unsigned char treehash_state[MERKLE_TREE_TREEHASH_SIZE];
+	short stack_index, retain_index, treehash_seed[MERKLE_TREE_TREEHASH_SIZE];
         struct node_t treehash[MERKLE_TREE_TREEHASH_SIZE];
         struct node_t stack[MERKLE_TREE_STACK_SIZE];
         struct node_t retain[MERKLE_TREE_RETAIN_SIZE];
@@ -42,7 +49,7 @@ struct state_mt {
 
 void init_state(struct state_mt* state);
 
-void mt_keygen(unsigned char seed[LEN_BYTES(MERKLE_TREE_SEC_LVL)], struct node_t *node, struct state_mt *state, unsigned char pkey[NODE_VALUE_SIZE]);
+void mt_keygen(sponge_t *hash, sponge_t *priv, sponge_t *pubk, unsigned char seed[LEN_BYTES(MERKLE_TREE_SEC_LVL)], struct node_t *node1, struct node_t *node2, struct state_mt *state, unsigned char pkey[NODE_VALUE_SIZE]);
 
 #ifdef __cplusplus
 };
