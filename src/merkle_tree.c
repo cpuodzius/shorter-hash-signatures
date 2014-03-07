@@ -81,7 +81,7 @@ void print_auth(const struct state_mt *state) {
 	// Print Auth
 	printf("\nAuthentication Path\n");
 	for(i = 0; i < MERKLE_TREE_HEIGHT - 1; i++) {
-		printf("Node[%d, %d]: ", state->auth[i].height, state->auth[i].pos);
+		printf("Node[%d, %d]", state->auth[i].height, state->auth[i].pos);
 		Display("", state->auth[i].value, NODE_VALUE_SIZE);
 	}
 }
@@ -91,7 +91,7 @@ void print_treehash(const struct state_mt *state) {
 	// Print Treehash
 	printf("\nTreehash\n");
 	for(i = 0; i < MERKLE_TREE_TREEHASH_SIZE; i++) {
-		printf("Node[%d, %d]: ", state->treehash[i].height, state->treehash[i].pos);
+		printf("Node[%d, %d]", state->treehash[i].height, state->treehash[i].pos);
 		Display("", state->treehash[i].value, NODE_VALUE_SIZE);
 	}
 }
@@ -103,7 +103,7 @@ void print_retain(const struct state_mt *state) {
 	for(i = MERKLE_TREE_HEIGHT - 2; i >= MERKLE_TREE_HEIGHT - MERKLE_TREE_K; i--) {
 		short pos = (1 << (MERKLE_TREE_HEIGHT - i)) - 1;
 		short index = (1 << (MERKLE_TREE_HEIGHT - i - 1)) - (MERKLE_TREE_HEIGHT - i - 1) - 1 + (pos >> 1) - 1;
-		printf("\tNode[%d, %d]: ", state->retain[index].height, state->retain[index].pos);
+		printf("\tNode[%d, %d]", state->retain[index].height, state->retain[index].pos);
 		Display("", state->retain[index].value, NODE_VALUE_SIZE);
 	}
 }
@@ -275,7 +275,7 @@ unsigned char _treehash_height(struct state_mt *state, unsigned char h) {
 	return height;
 }
 
-void _treehash_update(sponge_t *hash, sponge_t *priv, sponge_t *pubk, struct state_mt *state, unsigned char h, struct node_t *node1, struct node_t *node2, unsigned char seed[LEN_BYTES(MERKLE_TREE_SEC_LVL)]) {
+void _treehash_update(sponge_t *hash, sponge_t *priv, sponge_t *pubk, struct state_mt *state, const unsigned char h, struct node_t *node1, struct node_t *node2, const unsigned char seed[LEN_BYTES(MERKLE_TREE_SEC_LVL)]) {
 	_create_leaf(hash, priv, pubk, node1, state->treehash_seed[h], seed);
 	_treehash_set_tailheight(state, h, 0);
 
@@ -373,12 +373,15 @@ void mt_keygen(sponge_t *hash, sponge_t *priv, sponge_t *pubk, unsigned char see
 		pkey[i] = node1->value[i];
 }
 
-void _nextAuth(struct state_mt *state, unsigned char seed[LEN_BYTES(MERKLE_TREE_SEC_LVL)], sponge_t *hash, sponge_t *priv, sponge_t *pubk, struct node_t *node1, struct node_t *node2, short s) {
+void _nextAuth(struct state_mt *state, const unsigned char seed[LEN_BYTES(MERKLE_TREE_SEC_LVL)], sponge_t *hash, sponge_t *priv, sponge_t *pubk, struct node_t *node1, struct node_t *node2, const short s) {
 	short tau = MERKLE_TREE_HEIGHT - 1, h, min;
 
-	while((1 << tau) % (s + 1) != 0) {
+	while((s + 1) % (1 << tau) != 0)
 		tau--;
-	}
+
+#if defined(DEBUG)
+	printf("NextAuth: s = %d, tau = %d\n", s, tau);
+#endif
 
 	if(tau < MERKLE_TREE_HEIGHT - 1 && (((s >> (tau + 1)) & 1) == 0))
 		state->keep[tau] = state->auth[tau];
@@ -422,7 +425,7 @@ void merkletreeSig(const byte s[/*m*/], const byte v[/*m*/], const uint m, const
 #if defined(DEBUG)
 
 // Return the index of the authentication path for s-th leaf
-void get_auth_index(short s, short auth_index[MERKLE_TREE_HEIGHT - 1]) {
+void get_auth_index(short s, short auth_index[MERKLE_TREE_HEIGHT]) {
 	short h;
 	for(h = 0; h < MERKLE_TREE_HEIGHT; h++) {
 		if(s % 2 == 0)
@@ -484,7 +487,9 @@ int main() {
 	// Test variables
 	clock_t elapsed;
 	unsigned char j;
-	short auth_index[MERKLE_TREE_HEIGHT - 1];
+#if defined(DEBUG)
+	short auth_index[MERKLE_TREE_HEIGHT];
+#endif
 
 	// Count only execution variables
 	printf("RAM total: %luB\n", (long unsigned int)(sizeof(seed) + sizeof(pkey) + sizeof(sponges) + sizeof(nodes) + sizeof(state)));
@@ -507,13 +512,13 @@ int main() {
 		_get_pkey(&sponges[0], state.auth, &nodes[0], nodes[0].value);
 		assert(_vector_equal(nodes[0].value, pkey));
 		printf("Initial authentication path: Ok\n");
-		/*for(j = 0; j < (1 << MERKLE_TREE_HEIGHT); j++) {
+		for(j = 0; j < (1 << MERKLE_TREE_HEIGHT); j++) {
 			printf("s = %d  ", j);
 			print_auth(&state);
 			_nextAuth(&state, seed, &sponges[0], &sponges[1], &sponges[2], &nodes[0], &nodes[1], j);
 			get_auth_index(j, auth_index);
 			print_auth_index(auth_index);
-		}*/
+		}
 #endif
 	}
 	//gettimeofday(&t_end, NULL);
