@@ -12,7 +12,7 @@ extern "C" {
 
 #if defined(MERKLE_TREE_SELFTEST) || defined(DEBUG)
 #define MERKLE_TREE_SEC_LVL                     WINTERNITZ_SEC_LVL
-#define MERKLE_TREE_HEIGHT			6
+#define MERKLE_TREE_HEIGHT			8
 #define MERKLE_TREE_K				2
 #else
 #define MERKLE_TREE_SEC_LVL                     WINTERNITZ_SEC_LVL
@@ -29,7 +29,6 @@ extern "C" {
 #define MERKLE_TREE_KEEP_SIZE			MERKLE_TREE_HEIGHT // Keep is used as stack during key generation
 #define MERKLE_TREE_RETAIN_SIZE			(1 << MERKLE_TREE_K) - MERKLE_TREE_K - 1
 
-#define N_NODES ((1 << (MERKLE_TREE_HEIGHT + 1)) - 1)
 #define NODE_VALUE_SIZE LEN_BYTES(MERKLE_TREE_SEC_LVL)          // each value element is a byte
 
 struct node_t {
@@ -44,7 +43,7 @@ struct state_mt {
         struct node_t stack[MERKLE_TREE_STACK_SIZE];
         struct node_t retain[MERKLE_TREE_RETAIN_SIZE];
         struct node_t keep[MERKLE_TREE_KEEP_SIZE];
-        struct node_t auth[MERKLE_TREE_HEIGHT - 1];
+        struct node_t auth[MERKLE_TREE_HEIGHT];
 };
 
 void init_state(struct state_mt* state);
