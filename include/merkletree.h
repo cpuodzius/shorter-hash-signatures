@@ -12,8 +12,8 @@ extern "C" {
 
 #if defined(MERKLE_TREE_SELFTEST) || defined(DEBUG)
 #define MERKLE_TREE_SEC_LVL                     WINTERNITZ_SEC_LVL
-#define MERKLE_TREE_HEIGHT			8
-#define MERKLE_TREE_K				2
+#define MERKLE_TREE_HEIGHT			5//8
+#define MERKLE_TREE_K				3
 #else
 #define MERKLE_TREE_SEC_LVL                     WINTERNITZ_SEC_LVL
 #define MERKLE_TREE_HEIGHT                      14		// Heightst tree for this implementation (because type of index is short)

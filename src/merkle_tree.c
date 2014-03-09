@@ -80,7 +80,7 @@ void print_auth(const struct state_mt *state) {
 	short i;
 	// Print Auth
 	printf("\nAuthentication Path\n");
-	for(i = 0; i < MERKLE_TREE_HEIGHT - 1; i++) {
+	for(i = 0; i < MERKLE_TREE_HEIGHT; i++) {
 		printf("Node[%d, %d]", state->auth[i].height, state->auth[i].pos);
 		Display("", state->auth[i].value, NODE_VALUE_SIZE);
 	}
@@ -97,14 +97,16 @@ void print_treehash(const struct state_mt *state) {
 }
 
 void print_retain(const struct state_mt *state) {
-	short i;
+	short h, j;
 	// Print Retain
 	printf("\nRetain\n");
-	for(i = MERKLE_TREE_HEIGHT - 2; i >= MERKLE_TREE_HEIGHT - MERKLE_TREE_K; i--) {
-		short pos = (1 << (MERKLE_TREE_HEIGHT - i)) - 1;
-		short index = (1 << (MERKLE_TREE_HEIGHT - i - 1)) - (MERKLE_TREE_HEIGHT - i - 1) - 1 + (pos >> 1) - 1;
-		printf("\tNode[%d, %d]", state->retain[index].height, state->retain[index].pos);
-		Display("", state->retain[index].value, NODE_VALUE_SIZE);
+	for(h = MERKLE_TREE_HEIGHT - 2; h >= MERKLE_TREE_HEIGHT - MERKLE_TREE_K; h--) {
+		for (j = (1 << (MERKLE_TREE_HEIGHT - h - 1)) - 2; j >= 0; j--) {
+            short pos = 2*j + 3;
+            short index = (1 << (MERKLE_TREE_HEIGHT - h - 1)) - (MERKLE_TREE_HEIGHT - h - 1) - 1 + (pos >> 1) - 1;
+            printf("\tNode[%d, %d]", state->retain[index].height, state->retain[index].pos);
+            Display("", state->retain[index].value, NODE_VALUE_SIZE);
+		}
 	}
 }
 
@@ -257,7 +259,7 @@ void _treehash_initialize(struct state_mt *state, unsigned char h, short s) {
 }
 
 unsigned char _treehash_height(struct state_mt *state, unsigned char h) {
-	unsigned char height;
+	unsigned char height = 0;
 	switch(state->treehash_state[h] & ~TREEHASH_MASK) {
 		case TREEHASH_NEW:
 			height = h;
@@ -333,12 +335,16 @@ void _init_state(struct state_mt *state, struct node_t *node) {
 		assert(node->height < MERKLE_TREE_HEIGHT - MERKLE_TREE_K);
 #endif
 		state->treehash[node->height] = *node;
+		if (node->height == 0) {
+            _treehash_initialize(state, node->height, 2);
+		}
+		//_treehash_initialize(state, node->height, node->pos + 1 + 3 * (1 << node->height));
 	}
-	else if(node->pos > 3 && (node->pos & 1) == 1 && node->height >= MERKLE_TREE_HEIGHT - MERKLE_TREE_K) {
+	else if(node->pos >= 3 && ((node->pos & 1) == 1) && node->height >= MERKLE_TREE_HEIGHT - MERKLE_TREE_K) {
 #if defined(DEBUG)
 		assert(_node_valid(node));
 		assert((node->height < MERKLE_TREE_HEIGHT - 1) && (node->height >= MERKLE_TREE_HEIGHT - MERKLE_TREE_K));
-		assert(node->pos > 3 && (node->pos & 1) == 1);
+		assert(node->pos >= 3 && ((node->pos & 1) == 1));
 #endif
 		_retain_push(state, node);
 	}
@@ -405,7 +411,7 @@ void _nextAuth(struct state_mt *state, const unsigned char seed[LEN_BYTES(MERKLE
 		}
 	}
 	// UPDATE
-	short i, j, k;
+	short i, j, k = 0;
 	min = TREEHASH_HEIGHT_INFINITY;
 	for(i = 0; i < (MERKLE_TREE_HEIGHT - MERKLE_TREE_K) / 2; i++) {
 		for(j = MERKLE_TREE_HEIGHT - MERKLE_TREE_K - 1; j >= 0; j--) {
@@ -433,7 +439,7 @@ void get_auth_index(short s, short auth_index[MERKLE_TREE_HEIGHT]) {
 		else
 			auth_index[h] = s - 1;
 		s >>= 1;
-	}	
+	}
 }
 
 void print_auth_index(short auth_index[MERKLE_TREE_HEIGHT - 1]) {
