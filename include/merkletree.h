@@ -36,9 +36,10 @@ struct node_t {
         unsigned char value[NODE_VALUE_SIZE];           // node's value for auth path
 };
 
+//treehash_seed: index of the seed for the treehash of height h
 struct state_mt {
 	unsigned char treehash_state[MERKLE_TREE_TREEHASH_SIZE];
-	short stack_index, retain_index, treehash_seed[MERKLE_TREE_TREEHASH_SIZE];
+	short stack_index, retain_index, treehash_seed[MERKLE_TREE_TREEHASH_SIZE], nextseed_height;
         struct node_t treehash[MERKLE_TREE_TREEHASH_SIZE];
         struct node_t stack[MERKLE_TREE_STACK_SIZE];
         struct node_t retain[MERKLE_TREE_RETAIN_SIZE];
