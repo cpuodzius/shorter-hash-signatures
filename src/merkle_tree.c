@@ -206,6 +206,7 @@ void _get_parent(sponge_t *h, const struct node_t *left_child, const struct node
 	assert(right_child->pos == left_child->pos + 1);
 	const short parent_height = right_child->height + 1;
 	const short parent_pos = (right_child->pos / 2);
+	/*
 	printf("----- _get_parent -----\n\n");
 	printf("Left Child\n");
 	printf("h=%d, pos=%d\n", left_child->height, left_child->pos);
@@ -213,7 +214,8 @@ void _get_parent(sponge_t *h, const struct node_t *left_child, const struct node
 	printf("Right Child\n");
 	printf("h=%d, pos=%d\n", right_child->height, right_child->pos);
 	Display("Node", right_child->value, NODE_VALUE_SIZE);
-	//getchar();
+	getchar();
+	//*/
 #endif
 	sinit(h, MERKLE_TREE_SEC_LVL);
 	absorb(h, left_child->value, NODE_VALUE_SIZE);
@@ -236,9 +238,10 @@ void _get_parent(sponge_t *h, const struct node_t *left_child, const struct node
 void init_state(struct state_mt *state) {
 	short i;
 	state->stack_index = 0;
-	state->retain_index = 0;
+	state->retain_index_start = 0;
+	state->retain_index_end = 0;
 	for(i = 0; i < MERKLE_TREE_TREEHASH_SIZE; i++)
-		state->treehash_state[i] = TREEHASH_NEW;
+		state->treehash_state[i] = TREEHASH_FINISHED;
 }
 
 void _treehash_set_tailheight(struct state_mt *state, unsigned char h, unsigned char height) {
@@ -262,6 +265,7 @@ void _treehash_state(struct state_mt *state, unsigned char h, enum TREEHASH_STAT
 
 void _treehash_initialize(struct state_mt *state, unsigned char h, short s) {
 	state->treehash_seed[h] = s;
+	_treehash_state(state, h, TREEHASH_NEW);
 }
 
 unsigned char _treehash_height(struct state_mt *state, unsigned char h) {
@@ -288,18 +292,19 @@ void _treehash_update(sponge_t *hash, sponge_t *priv, sponge_t *pubk, struct sta
 	_create_leaf(hash, priv, pubk, node1, state->treehash_seed[h], seed);
 	_treehash_set_tailheight(state, h, 0);
 
-    if (state->stack_index > 0) {
-        while(_treehash_get_tailheight(state, h) == state->stack[state->stack_index - 1].height &&
-             (_treehash_get_tailheight(state, h) + 1) < h) {
 
-            _stack_pop(state->stack, &state->stack_index, node2);
-            _get_parent(hash, node1, node2, node1);
-            _treehash_set_tailheight(state, h, _treehash_get_tailheight(state, h) + 1);
-        }
+    while(state->stack_index > 0 && _treehash_get_tailheight(state, h) == state->stack[state->stack_index - 1].height &&
+         (_treehash_get_tailheight(state, h) + 1) < h) {
+
+        _stack_pop(state->stack, &state->stack_index, node2);
+        _get_parent(hash, node1, node2, node1);
+        _treehash_set_tailheight(state, h, _treehash_get_tailheight(state, h) + 1);
     }
+
 
 	if(_treehash_get_tailheight(state, h) + 1 < h) {
 		_stack_push(state->stack, &state->stack_index, node1);
+
 	}else {
 		if(!(state->treehash_state[h] & TREEHASH_FINISHED) && !(state->treehash_state[h] & TREEHASH_NEW)) {
 			*node2 = state->treehash[h];
@@ -311,19 +316,37 @@ void _treehash_update(sponge_t *hash, sponge_t *priv, sponge_t *pubk, struct sta
 }
 
 void _retain_push(struct state_mt *state, struct node_t *node) {
-	short index = (1 << (MERKLE_TREE_HEIGHT - node->height - 1)) - (MERKLE_TREE_HEIGHT - node->height - 1) - 1 + (node->pos >> 1) - 1;
+	//short index = (1 << (MERKLE_TREE_HEIGHT - node->height - 1)) - (MERKLE_TREE_HEIGHT - node->height - 1) - 1 + (node->pos >> 1) - 1;
 #if defined(DEBUG)
 	assert(_node_valid(node));
-	assert((index >= 0) && (index < MERKLE_TREE_RETAIN_SIZE));
+	assert((state->retain_index_end >= 0) && (state->retain_index_end < MERKLE_TREE_RETAIN_SIZE));
 #endif
-	state->retain[index] = *node;
+	state->retain[state->retain_index_end++] = *node;
+	//state->retain_index++;
 }
 
-void _retain_pop(struct state_mt *state, struct node_t *node) {
+void _retain_pop(struct state_mt *state, struct node_t *node, short h) {
+    //short i, index = state->retain_index-1;
 #if defined(DEBUG)
-	assert((state->retain_index >= 0) && (state->retain_index < MERKLE_TREE_RETAIN_SIZE));
+	assert((state->retain_index_start >= 0) && (state->retain_index_start <= MERKLE_TREE_RETAIN_SIZE));
+	assert(state->retain_index_end > state->retain_index_start);
+	assert(h <= MERKLE_TREE_HEIGHT - MERKLE_TREE_K);
 #endif
-	*node = state->retain[state->retain_index++];
+
+	*node = state->retain[state->retain_index_start++];
+    /*
+    while(state->retain[index].height > h) {
+        index--;
+    }
+    while(state->retain[index].height == state->retain[index-1].height) {
+        index--;
+    }
+	*node = state->retain[index];
+	for (i = index; i < state->retain_index; i++) {
+        state->retain[i] = state->retain[i+1];
+	}
+	state->retain_index--;
+	//*/
 #if defined(DEBUG)
 	assert(_node_valid(node));
 #endif
@@ -347,16 +370,16 @@ void _init_state(struct state_mt *state, struct node_t *node) {
 #endif
 		state->auth[node->height] = *node;
 	}
-	else if(node->pos == 3 && node->height < MERKLE_TREE_HEIGHT - MERKLE_TREE_K) {
+	if(node->pos == 3 && node->height < MERKLE_TREE_HEIGHT - MERKLE_TREE_K) {
 #if defined(DEBUG)
 		assert(_node_valid(node));
 		assert(node->pos == 3);
 		assert(node->height < MERKLE_TREE_HEIGHT - MERKLE_TREE_K);
 #endif
 		state->treehash[node->height] = *node;
-		_treehash_state(state, node->height, TREEHASH_NEW);
+		_treehash_initialize(state, node->height, node->pos);
 	}
-	else if(node->pos >= 3 && ((node->pos & 1) == 1) && node->height >= MERKLE_TREE_HEIGHT - MERKLE_TREE_K) {
+	if(node->pos >= 3 && ((node->pos & 1) == 1) && node->height >= MERKLE_TREE_HEIGHT - MERKLE_TREE_K) {
 #if defined(DEBUG)
 		assert(_node_valid(node));
 		assert((node->height < MERKLE_TREE_HEIGHT - 1) && (node->height >= MERKLE_TREE_HEIGHT - MERKLE_TREE_K));
@@ -368,7 +391,9 @@ void _init_state(struct state_mt *state, struct node_t *node) {
 
 void mt_keygen(sponge_t *hash, sponge_t *priv, sponge_t *pubk, unsigned char seed[LEN_BYTES(MERKLE_TREE_SEC_LVL)], struct node_t *node1, struct node_t *node2, struct state_mt *state, unsigned char pkey[NODE_VALUE_SIZE]) {
 	short i, pos, index = 0;
-	state->treehash_seed[0] = 3;
+	//state->treehash_seed[0] = 3;
+	init_state(state);
+
 	for(pos = 0; pos < (1 << MERKLE_TREE_HEIGHT); pos++) {
 		_create_leaf(hash, priv, pubk, node1, pos, seed);
 #if defined(DEBUG)
@@ -413,7 +438,6 @@ void _nextAuth(struct state_mt *state, const unsigned char seed[LEN_BYTES(MERKLE
 		_create_leaf(hash, priv, pubk, &state->auth[0], s, seed);
 	else {
 		_get_parent(hash, &state->auth[tau - 1], &state->keep[tau - 1], &state->auth[tau]);
-
 		min = (tau - 1 < MERKLE_TREE_HEIGHT - MERKLE_TREE_K - 1) ? tau - 1 : MERKLE_TREE_HEIGHT - MERKLE_TREE_K - 1;
 		for(h = 0; h <= min; h++) {
 			state->auth[h] = state->treehash[h];
@@ -424,7 +448,7 @@ void _nextAuth(struct state_mt *state, const unsigned char seed[LEN_BYTES(MERKLE
 		}
 		h = MERKLE_TREE_HEIGHT - MERKLE_TREE_K;
 		while(h < tau) {
-			_retain_pop(state, &state->auth[h]);
+			_retain_pop(state, &state->auth[h], h);
 			h = h + 1;
 		}
 	}
@@ -529,20 +553,27 @@ int main() {
 	elapsed = -clock();
 	//gettimeofday(&t_start, NULL);
 	for(i = 0; i < ntest; i++) {
-		init_state(&state);
 		mt_keygen(&sponges[0] , &sponges[1], &sponges[2], seed, &nodes[0], &nodes[1], &state, pkey);
 #if defined(DEBUG)
 		Display(" Merkle Tree (pkey)\n", pkey, NODE_VALUE_SIZE);
 		_create_leaf(&sponges[0] , &sponges[1], &sponges[2], &nodes[0], 0, seed);
 		_get_pkey(&sponges[0], state.auth, &nodes[0], nodes[0].value);
 		assert(_vector_equal(nodes[0].value, pkey));
+		printf("--------------- First authication path ---------------\n");
+		print_auth(&state);
+		printf("------------------------------------\n");
 		printf("Initial authentication path: Ok\n");
 		for(j = 0; j < (1 << MERKLE_TREE_HEIGHT); j++) {
-			printf("s = %d  ", j);
-			print_auth(&state);
+			printf("\n--------------- s = %d ---------------\n", j);
+			printf("Authentication path for %dth leaf\n", j + 1);
 			_nextAuth(&state, seed, &sponges[0], &sponges[1], &sponges[2], &nodes[0], &nodes[1], j);
-			get_auth_index(j, auth_index);
+			_create_leaf(&sponges[0], &sponges[1], &sponges[2], &nodes[0], j+1, seed);
+			_get_pkey(&sponges[0], state.auth, &nodes[0], nodes[0].value);
+			assert(_vector_equal(nodes[0].value, pkey));
+			print_auth(&state);
 			print_auth_index(auth_index);
+			get_auth_index(j, auth_index);
+			printf("------------------------------------\n");
 		}
 #endif
 	}
