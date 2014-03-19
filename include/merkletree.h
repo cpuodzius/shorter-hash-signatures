@@ -12,8 +12,8 @@ extern "C" {
 
 #if defined(MERKLE_TREE_SELFTEST) || defined(DEBUG)
 #define MERKLE_TREE_SEC_LVL                     WINTERNITZ_SEC_LVL
-#define MERKLE_TREE_HEIGHT			5//8
-#define MERKLE_TREE_K				3
+#define MERKLE_TREE_HEIGHT			6//5//6//6//4
+#define MERKLE_TREE_K				4//3//4//2//2
 #else
 #define MERKLE_TREE_SEC_LVL                     WINTERNITZ_SEC_LVL
 #define MERKLE_TREE_HEIGHT                      14		// Heightst tree for this implementation (because type of index is short)
@@ -39,7 +39,7 @@ struct node_t {
 //treehash_seed: index of the seed for the treehash of height h
 struct state_mt {
 	unsigned char treehash_state[MERKLE_TREE_TREEHASH_SIZE];
-	short stack_index, retain_index_start, retain_index_end, treehash_seed[MERKLE_TREE_TREEHASH_SIZE];
+	short stack_index, retain_index[MERKLE_TREE_K-1], treehash_seed[MERKLE_TREE_TREEHASH_SIZE];
         struct node_t treehash[MERKLE_TREE_TREEHASH_SIZE];
         struct node_t stack[MERKLE_TREE_STACK_SIZE];
         struct node_t retain[MERKLE_TREE_RETAIN_SIZE];
