@@ -238,11 +238,12 @@ void _get_parent(sponge_t *h, const struct node_t *left_child, const struct node
 void init_state(struct state_mt *state) {
 	short i;
 	state->stack_index = 0;
-	for(i = 0; i < MERKLE_TREE_TREEHASH_SIZE; i++) {
-		state->treehash_state[i] = TREEHASH_FINISHED;
-		if (i < MERKLE_TREE_K-1) {
-            state->retain_index[i] = 0;
-		}
+	short max = (MERKLE_TREE_TREEHASH_SIZE > MERKLE_TREE_RETAIN_SIZE) ? MERKLE_TREE_TREEHASH_SIZE : MERKLE_TREE_RETAIN_SIZE;
+	for(i = 0; i < max; i++) {
+		if(i < MERKLE_TREE_TREEHASH_SIZE)
+			state->treehash_state[i] = TREEHASH_FINISHED;
+		if (i < MERKLE_TREE_RETAIN_SIZE)
+			state->retain_index[i] = 0;
 	}
 }
 
