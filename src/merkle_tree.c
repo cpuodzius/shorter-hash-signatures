@@ -240,8 +240,10 @@ void init_state(struct state_mt *state) {
 	state->stack_index = 0;
 	short max = (MERKLE_TREE_TREEHASH_SIZE > MERKLE_TREE_RETAIN_SIZE) ? MERKLE_TREE_TREEHASH_SIZE : MERKLE_TREE_RETAIN_SIZE;
 	for(i = 0; i < max; i++) {
-		if(i < MERKLE_TREE_TREEHASH_SIZE)
+		if(i < MERKLE_TREE_TREEHASH_SIZE) {
 			state->treehash_state[i] = TREEHASH_FINISHED;
+			state->treehash_used[i] = 1;
+		}
 		if (i < MERKLE_TREE_RETAIN_SIZE)
 			state->retain_index[i] = 0;
 	}
@@ -314,12 +316,13 @@ void _treehash_update(sponge_t *hash, sponge_t *priv, sponge_t *pubk, struct sta
 		_treehash_state(state, h, TREEHASH_RUNNING);
 	} else {
 		//if((state->treehash_state[h] & TREEHASH_RUNNING) && (_treehash_get_tailheight(state, h) > 0 && _treehash_get_tailheight(state, h) < h)) {
-		if((state->treehash_state[h] & TREEHASH_RUNNING)  {
+		if((state->treehash_state[h] & TREEHASH_RUNNING) && (state->treehash_used[h] == 1) )  {
 			*node2 = state->treehash[h];
 			_get_parent(hash, node2, node1, node1);
 			_treehash_set_tailheight(state, h, _treehash_get_tailheight(state, h) + 1);
 		}
 		state->treehash[h] = *node1;
+		state->treehash_used[h] = 1;
 		if (node1->height == h) {
             _treehash_state(state, h, TREEHASH_FINISHED);
 		} else {
@@ -464,6 +467,7 @@ void _nextAuth(struct state_mt *state, const unsigned char seed[LEN_BYTES(MERKLE
 
             //Do Treehash_h.pop()
 			state->auth[h] = state->treehash[h];
+			state->treehash_used[h] = 0; //Consumed, so not used
 			/*
             if (_treehash_height(state, h) == 0) {
                 _treehash_state(state, h, TREEHASH_FINISHED);

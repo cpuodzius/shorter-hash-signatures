@@ -38,7 +38,7 @@ struct node_t {
 
 //treehash_seed: index of the seed for the treehash of height h
 struct state_mt {
-	unsigned char treehash_state[MERKLE_TREE_TREEHASH_SIZE];
+	unsigned char treehash_state[MERKLE_TREE_TREEHASH_SIZE], treehash_used[MERKLE_TREE_TREEHASH_SIZE];
 	short stack_index, retain_index[MERKLE_TREE_K-1], treehash_seed[MERKLE_TREE_TREEHASH_SIZE];
         struct node_t treehash[MERKLE_TREE_TREEHASH_SIZE];
         struct node_t stack[MERKLE_TREE_STACK_SIZE];
