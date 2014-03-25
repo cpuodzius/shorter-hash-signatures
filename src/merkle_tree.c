@@ -245,6 +245,7 @@ void init_state(struct state_mt *state) {
 		if (i < MERKLE_TREE_RETAIN_SIZE)
 			state->retain_index[i] = 0;
 	}
+
 }
 
 void _treehash_set_tailheight(struct state_mt *state, unsigned char h, unsigned char height) {
@@ -262,8 +263,10 @@ unsigned char _treehash_get_tailheight(struct state_mt *state, unsigned char h) 
 }
 
 void _treehash_state(struct state_mt *state, unsigned char h, enum TREEHASH_STATE th_state) {
-	state->treehash_state[h] &= TREEHASH_MASK; // clean state
-	state->treehash_state[h] |= th_state;
+	state->treehash_state[h] = th_state; // clean state
+	#if defined(DEBUG)
+    assert(_treehash_get_tailheight(state, h) == 0);
+    #endif
 }
 
 void _treehash_initialize(struct state_mt *state, unsigned char h, short s) {
@@ -311,7 +314,7 @@ void _treehash_update(sponge_t *hash, sponge_t *priv, sponge_t *pubk, struct sta
 		_treehash_state(state, h, TREEHASH_RUNNING);
 	} else {
 		//if((state->treehash_state[h] & TREEHASH_RUNNING) && (_treehash_get_tailheight(state, h) > 0 && _treehash_get_tailheight(state, h) < h)) {
-		if(state->treehash_state[h] & TREEHASH_RUNNING) {
+		if((state->treehash_state[h] & TREEHASH_RUNNING)  {
 			*node2 = state->treehash[h];
 			_get_parent(hash, node2, node1, node1);
 			_treehash_set_tailheight(state, h, _treehash_get_tailheight(state, h) + 1);
@@ -579,7 +582,7 @@ int main() {
 	Display("\n seed for keygen: ",seed,LEN_BYTES(MERKLE_TREE_SEC_LVL));
 
 	//struct timeval t_start, t_end;
-        short i, ntest = 1;
+    short i, ntest = 1;
 	elapsed = -clock();
 	//gettimeofday(&t_start, NULL);
 	for(i = 0; i < ntest; i++) {
