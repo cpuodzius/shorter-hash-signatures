@@ -254,7 +254,8 @@ void _treehash_set_tailheight(struct state_mt *state, unsigned char h, unsigned 
 #if defined(DEBUG)
     assert(h < MERKLE_TREE_TREEHASH_SIZE);
 #endif
-	state->treehash_state[h] |= (TREEHASH_MASK & height);
+    state->treehash_state[h] &= 0xE0; // clear previous height
+	state->treehash_state[h] |= (TREEHASH_MASK & height); // set new height
 }
 
 unsigned char _treehash_get_tailheight(struct state_mt *state, unsigned char h) {
@@ -572,7 +573,7 @@ int main() {
 
 	// Test variables
 	clock_t elapsed;
-	unsigned char j;
+	short j;
 #if defined(DEBUG)
 	short auth_index[MERKLE_TREE_HEIGHT];
 #endif
@@ -607,7 +608,7 @@ int main() {
 			_create_leaf(&sponges[0], &sponges[1], &sponges[2], &nodes[0], j+1, seed);
 			_get_pkey(&sponges[0], state.auth, &nodes[0], nodes[0].value);
 			assert(_vector_equal(nodes[0].value, pkey));
-			print_auth(&state);
+            print_auth(&state);
 			print_auth_index(auth_index);
 			get_auth_index(j, auth_index);
 			printf("------------------------------------\n");
