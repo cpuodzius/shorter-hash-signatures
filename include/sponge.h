@@ -3,9 +3,11 @@
 
 #ifndef __USUAL_TYPES
 #define __USUAL_TYPES
+#ifndef PLATFORM_TELOSB
 typedef unsigned char  bool;
 typedef unsigned char  byte;
 typedef unsigned short uint;
+#endif
 #endif /* __USUAL_TYPES */
 
 #include "blake2.h"

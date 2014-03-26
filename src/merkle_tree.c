@@ -8,7 +8,7 @@ enum TREEHASH_STATE {
 	TREEHASH_FINISHED	= 0x80
 };
 
-#define TREEHASH_MASK			0x1F
+#define TREEHASH_MASK			    0x1F
 #define TREEHASH_HEIGHT_INFINITY	0x7F
 
 #if defined(DEBUG)
@@ -506,7 +506,7 @@ void _nextAuth(struct state_mt *state, const unsigned char seed[LEN_BYTES(MERKLE
 }
 
 
-void merkletreeSig(const byte s[/*m*/], const byte v[/*m*/], const uint m, const byte *M, uint len, sponge_t *priv, sponge_t *hash, byte h[/*m*/], unsigned char seed[LEN_BYTES(MERKLE_TREE_SEC_LVL)], short pos) {
+void merkletreeSig(const unsigned char s[/*m*/], const unsigned char v[/*m*/], const uint m, const unsigned char *M, uint len, sponge_t *priv, sponge_t *hash, unsigned char h[/*m*/], unsigned char seed[LEN_BYTES(MERKLE_TREE_SEC_LVL)], short pos) {
 }
 
 #if defined(DEBUG)
@@ -561,7 +561,7 @@ void _get_pkey(sponge_t *sponge, const struct node_t auth[MERKLE_TREE_HEIGHT], s
 #include <time.h>
 #include "util.h"
 
-int main() {
+int main(int argc, char *argv[]) {
 	printf("\n Parameters:  sec lvlH=%u, H=%u, #leaves=%u, node size=%u, winternitz_w=%u \n\n", MERKLE_TREE_SEC_LVL, MERKLE_TREE_HEIGHT, (1 << MERKLE_TREE_HEIGHT), NODE_VALUE_SIZE, WINTERNITZ_W);
 
 	// Execution variables

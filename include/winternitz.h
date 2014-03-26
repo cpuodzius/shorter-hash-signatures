@@ -5,18 +5,14 @@
 #include "sponge.h"
 
 // Winternitz interface:
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #define OK 0
 #define ERROR 1
 
-// WINTERNITZ_W: word size in bits
 
 // sec level: 128
 #define WINTERNITZ_SEC_LVL (128)
-#define WINTERNITZ_W (2)
+#define WINTERNITZ_W (2)         // word size in bits
 
 
 // sec level: 82
@@ -66,13 +62,9 @@ extern "C" {
 #define GetWBits(x, startbit) ((x & (unsigned)( (unsigned)((1 << WINTERNITZ_W) - 1) << startbit)) >> startbit)
 #define LEN_BYTES(len_bits) ((len_bits+7)/8)
 
-void winternitzGen(const byte s[/*m*/], const uint m, sponge_t *priv, sponge_t *hash, sponge_t *pubk, byte v[/*m*/]);
-void winternitzSig(const byte s[/*m*/], const byte v[/*m*/], const uint m, const byte *M, uint len, sponge_t *priv, sponge_t *hash, byte h[/*m*/], byte sig[/*(m+2)*m*/] /* m+2 m-byte blocks */);
-bool winternitzVer(const byte v[/*m*/], const uint m, const byte *M, uint len, sponge_t *pubk, sponge_t *hash, byte h[/*m*/], const byte sig[/*(2*m+3)*m*/] /* 2m+3 m-byte blocks */, byte x[/*m*/]);
+void winternitzGen(const unsigned char s[/*m*/], const unsigned short m, sponge_t *priv, sponge_t *hash, sponge_t *pubk, unsigned char v[/*m*/]);
+void winternitzSig(const unsigned char s[/*m*/], const unsigned char v[/*m*/], const unsigned short m, const unsigned char *M, unsigned short len, sponge_t *priv, sponge_t *hash, unsigned char h[/*m*/], unsigned char sig[/*(m+2)*m*/] /* m+2 m-unsigned char blocks */);
+unsigned char winternitzVer(const unsigned char v[/*m*/], const unsigned short m, const unsigned char *M, unsigned short len, sponge_t *pubk, sponge_t *hash, unsigned char h[/*m*/], const unsigned char sig[/*(2*m+3)*m*/] /* 2m+3 m-unsigned char blocks */, unsigned char x[/*m*/]);
 
-
-#ifdef __cplusplus
-};
-#endif
 
 #endif // __WINTERNITZ_H

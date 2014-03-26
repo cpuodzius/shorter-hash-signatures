@@ -7,7 +7,7 @@ unsigned char rand_dig_f(void) {
     return (unsigned char)rand();
 }
 
-void Display(const char *tag, const byte *u, uint n) {
+void Display(const char *tag, const unsigned char *u, unsigned short n) {
     uint i;
     printf("%s:\n", tag);
     for (i = 0; i < n; i++) {
