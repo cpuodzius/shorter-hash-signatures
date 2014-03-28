@@ -38,22 +38,10 @@ short _node_valid(const struct node_t *node) {
 	return (valid_value_size && _node_valid_index(node->height, node->pos));
 }
 
-short _vector_equal(const void *v1, const void *v2) {
-	char equal = 1;
-	if(sizeof(v1) != sizeof(v2))
-		equal = 0;
-	else {
-		short size = sizeof(v1);
-		if(memcmp(v1, v2, size) != 0)
-			equal = 0;
-	}
-	return equal;
-}
-
 short _node_equal(const struct node_t *node1, const struct node_t *node2) {
 	char equal = 0;
 	if(node1->height == node2->height && node1->pos == node2->pos)
-		equal = _vector_equal(node1->value, node2->value);
+		equal = (memcmp(node1->value, node2->value, NODE_VALUE_SIZE) == 0);
 	return equal;
 }
 
@@ -112,15 +100,17 @@ void print_retain(const struct state_mt *state) {
 
 #endif
 
-void _create_leaf(sponge_t *hash, sponge_t *priv, sponge_t *pubk, struct node_t *node, const short pos, const unsigned char seed[LEN_BYTES(MERKLE_TREE_SEC_LVL)]) {
+void _create_leaf(sponge_t *hash, sponge_t *priv, sponge_t *pubk, struct node_t *node, const short pos,
+                  const unsigned char seed[LEN_BYTES(MERKLE_TREE_SEC_LVL)]) {
+    unsigned char seedPos[LEN_BYTES(MERKLE_TREE_SEC_LVL)];
 #if defined(DEBUG)
 	// seed must always be the same
 	if(!dbg_seed_initialized) {
 		dbg_seed_initialized = 1;
-		memmove(dbg_seed, seed, sizeof(seed));
+		memmove(dbg_seed, seed, LEN_BYTES(MERKLE_TREE_SEC_LVL));
 	}
 	else
-		assert(_vector_equal(dbg_seed, seed));
+		assert(memcmp(dbg_seed, seed, LEN_BYTES(MERKLE_TREE_SEC_LVL)) == 0);
 	// pos must be a valid leaf index
 	assert(_node_valid_index(0, pos));
 #endif
@@ -129,8 +119,8 @@ void _create_leaf(sponge_t *hash, sponge_t *priv, sponge_t *pubk, struct node_t 
 	sinit(hash, MERKLE_TREE_SEC_LVL);
 	absorb(hash, seed, NODE_VALUE_SIZE);
 	absorb(hash, &pos, sizeof(pos));
-	squeeze(hash, node->value, LEN_BYTES(MERKLE_TREE_SEC_LVL)); // seed <- H(seed, pos)
-	winternitzGen(node->value, LEN_BYTES(WINTERNITZ_SEC_LVL), priv, hash, pubk, node->value);
+	squeeze(hash, seedPos, LEN_BYTES(MERKLE_TREE_SEC_LVL)); // seed <- H(seed, pos)
+	winternitzGen(seedPos, LEN_BYTES(WINTERNITZ_SEC_LVL), priv, hash, pubk, node->value);
 #if defined(DEBUG)
 	assert(_node_valid(node));
 	assert(node->height == 0);
@@ -505,10 +495,6 @@ void _nextAuth(struct state_mt *state, const unsigned char seed[LEN_BYTES(MERKLE
 	}
 }
 
-
-void merkletreeSig(const unsigned char s[/*m*/], const unsigned char v[/*m*/], const uint m, const unsigned char *M, uint len, sponge_t *priv, sponge_t *hash, unsigned char h[/*m*/], unsigned char seed[LEN_BYTES(MERKLE_TREE_SEC_LVL)], short pos) {
-}
-
 #if defined(DEBUG)
 
 // Return the index of the authentication path for s-th leaf
@@ -530,7 +516,9 @@ void print_auth_index(short auth_index[MERKLE_TREE_HEIGHT - 1]) {
 		printf("\th = %d : n[%d][%d]\n", h, h, auth_index[h]);
 }
 
-void _get_pkey(sponge_t *sponge, const struct node_t auth[MERKLE_TREE_HEIGHT], struct node_t *node, unsigned char pkey[NODE_VALUE_SIZE]) {
+#endif
+
+void _get_pkey(sponge_t *sponge, const struct node_t auth[MERKLE_TREE_HEIGHT], struct node_t *node, unsigned char *pkey) {
 	short i, h;
 	for(h = 0; h < MERKLE_TREE_HEIGHT; h++) {
 		assert(_node_valid(node));
@@ -551,12 +539,58 @@ void _get_pkey(sponge_t *sponge, const struct node_t auth[MERKLE_TREE_HEIGHT], s
 	assert(node->pos == 0);
 	for(i = 0; i < NODE_VALUE_SIZE; i++)
 		pkey[i] = node->value[i];
-	assert(_vector_equal(pkey, node->value));
+	assert(memcmp(pkey, node->value, NODE_VALUE_SIZE) == 0);
 }
+
+/**
+ * s     The pos-th winternitz private key
+ * v     The pos-th winternitz public key used as a nonce for the hash H(v,M)
+ *
+ */
+
+void merkletreeSign(struct state_mt *state, const unsigned char *seed,
+                    const unsigned char *v, const char *M, short len, sponge_t *hash,
+                    sponge_t *priv, sponge_t *pubk, unsigned char *h, short pos, struct node_t *node1, struct node_t *node2,
+                    unsigned char *sig) {
+
+#if defined(DEBUG)
+    assert((pos >= 0) && (pos < (1 << MERKLE_TREE_HEIGHT)));
 #endif
 
+    winternitzSig(seed, v, LEN_BYTES(WINTERNITZ_SEC_LVL), (const unsigned char *)M, len, priv, hash, h, sig);
 
-#if defined(MERKLE_TREE_SELFTEST) || defined(DEBUG)
+    //_nextAuth(state, seed, hash, priv, pubk, node1, node2, pos);
+
+}
+
+/**
+ * s     The pos-th Winternitz private key
+ * v     The pos-th Winternitz public key used as a nonce for the hash H(v,M)
+ *
+ */
+
+unsigned char merkletreeVerify(struct state_mt *state, const unsigned char *v, const char *M, short len, sponge_t *hash, sponge_t *priv, sponge_t *pubk,
+                               unsigned char *h, short pos, const unsigned char *sig, unsigned char *x, struct node_t *currentLeaf, unsigned char merklePubKey[]) {
+
+    unsigned char ok = 0, i;
+
+    if (winternitzVer(v, LEN_BYTES(WINTERNITZ_SEC_LVL), (const unsigned char *)M, /*strlen(M)+1*/len, pubk, hash, h, sig, x) == 0)
+        return 0;
+
+    currentLeaf->height = 0;
+    currentLeaf->pos = pos;
+    for(i = 0; i < LEN_BYTES(MERKLE_TREE_SEC_LVL); i++)
+		currentLeaf->value[i] = v[i];
+
+    _get_pkey(hash, state->auth, currentLeaf, currentLeaf->value);
+
+    ok = (memcmp(currentLeaf->value, merklePubKey, LEN_BYTES(MERKLE_TREE_SEC_LVL)) == 0);
+
+    return ok;
+}
+
+
+#if defined(MERKLE_TREE_SELFTEST) && defined(DEBUG)
 
 #include <time.h>
 #include "util.h"
@@ -570,6 +604,17 @@ int main(int argc, char *argv[]) {
 	sponge_t sponges[3];
 	struct node_t nodes[2];
 	struct state_mt state;
+
+	// Parameters for signing
+
+	//char M[LEN_BYTES(WINTERNITZ_SEC_LVL)] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}; // One-block message to be signed
+	char M[] = "Hello, world!";
+	unsigned char h1[LEN_BYTES(WINTERNITZ_SEC_LVL)],h2[LEN_BYTES(WINTERNITZ_SEC_LVL)]; // m-unsigned char message hash
+	//unsigned char s[WINTERNITZ_L*LEN_BYTES(WINTERNITZ_SEC_LVL)];
+	unsigned char seedi[LEN_BYTES(WINTERNITZ_SEC_LVL)];
+	unsigned char sig[WINTERNITZ_L*LEN_BYTES(WINTERNITZ_SEC_LVL)];
+	unsigned char aux[LEN_BYTES(WINTERNITZ_SEC_LVL)];
+	struct node_t currentLeaf;
 
 	// Test variables
 	clock_t elapsed;
@@ -592,12 +637,25 @@ int main(int argc, char *argv[]) {
 	//gettimeofday(&t_start, NULL);
 	for(i = 0; i < ntest; i++) {
 		mt_keygen(&sponges[0] , &sponges[1], &sponges[2], seed, &nodes[0], &nodes[1], &state, pkey);
+
+        sinit(&sponges[0], MERKLE_TREE_SEC_LVL);
+        absorb(&sponges[0], seed, NODE_VALUE_SIZE);
+        absorb(&sponges[0], &i, sizeof(i));
+        squeeze(&sponges[0], seedi, LEN_BYTES(MERKLE_TREE_SEC_LVL)); // seed <- H(seed, pos)
+
+        _create_leaf(&sponges[0], &sponges[1], &sponges[2], &currentLeaf, i, seed);
+
+		merkletreeSign(&state, seedi, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], &sponges[2], h1, i, &nodes[0], &nodes[1], sig);
+        if (merkletreeVerify(&state, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], &sponges[2], h2, i, sig, aux, &currentLeaf, pkey) == 1) {
+                printf("Assinatura eh valida!\n");
+        }
+
 #if defined(DEBUG)
 		Display(" Merkle Tree (pkey)\n", pkey, NODE_VALUE_SIZE);
 		_create_leaf(&sponges[0] , &sponges[1], &sponges[2], &nodes[0], 0, seed);
 		_get_pkey(&sponges[0], state.auth, &nodes[0], nodes[0].value);
-		assert(_vector_equal(nodes[0].value, pkey));
-		printf("--------------- First authication path ---------------\n");
+		assert(memcmp(nodes[0].value, pkey, LEN_BYTES(MERKLE_TREE_SEC_LVL)) == 0);
+		printf("--------------- First authentication path ---------------\n");
 		print_auth(&state);
 		printf("------------------------------------\n");
 		printf("Initial authentication path: Ok\n");
@@ -607,7 +665,7 @@ int main(int argc, char *argv[]) {
 			_nextAuth(&state, seed, &sponges[0], &sponges[1], &sponges[2], &nodes[0], &nodes[1], j);
 			_create_leaf(&sponges[0], &sponges[1], &sponges[2], &nodes[0], j+1, seed);
 			_get_pkey(&sponges[0], state.auth, &nodes[0], nodes[0].value);
-			assert(_vector_equal(nodes[0].value, pkey));
+			assert(memcmp(nodes[0].value, pkey, LEN_BYTES(MERKLE_TREE_SEC_LVL)) == 0);
             print_auth(&state);
 			print_auth_index(auth_index);
 			get_auth_index(j, auth_index);

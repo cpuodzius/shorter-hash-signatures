@@ -165,7 +165,7 @@ void winternitzGen(const unsigned char s[/*m*/], const unsigned short m, sponge_
 #if WINTERNITZ_W == 4
 
 /**
- * Sign H(v, M)under private key s, yielding (x_{0:lo}, x_{0:hi}, ..., x_{(m-1):lo}, x_{(m-1):hi})
+ * Sign H(v, M) under private key s, yielding (x_{0:lo}, x_{0:hi}, ..., x_{(m-1):lo}, x_{(m-1):hi})
  *
  * @param s the m-unsigned char private signing key.
  * @param v the corresponding m-unsigned char verification key, used here as the random nonce.
@@ -363,7 +363,7 @@ void winternitzSig(const unsigned char s[/*m*/], const unsigned char v[/*m*/], c
  * @param y the signature
  * @param x scratch (should match v at the end)
  */
-unsigned char winternitz4Ver(const unsigned char v[/*m*/], const unsigned short m, const unsigned char *M, unsigned short len, sponge_t *pubk, sponge_t *hash, unsigned char h[/*m*/], const unsigned char sig[/*(2*m+3)*m*/] /* 2m+3 m-unsigned char blocks */, unsigned char x[/*m*/]) {
+unsigned char winternitz4Ver(const unsigned char v[/*m*/], const unsigned short m, const unsigned char *M, unsigned short len, sponge_t *pubk, sponge_t *hash, unsigned char h[/*m*/], const unsigned char *sig, unsigned char *x) {
     //int sq = 0;
     unsigned char i, j, c;
     unsigned short checksum = 0;
@@ -388,7 +388,7 @@ unsigned char winternitz4Ver(const unsigned char v[/*m*/], const unsigned short 
 
 #ifdef DEBUG
         assert(c < 16);
-#endif 
+#endif
 
         for (j = 0; j < c; j++) {
             sinit(hash, WINTERNITZ_SEC_LVL);
@@ -527,7 +527,7 @@ unsigned char winternitz8Ver(const unsigned char v[/*m*/], const unsigned short 
 }
 #endif /*WINTERNITZ_W = 8*/
 
-unsigned char winternitzVer(const unsigned char v[], const unsigned short m, const unsigned char *M, unsigned short len, sponge_t *pubk, sponge_t *hash, unsigned char h[], const unsigned char sig[], unsigned char x[]) {
+unsigned char winternitzVer(const unsigned char v[], const unsigned short m, const unsigned char *M, unsigned short len, sponge_t *pubk, sponge_t *hash, unsigned char h[], const unsigned char sig[], unsigned char *x) {
 #if WINTERNITZ_W == 4
     return winternitz4Ver(v, m, M, len, pubk, hash, h, sig, x);
 #elif WINTERNITZ_W == 8
@@ -564,7 +564,7 @@ taking the missing nodes from the authentication path $Q^{(j)}$. Accept iff $q_1
 
 int main(int argc, char *argv[]) {
 
-    unsigned char m = LEN_unsigned charS(WINTERNITZ_SEC_LVL);
+    unsigned char m = LEN_BYTES(WINTERNITZ_SEC_LVL);
     sponge_t priv, hash, pubk;
     unsigned char s[m]; // the m-unsigned char private signing key.
     unsigned char v[m]; // the corresponding m-unsigned char verification key.

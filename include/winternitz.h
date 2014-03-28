@@ -12,7 +12,7 @@
 
 // sec level: 128
 #define WINTERNITZ_SEC_LVL (128)
-#define WINTERNITZ_W (2)         // word size in bits
+#define WINTERNITZ_W (4)         // word size in bits
 
 
 // sec level: 82
