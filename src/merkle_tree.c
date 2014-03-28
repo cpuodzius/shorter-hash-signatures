@@ -119,7 +119,7 @@ void _create_leaf(sponge_t *hash, sponge_t *priv, sponge_t *pubk, struct node_t 
 	sinit(hash, MERKLE_TREE_SEC_LVL);
 	absorb(hash, seed, NODE_VALUE_SIZE);
 	absorb(hash, &pos, sizeof(pos));
-	squeeze(hash, seedPos, LEN_BYTES(MERKLE_TREE_SEC_LVL)); // seed <- H(seed, pos)
+	squeeze(hash, seedPos, LEN_BYTES(MERKLE_TREE_SEC_LVL)); // seedPos <- H(seed, pos)
 	winternitzGen(seedPos, LEN_BYTES(WINTERNITZ_SEC_LVL), priv, hash, pubk, node->value);
 #if defined(DEBUG)
 	assert(_node_valid(node));
@@ -520,25 +520,36 @@ void print_auth_index(short auth_index[MERKLE_TREE_HEIGHT - 1]) {
 void _get_pkey(sponge_t *sponge, const struct node_t auth[MERKLE_TREE_HEIGHT], struct node_t *node, unsigned char *pkey) {
 	short i, h;
 	for(h = 0; h < MERKLE_TREE_HEIGHT; h++) {
+
+#if defined(DEBUG)
 		assert(_node_valid(node));
 		assert(_node_valid(&auth[h]));
 		assert(auth[h].height == h);
 		assert(auth[h].height == node->height);
+#endif		
 		if(auth[h].pos >= node->pos) {
+#if defined(DEBUG)
 			assert(_node_brothers(node, &auth[h]));
+#endif	
 			_get_parent(sponge, node, &auth[h], node);
 		}
 		else {
+#if defined(DEBUG)
 			assert(_node_brothers(&auth[h], node));
+#endif
 			_get_parent(sponge, &auth[h], node, node);
 		}
 	}
+#if defined(DEBUG)
 	assert(_node_valid(node));
 	assert(node->height == MERKLE_TREE_HEIGHT);
 	assert(node->pos == 0);
+#endif
 	for(i = 0; i < NODE_VALUE_SIZE; i++)
 		pkey[i] = node->value[i];
+#if defined(DEBUG)		
 	assert(memcmp(pkey, node->value, NODE_VALUE_SIZE) == 0);
+#endif
 }
 
 /**
