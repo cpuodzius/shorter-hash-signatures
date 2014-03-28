@@ -48,5 +48,12 @@ void init_state(struct state_mt* state);
 
 void mt_keygen(sponge_t *hash, sponge_t *priv, sponge_t *pubk, unsigned char seed[LEN_BYTES(MERKLE_TREE_SEC_LVL)], struct node_t *node1, struct node_t *node2, struct state_mt *state, unsigned char pkey[NODE_VALUE_SIZE]);
 
+void merkletreeSign(struct state_mt *state, const unsigned char *seed,
+                    const unsigned char *v, const char *M, short len, sponge_t *hash,
+                    sponge_t *priv, sponge_t *pubk, unsigned char *h, short pos, struct node_t *node1, struct node_t *node2,
+                    unsigned char *sig, struct node_t authpath[MERKLE_TREE_HEIGHT]);
+
+unsigned char merkletreeVerify(struct node_t authpath[MERKLE_TREE_HEIGHT], const unsigned char *v, const char *M, short len, sponge_t *hash, sponge_t *priv, sponge_t *pubk,
+                               unsigned char *h, short pos, const unsigned char *sig, unsigned char *x, struct node_t *currentLeaf, unsigned char merklePubKey[]);
 
 #endif // __MERKLETREE_H
