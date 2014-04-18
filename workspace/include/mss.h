@@ -12,12 +12,12 @@
 
 #if defined(MSS_SELFTEST) || defined(DEBUG)
 #define MSS_SEC_LVL                     WINTERNITZ_SEC_LVL
-#define MSS_HEIGHT			10
-#define MSS_K				8
+#define MSS_HEIGHT			5
+#define MSS_K				3
 #else
 #define MSS_SEC_LVL                     WINTERNITZ_SEC_LVL
 #define MSS_HEIGHT                      6	// 16 is the Heighest tree for this implementation (because type of index is short)
-#define MSS_K				8
+#define MSS_K				3
 #endif
 
 #if odd(MSS_HEIGHT - MSS_K)

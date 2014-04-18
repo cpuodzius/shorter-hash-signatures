@@ -12,7 +12,9 @@ def read_input(basepath):
 	benchmarks = []
 	benchmark = None
 	for line in open(os.path.join(basepath, "bench_input.txt")).readlines():
-		if "PLATFORM" in line:
+		if line[0] == "#":
+			pass
+		elif "PLATFORM" in line:
 			platform = line[len("PLATFORM: "):].strip()
 			if benchmark != None:
 				benchmarks.append(benchmark)
@@ -70,7 +72,7 @@ def main(argv=None):
 	benchmarks = read_input(os.path.abspath(os.path.dirname(__file__)))
 	for benchmark in benchmarks:
 		platform = benchmark["platform"]
-		basepath = os.path.join(os.path.abspath(os.path.dirname(__file__)), platform)
+		basepath = os.path.join(os.path.abspath(os.path.dirname(__file__)), "projects" , platform)
 		includepath = os.path.join(basepath, 'include')
 		binpath = os.path.join(basepath, 'bin')
 		for param in benchmark["params"]:
