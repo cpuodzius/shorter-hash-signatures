@@ -81,7 +81,7 @@ def main(argv=None):
 			os.chdir(basepath)
 			for command in benchmark["commands"]:
 				os.system(command)
-			fname = "SEC_LVL_" + param["SEC_LVL"] + "_W_" + param["W"] + "_H_" + param["H"] + "_K_" + param["K"] + "_" + strftime("%Y-%m-%d_%H:%M:%S", gmtime())
+			fname = benchmark["platform"] + "_SEC_LVL_" + param["SEC_LVL"] + "_W_" + param["W"] + "_H_" + param["H"] + "_K_" + param["K"] + "_" + strftime("%Y-%m-%d_%H:%M:%S", gmtime())
 			fpath = os.path.join(benchbasepath, fname)
 			suffix = ".txt"
 			while(os.path.isfile(fpath + suffix)):

@@ -4,21 +4,16 @@
 #include "winternitz.h"
 
 // Merkle Tree interface:
+// 16 is the Heighest tree for this implementation (because type of index is short)
 
 #define MSS_OK 1
 #define MSS_ERROR 0
 
 #define odd(x)	((x) % 2)
 
-#if defined(MSS_SELFTEST) || defined(DEBUG)
 #define MSS_SEC_LVL                     WINTERNITZ_SEC_LVL
 #define MSS_HEIGHT			5
 #define MSS_K				3
-#else
-#define MSS_SEC_LVL                     WINTERNITZ_SEC_LVL
-#define MSS_HEIGHT                      6	// 16 is the Heighest tree for this implementation (because type of index is short)
-#define MSS_K				3
-#endif
 
 #if odd(MSS_HEIGHT - MSS_K)
 #error (H - K) must be even

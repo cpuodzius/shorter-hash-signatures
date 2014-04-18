@@ -67,7 +67,7 @@ void winternitz_2_keygen(const unsigned char s[/*m*/], const unsigned short m, s
  * @param pubk
  * @param v
  */
-void winternitz_2_keygen(const unsigned char s[/*m*/], const unsigned short m, sponge_t *priv, sponge_t *hash, sponge_t *pubk, unsigned char v[/*m*/]) {
+void winternitz_2_keygen(const unsigned char s[/*m*/], const unsigned short m, sponge_t *hash, sponge_t *pubk, unsigned char v[/*m*/]) {
     //int sq = 0;
     unsigned char i, j;
     // NB: for 1 <= m <= 21 (hence, sec level up to 2^168), the value of ceil(lg(3*4*m)/8) is simply 1 byte.
