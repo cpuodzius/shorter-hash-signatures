@@ -7,7 +7,8 @@
 #endif
 
 #include "winternitz.h"
-
+#include "aes.h"
+#include "aes.c"
 
 #if WINTERNITZ_W == 2 && !defined(PLATFORM_TELOSB)
 
@@ -36,6 +37,7 @@ void winternitz_2_keygen(const unsigned char s[/*m*/], const unsigned short m, s
     for (i = 0; i < L; i++) {
         memset(v, 0, 16); v[0] = i;
         cipherCryptB((u8*) s, (u8*) v, v);    //v = s_i = AES_s(i) = H(s,i) // v holds the private block for i-th semi-nybble
+		
         //sq++;
         for (j = 0; j < 3; j++) {
 //            sinit(hash, WINTERNITZ_SEC_LVL);
@@ -73,25 +75,29 @@ void winternitz_2_keygen(const unsigned char s[/*m*/], const unsigned short m, s
     // NB: for 1 <= m <= 21 (hence, sec level up to 2^168), the value of ceil(lg(3*4*m)/8) is simply 1 byte.
     unsigned char L = 4*(unsigned char)(m + 1); // chunk count, including checksum
 
-    cc2420_aes_set_key(s, 0);  // H(s, ...) = AES_s(...)
-
     memset(pubk->H, 0, 16);
+
+    //cc2420_aes_set_key(s, 1);  // H(s, ...) = AES_s(...)
+
     for (i = 0; i < L; i++) { // scan over the 2-bit chunks:
+	//cc2420_aes_set_key(s, 0);  // H(s, ...) = AES_s(...)
         memset(v, 0, 16); v[0] = i; // i = chunk tag
-        cc2420_aes_cipher(v, 16, 0); // v <= s_i = H(s, i) = AES_{s}(i)
+        //cc2420_aes_cipher(v, 16, 1); // v <= s_i = H(s, i) = AES_{s}(i)
+	cipherCryptB((u8*) s, (u8*) v, v);
         //sq++;
         for (j = 0; j < 3; j++) {
-            //sinit(hash, seclevel);
+            //sinit(hash, WINTERNITZ_SEC_LVL);
             //absorb(hash, v, m);
             //squeeze(hash, v, m); // v is the hash of its previous value = y_i = H^3(s_i)
-	      hash16(hash, v, v);
+	    hash16(hash, v, v);
             //sq++;
         }
 
         // y_0 || ... || y_i ...
-        cc2420_aes_set_key(pubk->H, 0);
-        memcpy(pubk->H, v, 16);
-        cc2420_aes_cipher(pubk->H, 16, 0); // AES_{pubk->H}(y_i);
+        //cc2420_aes_set_key(pubk->H, 0);
+        //memcpy(pubk->H, v, 16);
+        //cc2420_aes_cipher(pubk->H, 16, 0); // AES_{pubk->H}(y_i);
+	cipherCryptB((u8*) pubk->H, (u8*) v, pubk->H);
         pubk->H[ 0] ^= v[ 0];
         pubk->H[ 1] ^= v[ 1];
         pubk->H[ 2] ^= v[ 2];
@@ -113,6 +119,7 @@ void winternitz_2_keygen(const unsigned char s[/*m*/], const unsigned short m, s
     }
     //squeeze(pubk, v, m); // v is finally the public key, v = H(y_0 || y_1 || ... || y_{L-1})
     memcpy(v, pubk->H, 16);
+
     //sq++;
     //printf("gen squeeze count: %d\n", sq);
     cleanup(hash);
@@ -538,33 +545,34 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
     absorb(hash, M, len); // followed by the message in this implementation (actually followed by the treetop key, and then by the message, in the full scheme)
     squeeze(hash, h, m); // NB: hash length is m here, but was 2*m in the predecessor scheme
     //sq++;
-    // data part:
 
-    cc2420_aes_set_key(s, 0);
-
+    // data part:    
     for (i = 0; i < (unsigned char)m; i++) { // NB: hash length is m here, but was 2*m in the predecessor scheme
         // 0 part:
+	//cc2420_aes_set_key(s, 0);
         memset(sig, 0, 16); sig[0] = (i << 2) + 0; // H(s, 4i + 0) // 0 chunk index
-        cc2420_aes_cipher(sig, 16, 0); // sig holds the private block for i-th "0" chunk
+        //cc2420_aes_cipher(sig, 16, 0); // sig holds the private block for i-th "0" chunk
+	cipherCryptB((u8*) s, (u8*) sig, sig);
         //sq++;
+
         checksum += 3;
         switch ((h[i]     ) & 3) { // 0 chunk
         case 3:
-            //sinit(hash, seclevel);
+            //sinit(hash, WINTERNITZ_SEC_LVL);
             //absorb(hash, sig, m);
             //squeeze(hash, sig, m); // sig holds the hash of its previous value
 	    hash16(hash, sig, sig);
             //sq++;
             checksum--; // FALLTHROUGH
         case 2:
-            //sinit(hash, seclevel);
+            //sinit(hash, WINTERNITZ_SEC_LVL);
             //absorb(hash, sig, m);
             //squeeze(hash, sig, m); // sig holds the hash of its previous value
 	    hash16(hash,sig,sig);
             //sq++;
             checksum--; // FALLTHROUGH
         case 1:
-            //sinit(hash, seclevel);
+            //sinit(hash, WINTERNITZ_SEC_LVL);
             //absorb(hash, sig, m);
             //squeeze(hash, sig, m); // sig holds the hash of its previous value
 	    hash16(hash,sig,sig);
@@ -577,27 +585,29 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
         sig += m; // signature block for next chunk
 
         // 1 part:
+	//cc2420_aes_set_key(s, 0);
         memset(sig, 0, 16); sig[0] = (i << 2) + 1; // H(s, 4i + 1) // 1 chunk index
-        cc2420_aes_cipher(sig, 16, 0); // sig holds the private block for i-th "1" chunk
+        //cc2420_aes_cipher(sig, 16, 0); // sig holds the private block for i-th "1" chunk
+	cipherCryptB((u8*) s, (u8*) sig, sig);
         //sq++;
         checksum += 3;
         switch ((h[i] >> 2) & 3) { // 1 chunk
         case 3:
-            //sinit(hash, seclevel);
+            //sinit(hash, WINTERNITZ_SEC_LVL);
             //absorb(hash, sig, m);
             //squeeze(hash, sig, m); // sig holds the hash of its previous value
 	    hash16(hash,sig,sig);
             //sq++;
             checksum--; // FALLTHROUGH
         case 2:
-            //sinit(hash, seclevel);
+            //sinit(hash, WINTERNITZ_SEC_LVL);
             //absorb(hash, sig, m);
             //squeeze(hash, sig, m); // sig holds the hash of its previous value
 	    hash16(hash,sig,sig);
             //sq++;
             checksum--; // FALLTHROUGH
         case 1:
-            //sinit(hash, seclevel);
+            //sinit(hash, WINTERNITZ_SEC_LVL);
             //absorb(hash, sig, m);
             //squeeze(hash, sig, m); // sig holds the hash of its previous value
 	    hash16(hash,sig,sig);
@@ -610,27 +620,29 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
         sig += m; // signature block for next chunk
 
         // 2 part:
+	//cc2420_aes_set_key(s, 0);
         memset(sig, 0, 16); sig[0] = (i << 2) + 2; // H(s, 4i + 2) // 2 chunk index
-        cc2420_aes_cipher(sig, 16, 0); // sig holds the private block for i-th "2" chunk
+        //cc2420_aes_cipher(sig, 16, 0); // sig holds the private block for i-th "2" chunk
+	cipherCryptB((u8*) s, (u8*) sig, sig);
         //sq++;
         checksum += 3;
         switch ((h[i] >> 4) & 3) { // 2 chunk
         case 3:
-            //sinit(hash, seclevel);
+            //sinit(hash, WINTERNITZ_SEC_LVL);
             //absorb(hash, sig, m);
             //squeeze(hash, sig, m); // sig holds the hash of its previous value
 	    hash16(hash,sig,sig);
             //sq++;
             checksum--; // FALLTHROUGH
         case 2:
-            //sinit(hash, seclevel);
+            //sinit(hash, WINTERNITZ_SEC_LVL);
             //absorb(hash, sig, m);
             //squeeze(hash, sig, m); // sig holds the hash of its previous value
             hash16(hash,sig,sig);
             //sq++;
             checksum--; // FALLTHROUGH
         case 1:
-            //sinit(hash, seclevel);
+            //sinit(hash, WINTERNITZ_SEC_LVL);
             //absorb(hash, sig, m);
             //squeeze(hash, sig, m); // sig holds the hash of its previous value
 	    hash16(hash,sig,sig);
@@ -643,27 +655,29 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
         sig += m; // signature block for next chunk
 
         // 3 part:
+	//cc2420_aes_set_key(s, 0);
         memset(sig, 0, 16); sig[0] = (i << 2) + 3; // H(s, 4i + 3) // 3 chunk index
-        cc2420_aes_cipher(sig, 16, 0); // sig holds the private block for i-th "3" chunk
+        //cc2420_aes_cipher(sig, 16, 0); // sig holds the private block for i-th "3" chunk
+	cipherCryptB((u8*) s, (u8*) sig, sig);
         //sq++;
         checksum += 3;
         switch ((h[i] >> 6) & 3) { // 3 chunk
         case 3:
-            //sinit(hash, seclevel);
+            //sinit(hash, WINTERNITZ_SEC_LVL);
             //absorb(hash, sig, m);
             //squeeze(hash, sig, m); // sig holds the hash of its previous value
 	    hash16(hash,sig,sig);
             //sq++;
             checksum--; // FALLTHROUGH
         case 2:
-            //sinit(hash, seclevel);
+            //sinit(hash, WINTERNITZ_SEC_LVL);
             //absorb(hash, sig, m);
             //squeeze(hash, sig, m); // sig holds the hash of its previous value
 	    hash16(hash,sig,sig);
             //sq++;
             checksum--; // FALLTHROUGH
         case 1:
-            //sinit(hash, seclevel);
+            //sinit(hash, WINTERNITZ_SEC_LVL);
             //absorb(hash, sig, m);
             //squeeze(hash, sig, m); // sig holds the hash of its previous value
 	    hash16(hash,sig,sig);
@@ -678,26 +692,28 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
     }
     // checksum part:
     for (i = 0; i < 4; i++) { // checksum
+	//cc2420_aes_set_key(s, 0);
         memset(sig, 0, 16); sig[0] = (m << 2) + i; // H(s, 4m + i) // i-th chunk index
-        cc2420_aes_cipher(sig, 16, 0); // sig holds the private block for i-th checksum chunk
+        //cc2420_aes_cipher(sig, 16, 0); // sig holds the private block for i-th checksum chunk
+	cipherCryptB((u8*) s, (u8*) sig, sig);
         //sq++;
         switch (checksum & 3) { // 3 chunk
         case 3:
-            //sinit(hash, seclevel);
+            //sinit(hash, WINTERNITZ_SEC_LVL);
             //absorb(hash, sig, m);
             //squeeze(hash, sig, m); // sig holds the hash of its previous value
             hash16(hash,sig,sig);
             //sq++;
             // FALLTHROUGH
         case 2:
-            //sinit(hash, seclevel);
+            //sinit(hash, WINTERNITZ_SEC_LVL);
             //absorb(hash, sig, m);
             //squeeze(hash, sig, m); // sig holds the hash of its previous value
 	    hash16(hash,sig,sig);
             //sq++;
             // FALLTHROUGH
         case 1:
-            //sinit(hash, seclevel);
+            //sinit(hash, WINTERNITZ_SEC_LVL);
             //absorb(hash, sig, m);
             //squeeze(hash, sig, m); // sig holds the hash of its previous value
 	    hash16(hash,sig,sig);
@@ -1134,16 +1150,17 @@ bool winternitz_2_verify(const byte v[/*m*/], const uint m, const byte *M, uint 
 unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned short m, const unsigned char *M, unsigned short len, sponge_t *pubk, sponge_t *hash, unsigned char h[/*m*/], const unsigned char sig[/*(2*m+3)*m*/] /* 2m+3 m-byte blocks */, unsigned char x[/*m*/]) {
     //int sq = 0;
     unsigned char i, j, c;
-    unsigned short seclevel = m << 3;
-    unsigned short checksum = 0;
+    unsigned short checksum = 0,ww;
 
-    sinit(hash, seclevel);
+    sinit(hash, WINTERNITZ_SEC_LVL);
     absorb(hash, v, m); // random nonce!!!
     absorb(hash, M, len); // followed by the treetop key in the full scheme
     squeeze(hash, h, m); // NB: hash length is m here, but was 2*m in the predecessor scheme
     //sq++;
     // data part:
-    sinit(pubk, seclevel);
+    sinit(pubk, WINTERNITZ_SEC_LVL);
+
+    memset(pubk->H, 0, 16);
 
     for (i = 0; i < (unsigned char)m; i++) { // NB: hash length is m here, but was 2*m in the predecessor scheme
         // 0 part:
@@ -1151,13 +1168,35 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
         c = 3 - ((h[i] >> 0) & 3); // chunk
         checksum += (unsigned short)c;
         for (j = 0; j < c; j++) {
-            //sinit(hash, seclevel);
+            //sinit(hash, WINTERNITZ_SEC_LVL);
             //absorb(hash, x, m);
             //squeeze(hash, x, m); // x holds the hash of its previous value
             hash16(hash,x,x);
             //sq++;
         }
-        absorb(pubk, x, m);
+        //absorb(pubk, x, m);
+        // y_0 || ... || y_i ...
+        //cc2420_aes_set_key(pubk->H, 0);
+        //memcpy(pubk->H, x, 16);
+        //cc2420_aes_cipher(pubk->H, 16, 0); // AES_{pubk->H}(y_i);
+	cipherCryptB((u8*) pubk->H, (u8*) x, pubk->H);
+        pubk->H[ 0] ^= x[ 0];
+        pubk->H[ 1] ^= x[ 1];
+        pubk->H[ 2] ^= x[ 2];
+        pubk->H[ 3] ^= x[ 3];
+        pubk->H[ 4] ^= x[ 4];
+        pubk->H[ 5] ^= x[ 5];
+        pubk->H[ 6] ^= x[ 6];
+        pubk->H[ 7] ^= x[ 7];
+        pubk->H[ 8] ^= x[ 8];
+        pubk->H[ 9] ^= x[ 9];
+        pubk->H[10] ^= x[10];
+        pubk->H[11] ^= x[11];
+        pubk->H[12] ^= x[12];
+        pubk->H[13] ^= x[13];
+        pubk->H[14] ^= x[14];
+        pubk->H[15] ^= x[15];
+
         sig += m; // next signature block
 
         // 1 part:
@@ -1165,13 +1204,37 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
         c = 3 - ((h[i] >> 2) & 3); // chunk
         checksum += (unsigned short)c;
         for (j = 0; j < c; j++) {
-            //sinit(hash, seclevel);
+            //sinit(hash, WINTERNITZ_SEC_LVL);
             //absorb(hash, x, m);
             //squeeze(hash, x, m); // x holds the hash of its previous value
 	    hash16(hash,x,x);
             //sq++;
         }
-        absorb(pubk, x, m);
+        //absorb(pubk, x, m);
+
+        // H(y_0 || ... || y_i ...)
+        //cc2420_aes_set_key(pubk->H, 0);
+        //memcpy(pubk->H, x, 16);
+        //cc2420_aes_cipher(pubk->H, 16, 0); // AES_{pubk->H}(y_i);
+        cipherCryptB((u8*) pubk->H, (u8*) x, pubk->H);
+        pubk->H[ 0] ^= x[ 0];
+        pubk->H[ 1] ^= x[ 1];
+        pubk->H[ 2] ^= x[ 2];
+        pubk->H[ 3] ^= x[ 3];
+        pubk->H[ 4] ^= x[ 4];
+        pubk->H[ 5] ^= x[ 5];
+        pubk->H[ 6] ^= x[ 6];
+        pubk->H[ 7] ^= x[ 7];
+        pubk->H[ 8] ^= x[ 8];
+        pubk->H[ 9] ^= x[ 9];
+        pubk->H[10] ^= x[10];
+        pubk->H[11] ^= x[11];
+        pubk->H[12] ^= x[12];
+        pubk->H[13] ^= x[13];
+        pubk->H[14] ^= x[14];
+        pubk->H[15] ^= x[15];
+
+
         sig += m; // next signature block
 
         // 2 part:
@@ -1179,13 +1242,37 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
         c = 3 - ((h[i] >> 4) & 3); // chunk
         checksum += (unsigned short)c;
         for (j = 0; j < c; j++) {
-            //sinit(hash, seclevel);
+            //sinit(hash, WINTERNITZ_SEC_LVL);
             //absorb(hash, x, m);
             //squeeze(hash, x, m); // x holds the hash of its previous value
 	    hash16(hash,x,x);
             //sq++;
         }
-        absorb(pubk, x, m);
+        //absorb(pubk, x, m);
+
+        // H(y_0 || ... || y_i ...)
+        //cc2420_aes_set_key(pubk->H, 0);
+        //memcpy(pubk->H, x, 16);
+        //cc2420_aes_cipher(pubk->H, 16, 0); // AES_{pubk->H}(y_i);
+	cipherCryptB((u8*) pubk->H, (u8*) x, pubk->H);
+        pubk->H[ 0] ^= x[ 0];
+        pubk->H[ 1] ^= x[ 1];
+        pubk->H[ 2] ^= x[ 2];
+        pubk->H[ 3] ^= x[ 3];
+        pubk->H[ 4] ^= x[ 4];
+        pubk->H[ 5] ^= x[ 5];
+        pubk->H[ 6] ^= x[ 6];
+        pubk->H[ 7] ^= x[ 7];
+        pubk->H[ 8] ^= x[ 8];
+        pubk->H[ 9] ^= x[ 9];
+        pubk->H[10] ^= x[10];
+        pubk->H[11] ^= x[11];
+        pubk->H[12] ^= x[12];
+        pubk->H[13] ^= x[13];
+        pubk->H[14] ^= x[14];
+        pubk->H[15] ^= x[15];
+
+
         sig += m; // next signature block
 
         // 3 part:
@@ -1193,13 +1280,36 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
         c = 3 - ((h[i] >> 6) & 3); // chunk
         checksum += (unsigned short)c;
         for (j = 0; j < c; j++) {
-            //sinit(hash, seclevel);
+            //sinit(hash, WINTERNITZ_SEC_LVL);
             //absorb(hash, x, m);
             //squeeze(hash, x, m); // x holds the hash of its previous value
 	    hash16(hash,x,x);
             //sq++;
         }
-        absorb(pubk, x, m);
+        //absorb(pubk, x, m);
+
+        // H(y_0 || ... || y_i ...)
+        //cc2420_aes_set_key(pubk->H, 0);
+        //memcpy(pubk->H, x, 16);
+        //cc2420_aes_cipher(pubk->H, 16, 0); // AES_{pubk->H}(y_i);
+	cipherCryptB((u8*) pubk->H, (u8*) x, pubk->H);
+        pubk->H[ 0] ^= x[ 0];
+        pubk->H[ 1] ^= x[ 1];
+        pubk->H[ 2] ^= x[ 2];
+        pubk->H[ 3] ^= x[ 3];
+        pubk->H[ 4] ^= x[ 4];
+        pubk->H[ 5] ^= x[ 5];
+        pubk->H[ 6] ^= x[ 6];
+        pubk->H[ 7] ^= x[ 7];
+        pubk->H[ 8] ^= x[ 8];
+        pubk->H[ 9] ^= x[ 9];
+        pubk->H[10] ^= x[10];
+        pubk->H[11] ^= x[11];
+        pubk->H[12] ^= x[12];
+        pubk->H[13] ^= x[13];
+        pubk->H[14] ^= x[14];
+        pubk->H[15] ^= x[15];
+
         sig += m; // next signature block
 
     }
@@ -1209,16 +1319,42 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
         c = 3 - (checksum & 3); // chunk
         checksum >>= 2;
         for (j = 0; j < c; j++) {
-            //sinit(hash, seclevel);
+            //sinit(hash, WINTERNITZ_SEC_LVL);
             //absorb(hash, x, m);
             //squeeze(hash, x, m); // x holds the hash of its previous value
 	    hash16(hash,x,x);
             //sq++;
         }
-        absorb(pubk, x, m);
+        //absorb(pubk, x, m);
+
+        // y_0 || ... || y_i ...
+        //cc2420_aes_set_key(pubk->H, 0);
+        //memcpy(pubk->H, x, 16);
+        //cc2420_aes_cipher(pubk->H, 16, 0); // AES_{pubk->H}(y_i);
+	cipherCryptB((u8*) pubk->H, (u8*) x, pubk->H);
+        pubk->H[ 0] ^= x[ 0];
+        pubk->H[ 1] ^= x[ 1];
+        pubk->H[ 2] ^= x[ 2];
+        pubk->H[ 3] ^= x[ 3];
+        pubk->H[ 4] ^= x[ 4];
+        pubk->H[ 5] ^= x[ 5];
+        pubk->H[ 6] ^= x[ 6];
+        pubk->H[ 7] ^= x[ 7];
+        pubk->H[ 8] ^= x[ 8];
+        pubk->H[ 9] ^= x[ 9];
+        pubk->H[10] ^= x[10];
+        pubk->H[11] ^= x[11];
+        pubk->H[12] ^= x[12];
+        pubk->H[13] ^= x[13];
+        pubk->H[14] ^= x[14];
+        pubk->H[15] ^= x[15];
+
+
         sig += m; // next signature block
     }
-    squeeze(pubk, x, m); // x should be the public key v
+    //squeeze(pubk, x, m); // x should be the public key v
+    memcpy(x, pubk->H, 16);
+
     //sq++;
     //printf("ver squeeze count: %d\n", sq);
 

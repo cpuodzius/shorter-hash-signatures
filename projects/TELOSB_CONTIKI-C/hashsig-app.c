@@ -3,11 +3,13 @@
 
 #include <stdio.h>
 
+/*
 #include "benchmark.h"
 #include "benchmark.c"
-
-//#include "test.h"
-//#include "test.c"
+/*/
+#include "test.h"
+#include "test.c"
+//*/
 
 #define PRINTF printf
 
@@ -37,15 +39,18 @@ PROCESS_THREAD(bench_hashsig_process, ev, data)
   //*/
 
 
-/* Run Merkle Signature TESTS  
-  ret = do_test(TEST_MSS_SIGN);
+//* Run Merkle Signature TESTS  
+  ret = do_test(TEST_MSS_SIGN); 
+  printf("Errors after tests: %d", ret);
 //*/
 
-//* Run the specified benchmark
+
+/* Run the specified benchmark
   benchs = 1;
 
   do_benchmark(BENCHMARK_PREPARE);  
   
+  printf("Starting bench...\n");
   t1 = clock_time();
   
   //do_benchmark(BENCHMARK_PREPARE);
@@ -56,7 +61,7 @@ PROCESS_THREAD(bench_hashsig_process, ev, data)
 
   t2 = clock_time();
 
-  printf("Bench time = %lu (ticks) / %lu (ticks) / benchs = %u ms \n", t2 - t1, CLOCK_SECOND,(1000*(t2 - t1))/CLOCK_SECOND/benchs);
+  printf("Bench time = %lu (ticks) / %lu (ticks) / benchs = %lu s \n", t2 - t1, CLOCK_SECOND,(t2 - t1)/CLOCK_SECOND/benchs);
   //printf("Verify=%u", i);
 //*/
 

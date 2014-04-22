@@ -36,7 +36,7 @@ void cleanup(sponge_t *sponge) {
 }
 
 void hash16(sponge_t *sponge, const unsigned char data[16], unsigned char digest[16]) {
-    if (sponge != NULL) {
+    if (sponge != NULL) {	
         davies_meyer_hash16(sponge->IV, data, digest);
     }
 }

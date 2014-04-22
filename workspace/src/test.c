@@ -6,7 +6,7 @@
 #include "sponge.h"
 #include "sponge.c"
 #include "winternitz.c"
-#include "merkle_tree.c"
+#include "mss.c"
 #include "mmo.c"
 #endif
 
@@ -23,7 +23,7 @@ int test_merkle_signature() {
 	unsigned char h1[LEN_BYTES(WINTERNITZ_SEC_LVL)], h2[LEN_BYTES(WINTERNITZ_SEC_LVL)];
 	unsigned char sig[WINTERNITZ_L*LEN_BYTES(WINTERNITZ_SEC_LVL)];
 	unsigned char aux[LEN_BYTES(WINTERNITZ_SEC_LVL)];
-	short errors, j;
+	short errors, j, o;
 	char M[] = "Hello, world!";
 
 	printf("Testing merkle, w=%d, H=%d, K=%d\n\n", WINTERNITZ_W, MSS_HEIGHT, MSS_K);

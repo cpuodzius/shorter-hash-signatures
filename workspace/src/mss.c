@@ -120,7 +120,9 @@ void create_leaf(sponge_t *hash, sponge_t *priv, sponge_t *pubk, struct mss_node
 	absorb(hash, seed, NODE_VALUE_SIZE);
 	absorb(hash, &pos, sizeof(pos));
 	squeeze(hash, seedPos, LEN_BYTES(MSS_SEC_LVL)); // seedPos <- H(seed, pos)
+	
 	winternitz_keygen(seedPos, LEN_BYTES(WINTERNITZ_SEC_LVL), priv, hash, pubk, node->value);
+
 #if defined(DEBUG)
 	assert(_node_valid(node));
 	assert(node->height == 0);

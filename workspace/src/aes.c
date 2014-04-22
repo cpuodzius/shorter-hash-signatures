@@ -98,7 +98,7 @@ static u8 constantsOffSet;
   *
   */
 static void createNextKey(void){
-
+	u8 i;
 	//Computes 1st column
 	k[0] ^= sBox(k[13]) ^ constantsOffSet;
 	k[1] ^= sBox(k[14]);
@@ -106,7 +106,7 @@ static void createNextKey(void){
 	k[3] ^= sBox(k[12]);
 
 	//Computes other collumns
-	for(u8 i = 4 ; i < BLOCK_SIZE ; i++){
+	for(i = 4 ; i < BLOCK_SIZE ; i++){
 		k[i] ^= k[i-4];
 	}
 
@@ -124,7 +124,7 @@ static void createNextKey(void){
  * operation is not performed; it will be performed otherwise.
  */
 static void unkeyedRound(u8* bl, u8 doMixColumn){
-	u8 aux1;
+	u8 aux1, i;
 
 	//----ShiftRows
 	//2nd row
@@ -138,13 +138,13 @@ static void unkeyedRound(u8* bl, u8 doMixColumn){
 	bl[11] = bl[7]; bl[7] = aux1;
 
 	//----ByteSub (applies SBox)
-	for(u8 i = 0; i < BLOCK_SIZE ; i++){
+	for(i = 0; i < BLOCK_SIZE ; i++){
 		bl[i] = sBox(bl[i]);
 	}
 
 	//----Mixcolumn
 	if(doMixColumn){
-		for(u8 i = 0;  i <= 12 ; i++)
+		for(i = 0;  i <= 12 ; i++)
 		{
 			u8 aux2 = bl[i];
 			aux1 = aux2 ^ bl[i+1] ^ bl[i+2] ^ bl[i+3];
@@ -168,10 +168,10 @@ static void unkeyedRound(u8* bl, u8 doMixColumn){
  * @param dst Pointer to the destination block
  */
 void cipherCryptB(u8* key, u8* src, u8* dst){
-
+	u8 i, round; 
 	//Loads the key into the 'k' buffer (so it is not replaced
 	//by the key evolution process) and applies the first key
-	for(u8 i = 0 ; i < BLOCK_SIZE ; i++){
+	for(i = 0 ; i < BLOCK_SIZE ; i++){
 		k[i] = key[i];
 		dst[i] = src[i] ^ k[i];
 	}
@@ -180,7 +180,7 @@ void cipherCryptB(u8* key, u8* src, u8* dst){
 	constantsOffSet  = 1;
 
     //round function applied 10 times
-    for(u8 round = 1; round <= N_ROUNDS ; round++){
+    for(round = 1; round <= N_ROUNDS ; round++){
 
         //Creates the key for this round
         createNextKey();
@@ -190,7 +190,7 @@ void cipherCryptB(u8* key, u8* src, u8* dst){
         unkeyedRound(dst, round < N_ROUNDS);
 
         //Applies the key for this round
-		for(u8 i = 0 ; i < BLOCK_SIZE ; i++){
+		for(i = 0 ; i < BLOCK_SIZE ; i++){
 			dst[i] ^= k[i];
 		}
 
@@ -216,10 +216,10 @@ printMatrix(dst);
  * @param dst Pointer to the destination block
  */
 void cipherCryptB(u8* key, u8* src, u8* dst){
-
+	u8 i, j, round, aux1, aux2;
 	//Loads the key into the 'k' buffer (so it is not replaced
 	//by the key evolution process) and applies the first key
-	for(u8 i = 0 ; i < BLOCK_SIZE ; i++){
+	for(i = 0 ; i < BLOCK_SIZE ; i++){
 		k[i] = key[i];
 		dst[i] = src[i] ^ k[i];
 	}
@@ -228,9 +228,8 @@ void cipherCryptB(u8* key, u8* src, u8* dst){
 	constantsOffSet  = 1;
 
 	//round function
-	for(u8 round = 0;  ; ){
-		u8 aux1;
-
+	for(round = 0;  ; ){
+		
 		//----ShiftRows
 		//2nd row
 		aux1 = dst[1]; dst[1] = dst[5]; dst[5] = dst[9];
@@ -243,7 +242,7 @@ void cipherCryptB(u8* key, u8* src, u8* dst){
 		dst[11] = dst[7]; dst[7] = aux1;
 
 		//----ByteSub (applies SBox)
-		for(u8 i = 0; i < BLOCK_SIZE ; i++){
+		for(i = 0; i < BLOCK_SIZE ; i++){
 			dst[i] = sBox(dst[i]);
 		}
 
@@ -253,7 +252,7 @@ void cipherCryptB(u8* key, u8* src, u8* dst){
         //Checks if the final round is achieved
 		if(++round == 10){
 			//Final round lacks mixCollumns operation
-			for(u8 i = 0 ; i < BLOCK_SIZE ; i++){
+			for(i = 0 ; i < BLOCK_SIZE ; i++){
 				dst[i] ^= k[i];
 			}
 
@@ -262,11 +261,11 @@ void cipherCryptB(u8* key, u8* src, u8* dst){
 
 		//----Mixcolumn + AddRoundKey
 
-		for(u8 i = 0;  i <= 12 ; i++)
+		for(i = 0;  i <= 12 ; i++)
 		{
-			u8 aux2 = dst[i];
+			aux2 = dst[i];
 			aux1 = aux2 ^ dst[i+1] ^ dst[i+2] ^ dst[i+3];
-			for(u8 j = 0 ; j < 3 ; j++)
+			for(j = 0 ; j < 3 ; j++)
 			{
 				dst[i] ^= aux1 ^ xTimes(dst[i] ^ dst[i+1]) ^ k[i];
 				i++;
