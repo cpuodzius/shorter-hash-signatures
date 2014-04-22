@@ -28,8 +28,14 @@ void AES_encrypt(unsigned char ciphertext[16], const unsigned char plaintext[16]
 		cc2420_aes_cipher(ciphertext, 16, 0); // ct will be overwritten with the computed ciphertext
 		//for (i = 0; i < 16; i++) printf(" %02X", plaintext[i]);		
 		//printf("\n");
+/*/
+		//cipherCryptB((u8*) key, (u8*) plaintext, ciphertext);
 //*/
-		cipherCryptB((u8*) key, (u8*) plaintext, ciphertext);
+		unsigned char expandedKey[175];
+		expandKey(expandedKey, key);
+		memcpy(ciphertext, plaintext, 16); // ct saves the plaintext
+		aes_encr(ciphertext, expandedKey);
+
     #else
         cipherCryptB((u8*) key, (u8*) plaintext, ciphertext);
     #endif // PLATFORM_TELOB

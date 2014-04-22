@@ -83,7 +83,8 @@ void winternitz_2_keygen(const unsigned char s[/*m*/], const unsigned short m, s
 	//cc2420_aes_set_key(s, 0);  // H(s, ...) = AES_s(...)
         memset(v, 0, 16); v[0] = i; // i = chunk tag
         //cc2420_aes_cipher(v, 16, 1); // v <= s_i = H(s, i) = AES_{s}(i)
-	cipherCryptB((u8*) s, (u8*) v, v);
+	//cipherCryptB((u8*) s, (u8*) v, v);
+	AES_encrypt(v, v, s);
         //sq++;
         for (j = 0; j < 3; j++) {
             //sinit(hash, WINTERNITZ_SEC_LVL);
@@ -97,7 +98,8 @@ void winternitz_2_keygen(const unsigned char s[/*m*/], const unsigned short m, s
         //cc2420_aes_set_key(pubk->H, 0);
         //memcpy(pubk->H, v, 16);
         //cc2420_aes_cipher(pubk->H, 16, 0); // AES_{pubk->H}(y_i);
-	cipherCryptB((u8*) pubk->H, (u8*) v, pubk->H);
+	//cipherCryptB((u8*) pubk->H, (u8*) v, pubk->H);
+	AES_encrypt(pubk->H, v, pubk->H);
         pubk->H[ 0] ^= v[ 0];
         pubk->H[ 1] ^= v[ 1];
         pubk->H[ 2] ^= v[ 2];
@@ -552,7 +554,8 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
 	//cc2420_aes_set_key(s, 0);
         memset(sig, 0, 16); sig[0] = (i << 2) + 0; // H(s, 4i + 0) // 0 chunk index
         //cc2420_aes_cipher(sig, 16, 0); // sig holds the private block for i-th "0" chunk
-	cipherCryptB((u8*) s, (u8*) sig, sig);
+	//cipherCryptB((u8*) s, (u8*) sig, sig);
+	AES_encrypt(sig, sig, s);
         //sq++;
 
         checksum += 3;
@@ -588,7 +591,8 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
 	//cc2420_aes_set_key(s, 0);
         memset(sig, 0, 16); sig[0] = (i << 2) + 1; // H(s, 4i + 1) // 1 chunk index
         //cc2420_aes_cipher(sig, 16, 0); // sig holds the private block for i-th "1" chunk
-	cipherCryptB((u8*) s, (u8*) sig, sig);
+	//cipherCryptB((u8*) s, (u8*) sig, sig);
+	AES_encrypt(sig, sig, s);
         //sq++;
         checksum += 3;
         switch ((h[i] >> 2) & 3) { // 1 chunk
@@ -623,8 +627,9 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
 	//cc2420_aes_set_key(s, 0);
         memset(sig, 0, 16); sig[0] = (i << 2) + 2; // H(s, 4i + 2) // 2 chunk index
         //cc2420_aes_cipher(sig, 16, 0); // sig holds the private block for i-th "2" chunk
-	cipherCryptB((u8*) s, (u8*) sig, sig);
-        //sq++;
+	//cipherCryptB((u8*) s, (u8*) sig, sig);
+	AES_encrypt(sig, sig, s);        
+	//sq++;
         checksum += 3;
         switch ((h[i] >> 4) & 3) { // 2 chunk
         case 3:
@@ -658,7 +663,8 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
 	//cc2420_aes_set_key(s, 0);
         memset(sig, 0, 16); sig[0] = (i << 2) + 3; // H(s, 4i + 3) // 3 chunk index
         //cc2420_aes_cipher(sig, 16, 0); // sig holds the private block for i-th "3" chunk
-	cipherCryptB((u8*) s, (u8*) sig, sig);
+	//cipherCryptB((u8*) s, (u8*) sig, sig);
+	AES_encrypt(sig, sig, s);
         //sq++;
         checksum += 3;
         switch ((h[i] >> 6) & 3) { // 3 chunk
@@ -695,7 +701,8 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
 	//cc2420_aes_set_key(s, 0);
         memset(sig, 0, 16); sig[0] = (m << 2) + i; // H(s, 4m + i) // i-th chunk index
         //cc2420_aes_cipher(sig, 16, 0); // sig holds the private block for i-th checksum chunk
-	cipherCryptB((u8*) s, (u8*) sig, sig);
+	//cipherCryptB((u8*) s, (u8*) sig, sig);
+	AES_encrypt(sig, sig, s);
         //sq++;
         switch (checksum & 3) { // 3 chunk
         case 3:
@@ -1179,7 +1186,8 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
         //cc2420_aes_set_key(pubk->H, 0);
         //memcpy(pubk->H, x, 16);
         //cc2420_aes_cipher(pubk->H, 16, 0); // AES_{pubk->H}(y_i);
-	cipherCryptB((u8*) pubk->H, (u8*) x, pubk->H);
+	//cipherCryptB((u8*) pubk->H, (u8*) x, pubk->H);
+	AES_encrypt(pubk->H, x, pubk->H);
         pubk->H[ 0] ^= x[ 0];
         pubk->H[ 1] ^= x[ 1];
         pubk->H[ 2] ^= x[ 2];
@@ -1216,7 +1224,8 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
         //cc2420_aes_set_key(pubk->H, 0);
         //memcpy(pubk->H, x, 16);
         //cc2420_aes_cipher(pubk->H, 16, 0); // AES_{pubk->H}(y_i);
-        cipherCryptB((u8*) pubk->H, (u8*) x, pubk->H);
+        //cipherCryptB((u8*) pubk->H, (u8*) x, pubk->H);
+	AES_encrypt(pubk->H, x, pubk->H);
         pubk->H[ 0] ^= x[ 0];
         pubk->H[ 1] ^= x[ 1];
         pubk->H[ 2] ^= x[ 2];
@@ -1254,7 +1263,8 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
         //cc2420_aes_set_key(pubk->H, 0);
         //memcpy(pubk->H, x, 16);
         //cc2420_aes_cipher(pubk->H, 16, 0); // AES_{pubk->H}(y_i);
-	cipherCryptB((u8*) pubk->H, (u8*) x, pubk->H);
+	//cipherCryptB((u8*) pubk->H, (u8*) x, pubk->H);
+	AES_encrypt(pubk->H, x, pubk->H);
         pubk->H[ 0] ^= x[ 0];
         pubk->H[ 1] ^= x[ 1];
         pubk->H[ 2] ^= x[ 2];
@@ -1292,7 +1302,8 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
         //cc2420_aes_set_key(pubk->H, 0);
         //memcpy(pubk->H, x, 16);
         //cc2420_aes_cipher(pubk->H, 16, 0); // AES_{pubk->H}(y_i);
-	cipherCryptB((u8*) pubk->H, (u8*) x, pubk->H);
+	//cipherCryptB((u8*) pubk->H, (u8*) x, pubk->H);
+	AES_encrypt(pubk->H, x, pubk->H);
         pubk->H[ 0] ^= x[ 0];
         pubk->H[ 1] ^= x[ 1];
         pubk->H[ 2] ^= x[ 2];
@@ -1331,7 +1342,8 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
         //cc2420_aes_set_key(pubk->H, 0);
         //memcpy(pubk->H, x, 16);
         //cc2420_aes_cipher(pubk->H, 16, 0); // AES_{pubk->H}(y_i);
-	cipherCryptB((u8*) pubk->H, (u8*) x, pubk->H);
+	//cipherCryptB((u8*) pubk->H, (u8*) x, pubk->H);
+	AES_encrypt(pubk->H, x, pubk->H);
         pubk->H[ 0] ^= x[ 0];
         pubk->H[ 1] ^= x[ 1];
         pubk->H[ 2] ^= x[ 2];

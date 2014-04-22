@@ -24,6 +24,11 @@ short pos = 0;
 struct mss_node currentLeaf;
 struct mss_node authpath[MSS_HEIGHT];
 unsigned char sig[WINTERNITZ_L*LEN_BYTES(WINTERNITZ_SEC_LVL)];
+
+//struct mss_node currentLeafVerify[1 << MSS_HEIGHT];
+//struct mss_node authpathVerify[1 << MSS_HEIGHT][MSS_HEIGHT];
+//unsigned char sigAndVerify[1 << MSS_HEIGHT][WINTERNITZ_L*LEN_BYTES(WINTERNITZ_SEC_LVL)];
+
 unsigned char aux[LEN_BYTES(WINTERNITZ_SEC_LVL)];
 
 
@@ -35,7 +40,6 @@ void do_benchmark(enum BENCHMARK phase) {
 			for (j = 0; j < LEN_BYTES(MSS_SEC_LVL); j++) {
 				seed[j] = 0xA0 ^ j; // sample private key, for debugging only
 			}
-            //memset(IV, 0, 16);
 
 			sinit(&sponges[0], MSS_SEC_LVL);
 			sinit(&sponges[1], MSS_SEC_LVL);
@@ -52,11 +56,32 @@ void do_benchmark(enum BENCHMARK phase) {
 			    mss_sign(&state, seed, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], &sponges[2], h1, j, &nodes[0], &nodes[1], sig, authpath);
 			}
 			break;
+		case BENCHMARK_MSS_PREPARE_VERIFY:
+			for (j = 0; j < LEN_BYTES(MSS_SEC_LVL); j++) {
+				seed[j] = 0xA0 ^ j; // sample private key, for debugging only
+			}
+			sinit(&sponges[0], MSS_SEC_LVL);
+			sinit(&sponges[1], MSS_SEC_LVL);
+			sinit(&sponges[2], MSS_SEC_LVL);
+			davies_meyer_init(&sponges[0]);
+			pos = 0;
+			mss_keygen(&sponges[0], &sponges[1], &sponges[2], seed, &nodes[0], &nodes[1], &state, pkey);
+			create_leaf(&sponges[0],&sponges[1],&sponges[2],&currentLeaf,pos,seed);
+			mss_sign(&state, seed, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], &sponges[2], h1, pos, &nodes[0], 
+				 &nodes[1], sig, authpath);
 		case BENCHMARK_MSS_VERIFY:
-		    mss_verify(authpath, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], &sponges[2], h2, pos, sig, aux, &currentLeaf, pkey);
+		        mss_verify(authpath, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], &sponges[2], h2, pos, sig, aux, 
+				   &currentLeaf, pkey);
 			break;
 		case BENCHMARK_WINTERNITZ_KEYGEN:
-			winternitz_keygen(nodes[0].value, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], &sponges[2], nodes[1].value);
+			winternitz_keygen(seed, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], &sponges[2], nodes[1].value);
+			break;
+		case BENCHMARK_WINTERNITZ_SIGN:
+			winternitz_sign(seed, nodes[1].value, LEN_BYTES(WINTERNITZ_SEC_LVL), M, strlen(M)+1, &sponges[0], 
+					&sponges[2], h1, sig);
+			break;
+		case BENCHMARK_WINTERNITZ_VERIFY:
+			winternitz_verify(nodes[1].value, LEN_BYTES(WINTERNITZ_SEC_LVL), M, strlen(M)+1, &sponges[1], &sponges[2], h1, sig, aux);
 			break;
 		case BENCHMARK_HASH_CALC:
 #if HASH == BLAKE2S

@@ -3,6 +3,8 @@
 
 #ifdef PLATFORM_TELOSB
 #include "cc2420-aes.h"
+#include "TI_aes.h"
+#include "TI_aes.c"
 #else
 #include "aes.h"
 #endif

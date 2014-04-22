@@ -210,13 +210,13 @@ void _get_parent(sponge_t *h, const struct mss_node *left_child, const struct ms
 	//*/
 #endif
 
-        //*
+        /*
 	sinit(h, MSS_SEC_LVL);
 	absorb(h, left_child->value, NODE_VALUE_SIZE);
 	absorb(h, right_child->value, NODE_VALUE_SIZE);
 	squeeze(h, parent->value, NODE_VALUE_SIZE);
 	//*/
-        //hash32(h, left_child->value, right_child->value, parent->value);
+        hash32(h, left_child->value, right_child->value, parent->value);
 
 	parent->height = left_child->height + 1;
 	parent->pos = (left_child->pos >> 1);
