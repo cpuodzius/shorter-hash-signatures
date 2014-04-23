@@ -1,0 +1,21 @@
+PLATFORM: PC-C
+H = 6, K = 2, W = 2, SEC_LVL = 128
+H = 6, K = 4, W = 2, SEC_LVL = 128
+H = 7, K = 3, W = 2, SEC_LVL = 128
+H = 7, K = 5, W = 2, SEC_LVL = 128
+H = 8, K = 2, W = 2, SEC_LVL = 128
+H = 8, K = 4, W = 2, SEC_LVL = 128
+H = 8, K = 6, W = 2, SEC_LVL = 128
+H = 9, K = 3, W = 2, SEC_LVL = 128
+H = 9, K = 5, W = 2, SEC_LVL = 128
+H = 9, K = 7, W = 2, SEC_LVL = 128
+H = 6, K = 2, W = 4, SEC_LVL = 128
+H = 6, K = 4, W = 4, SEC_LVL = 128
+H = 7, K = 3, W = 4, SEC_LVL = 128
+H = 7, K = 5, W = 4, SEC_LVL = 128
+H = 8, K = 2, W = 4, SEC_LVL = 128
+H = 8, K = 4, W = 4, SEC_LVL = 128
+H = 8, K = 6, W = 4, SEC_LVL = 128
+H = 9, K = 3, W = 4, SEC_LVL = 128
+H = 9, K = 5, W = 4, SEC_LVL = 128
+H = 9, K = 7, W = 4, SEC_LVL = 128
