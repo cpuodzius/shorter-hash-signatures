@@ -616,7 +616,7 @@ unsigned char merkletreeVerify(struct node_t authpath[MERKLE_TREE_HEIGHT], const
 #include "util.h"
 
 int main(int argc, char *argv[]) {
-	printf("\n Parameters:  sec lvlH=%u, H=%u, #leaves=%u, node size=%u, winternitz_w=%u \n\n", MERKLE_TREE_SEC_LVL, MERKLE_TREE_HEIGHT, (1 << MERKLE_TREE_HEIGHT), NODE_VALUE_SIZE, WINTERNITZ_W);
+	printf("\n Parameters:  SEC_LVL=%u, H=%u, K=%u, w=%u, node size=%u\n\n", MERKLE_TREE_SEC_LVL, MERKLE_TREE_HEIGHT, MERKLE_TREE_K, WINTERNITZ_W, NODE_VALUE_SIZE);
 
 	// Execution variables
 	unsigned char seed[LEN_BYTES(MERKLE_TREE_SEC_LVL)];
@@ -641,13 +641,16 @@ int main(int argc, char *argv[]) {
 
 #endif
 
+#ifndef	_PYTHON_GENERATED
 	// Count only execution variables
 	printf("RAM total: %luB\n", (long unsigned int)(sizeof(seed) + sizeof(pkey) + sizeof(sponges) + sizeof(nodes) + sizeof(state)));
-
+#endif
 	for (j = 0; j < LEN_BYTES(MERKLE_TREE_SEC_LVL); j++) {
 		seed[j] = 0xA0 ^ j; // sample private key, for debugging only
 	}
+#ifndef	_PYTHON_GENERATED
 	Display("\n seed for keygen: ",seed,LEN_BYTES(MERKLE_TREE_SEC_LVL));
+#endif
 
 	//struct timeval t_start, t_end;
 	short i, ntest = 1;
@@ -686,7 +689,7 @@ int main(int argc, char *argv[]) {
 	//gettimeofday(&t_end, NULL);
 	elapsed += clock();
 	//printf("Tempo de execucao %ld.%ldms\n", (t_end.tv_usec - t_start.tv_usec) / ntest / 1000, ((t_end.tv_usec - t_start.tv_usec) / ntest) % 1000);
-	printf("KeyGen Elapsed time: %.1f ms\n", 1000*(float)elapsed/CLOCKS_PER_SEC/ntest);
+	printf("KeyGen elapsed time: %.1f ms\n", 1000*(float)elapsed/CLOCKS_PER_SEC/ntest);
 
 	return 0;
 }

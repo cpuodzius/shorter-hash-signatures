@@ -10,42 +10,8 @@
 #define ERROR 1
 
 
-// sec level: 128
-#define WINTERNITZ_SEC_LVL (128)
-#define WINTERNITZ_W (4)         // word size in bits
-
-
-// sec level: 82
-//#define WINTERNITZ_SEC_LVL (82)
-//#define WINTERNITZ_W (8)
-//#define WINTERNITZ_N (104)
-
-// sec level: 86
-//#define WINTERNITZ_SEC_LVL (86)
-//#define WINTERNITZ_SEC (86)
-//#define WINTERNITZ_W (4)
-//#define WINTERNITZ_N (104)
-
-// sec level: 97
-//#define WINTERNITZ_SEC_LVL (97)
-//#define W_BITS (8)
-//#define WINTERNITZ_N (120)
-
-// sec level: 101
-//#define WINTERNITZ_SEC_LVL (101)
-//#define WINTERNITZ_W (4)
-//#define WINTERNITZ_N (120)
-
-// sec level: 129
-//#define WINTERNITZ_SEC_LVL (129)
-//#define WINTERNITZ_W (8)
-//#define WINTERNITZ_N (152)
-
-// sec level: 126
-//#define WINTERNITZ_SEC_LVL (126)
-//#define WINTERNITZ_W (4)
-//#define WINTERNITZ_N (144)
-
+#define WINTERNITZ_SEC_LVL	128
+#define WINTERNITZ_W		4
 
 #define WINTERNITZ_l1 ((WINTERNITZ_SEC_LVL + WINTERNITZ_W - 1) / WINTERNITZ_W)
 #if (WINTERNITZ_W == 2)

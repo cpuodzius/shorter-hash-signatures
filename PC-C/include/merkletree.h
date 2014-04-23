@@ -9,12 +9,12 @@
 
 #if defined(MERKLE_TREE_SELFTEST) || defined(DEBUG)
 #define MERKLE_TREE_SEC_LVL                     WINTERNITZ_SEC_LVL
-#define MERKLE_TREE_HEIGHT			            9  //{4,5,6,6,7,7,8,8,8,9,9,9,10,10,10,10}
-#define MERKLE_TREE_K				            7  //{2,3,2,4,3,5,2,4,6,3,5,7, 2, 4, 6, 8}
+#define MERKLE_TREE_HEIGHT			9
+#define MERKLE_TREE_K				7
 #else
 #define MERKLE_TREE_SEC_LVL                     WINTERNITZ_SEC_LVL
-#define MERKLE_TREE_HEIGHT                     10	// 16 is the Heighest tree for this implementation (because type of index is short)
-#define MERKLE_TREE_K	                      	2
+#define MERKLE_TREE_HEIGHT			9
+#define MERKLE_TREE_K				7
 #endif
 
 #if odd(MERKLE_TREE_HEIGHT - MERKLE_TREE_K)
