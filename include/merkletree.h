@@ -9,12 +9,12 @@
 
 #if defined(MERKLE_TREE_SELFTEST) || defined(DEBUG)
 #define MERKLE_TREE_SEC_LVL                     WINTERNITZ_SEC_LVL
-#define MERKLE_TREE_HEIGHT			            9  //{4,5,6,6,7,7,8,8,8,9,9,9,10,10,10,10}
-#define MERKLE_TREE_K				            7  //{2,3,2,4,3,5,2,4,6,3,5,7, 2, 4, 6, 8}
+#define MERKLE_TREE_HEIGHT			            6  //{4,5,6,6,7,7,8,8,8,9,9,9,10,10,10,10}
+#define MERKLE_TREE_K				            2  //{2,3,2,4,3,5,2,4,6,3,5,7, 2, 4, 6, 8}
 #else
 #define MERKLE_TREE_SEC_LVL                     WINTERNITZ_SEC_LVL
-#define MERKLE_TREE_HEIGHT                     10	// 16 is the Heighest tree for this implementation (because type of index is short)
-#define MERKLE_TREE_K	                      	2
+#define MERKLE_TREE_HEIGHT                      6	// 16 is the Heighest tree for this implementation (because type of index is short)
+#define MERKLE_TREE_K	                      	4
 #endif
 
 #if odd(MERKLE_TREE_HEIGHT - MERKLE_TREE_K)
@@ -45,6 +45,8 @@ struct state_mt {
 };
 
 void init_state(struct state_mt* state);
+
+void create_leaf(sponge_t *hash, sponge_t *priv, sponge_t *pubk, struct node_t *node, const short pos, const unsigned char seed[LEN_BYTES(MERKLE_TREE_SEC_LVL)]);
 
 void mt_keygen(sponge_t *hash, sponge_t *priv, sponge_t *pubk, unsigned char seed[LEN_BYTES(MERKLE_TREE_SEC_LVL)], struct node_t *node1, struct node_t *node2, struct state_mt *state, unsigned char pkey[NODE_VALUE_SIZE]);
 

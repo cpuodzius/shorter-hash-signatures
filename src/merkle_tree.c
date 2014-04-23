@@ -16,6 +16,7 @@ enum TREEHASH_STATE {
 
 #include <assert.h>
 #include "util.h"
+#include "test.h"
 
 char dbg_seed_initialized = 0;
 unsigned char dbg_seed[LEN_BYTES(MERKLE_TREE_SEC_LVL)];
@@ -100,7 +101,7 @@ void print_retain(const struct state_mt *state) {
 
 #endif
 
-void _create_leaf(sponge_t *hash, sponge_t *priv, sponge_t *pubk, struct node_t *node, const short pos, const unsigned char seed[LEN_BYTES(MERKLE_TREE_SEC_LVL)]) {
+void create_leaf(sponge_t *hash, sponge_t *priv, sponge_t *pubk, struct node_t *node, const short pos, const unsigned char seed[LEN_BYTES(MERKLE_TREE_SEC_LVL)]) {
 	unsigned char seedPos[LEN_BYTES(MERKLE_TREE_SEC_LVL)];
 #if defined(DEBUG)
 	// seed must always be the same
@@ -206,10 +207,15 @@ void _get_parent(sponge_t *h, const struct node_t *left_child, const struct node
 	getchar();
 	//*/
 #endif
+
+        //*
 	sinit(h, MERKLE_TREE_SEC_LVL);
 	absorb(h, left_child->value, NODE_VALUE_SIZE);
 	absorb(h, right_child->value, NODE_VALUE_SIZE);
 	squeeze(h, parent->value, NODE_VALUE_SIZE);
+	//*/
+        //hash32(h, left_child->value, right_child->value, parent->value);
+
 	parent->height = left_child->height + 1;
 	parent->pos = (left_child->pos >> 1);
 #if defined(DEBUG)
@@ -251,13 +257,18 @@ unsigned char _treehash_get_tailheight(struct state_mt *state, unsigned char h) 
 	assert(h < MERKLE_TREE_TREEHASH_SIZE);
 #endif
 	return (TREEHASH_MASK & state->treehash_state[h]);
+
 }
 
 void _treehash_state(struct state_mt *state, unsigned char h, enum TREEHASH_STATE th_state) {
+
+#if defined(DEBUG)
+	assert(h >= 0 && h < MERKLE_TREE_TREEHASH_SIZE);
+#endif
 	state->treehash_state[h] = th_state; // clean state
-	#if defined(DEBUG)
+#if defined(DEBUG)
 	assert(_treehash_get_tailheight(state, h) == 0);
-	#endif
+#endif
 }
 
 void _treehash_initialize(struct state_mt *state, unsigned char h, short s) {
@@ -286,10 +297,9 @@ unsigned char _treehash_height(struct state_mt *state, unsigned char h) {
 
 void _treehash_update(sponge_t *hash, sponge_t *priv, sponge_t *pubk, struct state_mt *state, const unsigned char h, struct node_t *node1, struct node_t *node2, const unsigned char seed[LEN_BYTES(MERKLE_TREE_SEC_LVL)]) {
 
-	_create_leaf(hash, priv, pubk, node1, state->treehash_seed[h], seed);
+	create_leaf(hash, priv, pubk, node1, state->treehash_seed[h], seed);
 	state->treehash_seed[h]++;
 	_treehash_set_tailheight(state, h, 0);
-
 
 	while(state->stack_index > 0 && _treehash_get_tailheight(state, h) == state->stack[state->stack_index - 1].height && (_treehash_get_tailheight(state, h) + 1) < h) {
 	_stack_pop(state->stack, &state->stack_index, node2);
@@ -406,7 +416,7 @@ void mt_keygen(sponge_t *hash, sponge_t *priv, sponge_t *pubk, unsigned char see
 	init_state(state);
 
 	for(pos = 0; pos < (1 << MERKLE_TREE_HEIGHT); pos++) {
-		_create_leaf(hash, priv, pubk, node1, pos, seed);
+		create_leaf(hash, priv, pubk, node1, pos, seed);
 #if defined(DEBUG) && VERBOSE > 2
 		printf("h=%d, pos=%d\n", node1->height, node1->pos);
 		Display("Node: ", node1->value, NODE_VALUE_SIZE);
@@ -415,7 +425,7 @@ void mt_keygen(sponge_t *hash, sponge_t *priv, sponge_t *pubk, unsigned char see
 		while(index > 0 && state->keep[index - 1].height == node1->height) {
 			_stack_pop(state->keep, &index, node2);
 			_get_parent(hash, node2, node1, node1);
-#if defined(DEBUG) && VERBOSE > 2 
+#if defined(DEBUG) && VERBOSE > 2
 			printf("h=%d, pos=%d\n", node1->height, node1->pos);
 			Display("Node: ", node1->value, NODE_VALUE_SIZE);
 #endif
@@ -446,7 +456,7 @@ void _nextAuth(struct state_mt *state, const unsigned char seed[LEN_BYTES(MERKLE
 		state->keep[tau] = state->auth[tau];
 
 	if(tau == 0)
-		_create_leaf(hash, priv, pubk, &state->auth[0], s, seed);
+		create_leaf(hash, priv, pubk, &state->auth[0], s, seed);
 	else {
 		_get_parent(hash, &state->auth[tau - 1], &state->keep[tau - 1], &state->auth[tau]);
 		min = (tau - 1 < MERKLE_TREE_HEIGHT - MERKLE_TREE_K - 1) ? tau - 1 : MERKLE_TREE_HEIGHT - MERKLE_TREE_K - 1;
@@ -514,7 +524,7 @@ void print_auth_index(short auth_index[MERKLE_TREE_HEIGHT - 1]) {
 
 #endif
 
-void _get_pkey(sponge_t *sponge, const struct node_t auth[MERKLE_TREE_HEIGHT], struct node_t *node, unsigned char *pkey) {
+void _get_pkey(sponge_t *hash, const struct node_t auth[MERKLE_TREE_HEIGHT], struct node_t *node, unsigned char *pkey) {
 	short i, h;
 	for(h = 0; h < MERKLE_TREE_HEIGHT; h++) {
 
@@ -523,18 +533,18 @@ void _get_pkey(sponge_t *sponge, const struct node_t auth[MERKLE_TREE_HEIGHT], s
 		assert(_node_valid(&auth[h]));
 		assert(auth[h].height == h);
 		assert(auth[h].height == node->height);
-#endif		
+#endif
 		if(auth[h].pos >= node->pos) {
 #if defined(DEBUG)
 			assert(_node_brothers(node, &auth[h]));
-#endif	
-			_get_parent(sponge, node, &auth[h], node);
+#endif
+			_get_parent(hash, node, &auth[h], node);
 		}
 		else {
 #if defined(DEBUG)
 			assert(_node_brothers(&auth[h], node));
 #endif
-			_get_parent(sponge, &auth[h], node, node);
+			_get_parent(hash, &auth[h], node, node);
 		}
 	}
 #if defined(DEBUG)
@@ -544,7 +554,7 @@ void _get_pkey(sponge_t *sponge, const struct node_t auth[MERKLE_TREE_HEIGHT], s
 #endif
 	for(i = 0; i < NODE_VALUE_SIZE; i++)
 		pkey[i] = node->value[i];
-#if defined(DEBUG)		
+#if defined(DEBUG)
 	assert(memcmp(pkey, node->value, NODE_VALUE_SIZE) == 0);
 #endif
 }
@@ -589,8 +599,9 @@ unsigned char merkletreeVerify(struct node_t authpath[MERKLE_TREE_HEIGHT], const
 
 	unsigned char ok = 0;
 
-	if (winternitzVer(v, LEN_BYTES(WINTERNITZ_SEC_LVL), (const unsigned char *)M, len, pubk, hash, h, sig, x) == 0)
-		return 0;
+	if (winternitzVer(v, LEN_BYTES(WINTERNITZ_SEC_LVL), (const unsigned char *)M, len, pubk, hash, h, sig, x) == WINTERNITZ_ERROR) {
+		return ok;
+	}
 
 	currentLeaf->height = 0;
 	currentLeaf->pos = pos;
@@ -598,11 +609,13 @@ unsigned char merkletreeVerify(struct node_t authpath[MERKLE_TREE_HEIGHT], const
 
 	_get_pkey(hash, authpath, currentLeaf, currentLeaf->value);
 
-	ok = (memcmp(currentLeaf->value, merklePubKey, LEN_BYTES(MERKLE_TREE_SEC_LVL)) == 0);
+	if (memcmp(currentLeaf->value, merklePubKey, LEN_BYTES(MERKLE_TREE_SEC_LVL)) == 0) {
+		ok = 1;
+	}
 
 #ifdef DEBUG
 	if (ok == 1) {
-		printf("Assinatura eh valida para posicao %d\n", pos);
+		printf("Assinatura eh valida para folha %d\n", pos);
 	}
 #endif // DEBUG
 
@@ -626,7 +639,7 @@ int main(int argc, char *argv[]) {
 	struct state_mt state;
 
 	// Test variables
-	clock_t elapsed;
+	//clock_t elapsed;
 	short j;
 #if defined(DEBUG)
 	short auth_index[MERKLE_TREE_HEIGHT];
@@ -644,14 +657,15 @@ int main(int argc, char *argv[]) {
 	// Count only execution variables
 	printf("RAM total: %luB\n", (long unsigned int)(sizeof(seed) + sizeof(pkey) + sizeof(sponges) + sizeof(nodes) + sizeof(state)));
 
+    davies_meyer_init(&sponges[0]);
+
 	for (j = 0; j < LEN_BYTES(MERKLE_TREE_SEC_LVL); j++) {
 		seed[j] = 0xA0 ^ j; // sample private key, for debugging only
 	}
 	Display("\n seed for keygen: ",seed,LEN_BYTES(MERKLE_TREE_SEC_LVL));
 
-	//struct timeval t_start, t_end;
 	short i, ntest = 1;
-	elapsed = -clock();
+	//elapsed = -clock();
 	//gettimeofday(&t_start, NULL);
 	for(i = 0; i < ntest; i++) {
 		mt_keygen(&sponges[0] , &sponges[1], &sponges[2], seed, &nodes[0], &nodes[1], &state, pkey);
@@ -659,7 +673,7 @@ int main(int argc, char *argv[]) {
 #if defined(DEBUG)
 		Display(" Merkle Tree (pkey)\n", pkey, NODE_VALUE_SIZE);
 
-		_create_leaf(&sponges[0], &sponges[1], &sponges[2], &currentLeaf, i, seed);
+		create_leaf(&sponges[0], &sponges[1], &sponges[2], &currentLeaf, i, seed);
 		merkletreeSign(&state, seed, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], &sponges[2], h1, i, &nodes[0], &nodes[1], sig, authpath);
 		assert(merkletreeVerify(authpath, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], &sponges[2], h2, i, sig, aux, &currentLeaf, pkey) == 1);
 
@@ -671,7 +685,7 @@ int main(int argc, char *argv[]) {
 			printf("\n--------------- s = %d ---------------\n", j);
 			printf("Authentication path for %dth leaf\n", j + 1);
 
-			_create_leaf(&sponges[0], &sponges[1], &sponges[2], &currentLeaf, j+1, seed);
+			create_leaf(&sponges[0], &sponges[1], &sponges[2], &currentLeaf, j+1, seed);
 			merkletreeSign(&state, seed, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], &sponges[2], h1, j+1, &nodes[0], &nodes[1], sig, authpath);
 			assert(merkletreeVerify(authpath, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], &sponges[2], h2, j+1, sig, aux, &currentLeaf, pkey) == 1);
 
@@ -683,10 +697,11 @@ int main(int argc, char *argv[]) {
 
 #endif
 	}
-	//gettimeofday(&t_end, NULL);
-	elapsed += clock();
+	//elapsed += clock();
 	//printf("Tempo de execucao %ld.%ldms\n", (t_end.tv_usec - t_start.tv_usec) / ntest / 1000, ((t_end.tv_usec - t_start.tv_usec) / ntest) % 1000);
-	printf("KeyGen Elapsed time: %.1f ms\n", 1000*(float)elapsed/CLOCKS_PER_SEC/ntest);
+	//printf("KeyGen Elapsed time: %.1f ms\n", 1000*(float)elapsed/CLOCKS_PER_SEC/ntest);
+
+    do_test(TEST_MERKLE_SIGN);
 
 	return 0;
 }

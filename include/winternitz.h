@@ -3,16 +3,17 @@
 
 
 #include "sponge.h"
+//#include "mmo.h"
 
 // Winternitz interface:
 
-#define OK 0
-#define ERROR 1
+#define WINTERNITZ_OK 1
+#define WINTERNITZ_ERROR 0
 
 
 // sec level: 128
 #define WINTERNITZ_SEC_LVL (128)
-#define WINTERNITZ_W (4)         // word size in bits
+#define WINTERNITZ_W (2)         // word size in bits
 
 
 // sec level: 82

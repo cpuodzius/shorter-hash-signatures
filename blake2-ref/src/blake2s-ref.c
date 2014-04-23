@@ -15,8 +15,8 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "../include/blake2.h"
-#include "../include/blake2-impl.h"
+#include "blake2.h"
+#include "blake2-impl.h"
 
 static const uint32_t blake2s_IV[8] =
 {

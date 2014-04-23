@@ -1,6 +1,9 @@
 #ifndef __BENCHMARK
 #define __BENCHMARK
 
+#include "sponge.h"
+#include "merkletree.h"
+
 enum BENCHMARK {
 	BENCHMARK_PREPARE,
 	BENCHMARK_KEYGEN,
