@@ -1,0 +1,18 @@
+#ifndef __BENCHMARK
+#define __BENCHMARK
+
+#include "sponge.h"
+#include "mss.h"
+
+enum BENCHMARK {
+	BENCHMARK_PREPARE,
+	BENCHMARK_MSS_KEYGEN,
+	BENCHMARK_MSS_SIGN,
+	BENCHMARK_MSS_VERIFY,
+	BENCHMARK_WINTERNITZ_KEYGEN,
+	BENCHMARK_HASH_CALC
+};
+
+void do_benchmark(enum BENCHMARK phase);
+
+#endif // __BENCHMARK
