@@ -1,6 +1,9 @@
 #include "mmo.h"
 #include <string.h>
 
+#ifdef DEBUG
+	#include <stdlib.h>
+#endif
 
 /**
  * Encrypt a single AES block under a 128-bit key.
@@ -77,7 +80,7 @@ void MMO_update(mmo_t *mmo, const unsigned char *M, unsigned int m) {
         //assert(m > 0);
     }
     mmo->t -= m;
-#ifndef PLATFORM_TELOSB
+#ifdef DEBUG
     assert(mmo->t > 0);
 #endif
     //assert(m == 0 || mmo->t < 16); // m == 0 here only occurs if m == 0 from the very beginning
@@ -86,7 +89,7 @@ void MMO_update(mmo_t *mmo, const unsigned char *M, unsigned int m) {
 void MMO_final(mmo_t *mmo, unsigned char tag[16]) {
     unsigned int i;
     unsigned char *ZZ = &mmo->M[16 - mmo->t];
-#ifndef PLATFORM_TELOSB
+#ifdef DEBUG
     assert(mmo->t > 0);
 #endif
     // compute padding:
@@ -107,14 +110,14 @@ void MMO_final(mmo_t *mmo, unsigned char tag[16]) {
         mmo->t = 16; // start new block
         ZZ = mmo->M;
     }
-#ifndef PLATFORM_TELOSB
+#ifdef DEBUG
     assert(mmo->t >= 8);
 #endif
     while (mmo->t > 8) {
         *ZZ++ = 0x00; // fill low half of block with zero padding
         mmo->t--;
     }
-#ifndef PLATFORM_TELOSB
+#ifdef DEBUG
     assert(mmo->t == 8);
 #endif
     mmo->n <<= 3; // convert unsigned char length to bit length

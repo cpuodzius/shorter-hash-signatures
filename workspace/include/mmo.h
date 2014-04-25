@@ -4,11 +4,7 @@
 #ifdef PLATFORM_TELOSB
 #include "dev/cc2420-aes.h"
 #else
-#include "AES.h"
-#endif
-
-#ifdef DEBUG
-#include <assert.h>
+#include "aes.h"
 #endif
 
 /**

@@ -6,7 +6,9 @@ import sys
 import subprocess
 import random
 
-def get_input(basepath):
+from time import gmtime, strftime
+
+def read_input(basepath):
 	benchmarks = []
 	benchmark = None
 	for line in open(os.path.join(basepath, "bench_input.txt")).readlines():
@@ -14,8 +16,14 @@ def get_input(basepath):
 			platform = line[len("PLATFORM: "):].strip()
 			if benchmark != None:
 				benchmarks.append(benchmark)
-			benchmark = {"platform": platform, "params": []}
+			benchmark = {"platform": platform, "executable": None, "commands": [], "params": []}
 			benchmarks.append(benchmark)
+		elif "COMMAND" in line:
+			command = line[len("COMMAND "):]
+			benchmarks[-1]["commands"].append(command)
+		elif "EXECUTABLE" in line:
+			executable = line[len("EXECUTABLE: "):-1]
+			benchmarks[-1]["executable"] = executable
 		else:
 			line += ","	# Formatando para facilitar a extração
 			param = {"H": None, "K": None, "W": None, "SEC_LVL": None}
@@ -24,6 +32,7 @@ def get_input(basepath):
 			param["W"] = line[line.find("W") + len("W = "): line.find(",", line.find("W"))].strip()
 			param["SEC_LVL"] = line[line.find("SEC_LVL") + len("SEC_LVL = "): line.find(",", line.find("SEC_LVL"))].strip()
 			benchmarks[-1]["params"].append(param)
+	print benchmarks
 	return benchmarks
 
 def edit_winternitz_h(includepath, W, SEC_LVL):
@@ -42,14 +51,14 @@ def edit_winternitz_h(includepath, W, SEC_LVL):
 	f.close()
 
 def edit_merkletree_h(includepath, H, K):
-	path = os.path.join(includepath, 'merkletree.h')
+	path = os.path.join(includepath, 'mss.h')
 	f = open(path, 'r+')
 	includefile = ""
 	for line in f.readlines():
-		if "#define MERKLE_TREE_HEIGHT\t" in line:
-			line = "#define MERKLE_TREE_HEIGHT\t\t\t" + str(H) + "\n"
-		elif "#define MERKLE_TREE_K\t" in line:
-			line = "#define MERKLE_TREE_K\t\t\t\t" + str(K) + "\n"
+		if "#define MSS_HEIGHT\t" in line:
+			line = "#define MSS_HEIGHT\t\t\t" + str(H) + "\n"
+		elif "#define MSS_K\t" in line:
+			line = "#define MSS_K\t\t\t\t" + str(K) + "\n"
 		includefile += line
 	f.seek(0)
 	f.write(includefile)
@@ -58,7 +67,7 @@ def edit_merkletree_h(includepath, H, K):
 
 def main(argv=None):
 	benchbasepath = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'benchmark')
-	benchmarks = get_input(os.path.abspath(os.path.dirname(__file__)))
+	benchmarks = read_input(os.path.abspath(os.path.dirname(__file__)))
 	for benchmark in benchmarks:
 		platform = benchmark["platform"]
 		basepath = os.path.join(os.path.abspath(os.path.dirname(__file__)), platform)
@@ -68,13 +77,16 @@ def main(argv=None):
 			edit_merkletree_h(includepath, param["H"], param["K"])
 			edit_winternitz_h(includepath, param["W"], param["SEC_LVL"])
 			os.chdir(basepath)
-			os.system('make clean')
-			os.system('make tests')
-			fpath = os.path.join(benchbasepath, str(random.randint(50000, 1000000)))
-			while(os.path.isfile(fpath)):
-				fpath = os.path.join(benchbasepath, str(random.randint(50000, 1000000)))
+			for command in benchmark["commands"]:
+				os.system(command)
+			fname = "SEC_LVL_" + param["SEC_LVL"] + "_W_" + param["W"] + "_H_" + param["H"] + "_K_" + param["K"] + "_" + strftime("%Y-%m-%d_%H:%M:%S", gmtime())
+			fpath = os.path.join(benchbasepath, fname)
+			suffix = ".txt"
+			while(os.path.isfile(fpath + suffix)):
+				suffix = "_" + str(random.randint(50000, 1000000)) + ".txt"
+			fpath += suffix
 			f = open(fpath, 'w+')
-			subprocess.call([os.path.join(binpath, 'merkle_tree')], stdout=f)
+			subprocess.call([os.path.join(binpath, benchmark["executable"])], stdout=f)
 			f.seek(0)
 			for line in f.readlines():
 				if "Parameters" in line:
@@ -83,7 +95,7 @@ def main(argv=None):
 					k = line[line.find("K="):line.find(",", line.find("K="))]
 				elif "RAM" in line:
 					ram = "RAM=" + line[len("RAM total: "):-1]
-				elif "elapsed time" in line:
+				elif "Elapsed time" in line:
 					time = "time=" + line[line.find("elapsed time") + len("elapsed time: "):]
 			print seclvl, h, k, ram, time
 			f.close()

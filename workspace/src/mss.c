@@ -625,7 +625,7 @@ unsigned char mss_verify(struct mss_node authpath[MSS_HEIGHT], const unsigned ch
 #include "util.h"
 
 int main(int argc, char *argv[]) {
-	printf("\n Parameters:  sec lvlH=%u, H=%u, #leaves=%u, node size=%u, winternitz_w=%u \n\n", MSS_SEC_LVL, MSS_HEIGHT, (1 << MSS_HEIGHT), NODE_VALUE_SIZE, WINTERNITZ_W);
+	printf("\n Parameters:  sec lvlH=%u, H=%u, K=%u, W=%u \n\n", MSS_SEC_LVL, MSS_HEIGHT, MSS_K, WINTERNITZ_W);
 
 	// Execution variables
 	unsigned char seed[LEN_BYTES(MSS_SEC_LVL)];
@@ -635,7 +635,7 @@ int main(int argc, char *argv[]) {
 	struct state_mt state;
 
 	// Test variables
-	//clock_t elapsed;
+	clock_t elapsed;
 	short j;
 #if defined(DEBUG)
 	short auth_index[MSS_HEIGHT];
@@ -653,7 +653,7 @@ int main(int argc, char *argv[]) {
 	// Count only execution variables
 	printf("RAM total: %luB\n", (long unsigned int)(sizeof(seed) + sizeof(pkey) + sizeof(sponges) + sizeof(nodes) + sizeof(state)));
 
-    davies_meyer_init(&sponges[0]);
+	davies_meyer_init(&sponges[0]);
 
 	for (j = 0; j < LEN_BYTES(MSS_SEC_LVL); j++) {
 		seed[j] = 0xA0 ^ j; // sample private key, for debugging only
@@ -661,8 +661,7 @@ int main(int argc, char *argv[]) {
 	Display("\n seed for keygen: ",seed,LEN_BYTES(MSS_SEC_LVL));
 
 	short i, ntest = 1;
-	//elapsed = -clock();
-	//gettimeofday(&t_start, NULL);
+	elapsed = -clock();
 	for(i = 0; i < ntest; i++) {
 		mss_keygen(&sponges[0] , &sponges[1], &sponges[2], seed, &nodes[0], &nodes[1], &state, pkey);
 
@@ -693,11 +692,10 @@ int main(int argc, char *argv[]) {
 
 #endif
 	}
-	//elapsed += clock();
-	//printf("Tempo de execucao %ld.%ldms\n", (t_end.tv_usec - t_start.tv_usec) / ntest / 1000, ((t_end.tv_usec - t_start.tv_usec) / ntest) % 1000);
-	//printf("KeyGen Elapsed time: %.1f ms\n", 1000*(float)elapsed/CLOCKS_PER_SEC/ntest);
+	elapsed += clock();
+	printf("Elapsed time: %.1f ms\n", 1000*(float)elapsed/CLOCKS_PER_SEC/ntest);
 
-    do_test(TEST_MSS_SIGN);
+	//do_test(TEST_MSS_SIGN);
 
 	return 0;
 }

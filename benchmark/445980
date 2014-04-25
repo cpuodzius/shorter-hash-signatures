@@ -1,9 +1,0 @@
-
- Parameters:  sec lvlH=128, H=10, #leaves=1024, node size=16, winternitz_w=4 
-
-RAM total: 1500B
-
- seed for keygen: :
-A0A1A2A3A4A5A6A7A8A9AAABACADAEAF
-
-KeyGen Elapsed time: 1290.0 ms
