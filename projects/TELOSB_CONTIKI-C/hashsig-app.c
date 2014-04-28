@@ -41,7 +41,7 @@ PROCESS_THREAD(bench_hashsig_process, ev, data)
 
 //* Run Merkle Signature TESTS  
   ret = do_test(TEST_MSS_SIGN); 
-  printf("Errors after tests: %d", ret);
+  printf("Errors after tests: %d\n", ret);
 
 /*/ //Run the specified benchmark
   benchs = 1;
@@ -67,6 +67,8 @@ PROCESS_THREAD(bench_hashsig_process, ev, data)
   printf("Bench time = %lu (ticks) / %lu (ticks) / benchs = %lu ms \n", t2 - t1, CLOCK_SECOND,1000*(t2 - t1)/CLOCK_SECOND/benchs);
   //printf("Verify=%u", i);
 //*/
+
+  printf("DONE \n");
 
   PROCESS_END();
 }
