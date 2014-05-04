@@ -300,6 +300,7 @@ unsigned char _treehash_height(struct state_mt *state, unsigned char h) {
 
 void _treehash_update(sponge_t *hash, sponge_t *pubk, struct state_mt *state, const unsigned char h, struct mss_node *node1, struct mss_node *node2, const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
 
+    //printf("New leaf from treehash:%d \n",state->treehash_seed[h]);
 	_create_leaf(hash, pubk, node1, state->treehash_seed[h], seed);
 	state->treehash_seed[h]++;
 	_treehash_set_tailheight(state, h, 0);
@@ -438,9 +439,9 @@ void _nextAuth(struct state_mt *state, const unsigned char seed[LEN_BYTES(MSS_SE
 	if(tau < MSS_HEIGHT - 1 && (((s >> (tau + 1)) & 1) == 0))
 		state->keep[tau] = state->auth[tau];
 
-	if(tau == 0)
+	if(tau == 0) { // next leaf is a right node
 		_create_leaf(hash, pubk, &state->auth[0], s, seed);
-	else {
+	} else { // next leaf is a left node
 		_get_parent(hash, &state->auth[tau - 1], &state->keep[tau - 1], &state->auth[tau]);
 		min = (tau - 1 < MSS_HEIGHT - MSS_K - 1) ? tau - 1 : MSS_HEIGHT - MSS_K - 1;
 		for(h = 0; h <= min; h++) {
@@ -556,7 +557,13 @@ void mss_sign(struct state_mt *state, const unsigned char *seed, struct mss_node
 	assert((pos >= 0) && (pos < (1 << MSS_HEIGHT)));
 #endif
 
-    _create_leaf(hash, pubk, leaf, pos, seed);
+    if(pos % 2 == 0) {
+        _create_leaf(hash, pubk, leaf, pos, seed);
+    } else {
+        leaf->height = 0;
+        memcpy(&leaf->pos, &pos, sizeof(short));
+        memcpy(leaf->value, authpath[0].value, NODE_VALUE_SIZE);
+    }
 
 	sinit(hash, MSS_SEC_LVL);
 	absorb(hash, seed, NODE_VALUE_SIZE);

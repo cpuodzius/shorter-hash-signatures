@@ -43,7 +43,7 @@ int test_merkle_signature() {
 
 	errors = 0;
 	for (j = 0; j < (1 << MSS_HEIGHT); j++) {
-	    printf("Testing auth path %d ...", j);
+	    printf("Testing merkle signature for leaf %d ...", j);
 	    mss_sign(&state, seed, &currentLeaf, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], h1, j, &nodes[0], &nodes[1], sig, authpath);
         if(mss_verify(authpath, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], h2, j, sig, aux, &currentLeaf, pkey) == MSS_OK) {
             printf(" [OK]\n");

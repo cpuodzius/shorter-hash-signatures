@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "benchmark.h"
 #include "mss.h"
 
@@ -12,7 +13,6 @@
 
 unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], seedPos[LEN_BYTES(MSS_SEC_LVL)];
 unsigned char pkey[NODE_VALUE_SIZE];
-//unsigned char IV[16];
 struct mss_node nodes[2];
 struct state_mt state;
 sponge_t sponges[2];
@@ -95,4 +95,34 @@ void do_benchmark(enum BENCHMARK phase) {
 			break;
 	}
 }
+
+#ifdef BENCH_SELFTEST
+
+    #include <time.h>
+    #include "util.h"
+
+    int main(int argc, char *argv[]) {
+        int mark = 1000;
+        clock_t elapsed;
+
+        printf("\n Parameters:  sec lvl=%u, H=%u, K=%u, W=%u \n\n", MSS_SEC_LVL, MSS_HEIGHT, MSS_K, WINTERNITZ_W);
+
+        do_benchmark(BENCHMARK_PREPARE);
+
+        elapsed = -clock();
+        for(int i = 0; i < mark; i++) {
+            //do_benchmark(BENCHMARK_MSS_KEYGEN);
+            do_benchmark(BENCHMARK_MSS_SIGN);
+            //do_benchmark(BENCHMARK_MSS_PREPARE_VERIFY);
+            //do_benchmark(BENCHMARK_MSS_VERIFY);
+            //do_benchmark(BENCHMARK_WINTERNITZ_KEYGEN);
+            //do_benchmark(BENCHMARK_WINTERNITZ_SIGN);
+            //do_benchmark(BENCHMARK_WINTERNITZ_VERIFY);
+            //do_benchmark(BENCHMARK_HASH_CALC);
+        }
+
+        elapsed += clock();
+        printf("Elapsed time: %.1f ms\n", 1000*(float)elapsed/CLOCKS_PER_SEC/mark);
+    }
+#endif
 
