@@ -1,9 +1,0 @@
-
- Parameters:  sec lvlH=128, H=9, K=5, W=2 
-
-RAM total: 1266B
-
- seed for keygen: :
-A0A1A2A3A4A5A6A7A8A9AAABACADAEAF
-
-Elapsed time: 490.0 ms
