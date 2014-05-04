@@ -1,9 +1,7 @@
 #ifndef __WINTERNITZ_H
 #define __WINTERNITZ_H
 
-
 #include "sponge.h"
-//#include "mmo.h"
 
 // Winternitz interface:
 
@@ -31,9 +29,9 @@
 //#define GET_CHUNK(x, startbit) ((x & (unsigned)( (unsigned)((1 << WINTERNITZ_W) - 1) << startbit)) >> startbit)
 #define LEN_BYTES(len_bits) ((len_bits+7)/8)
 
-void winternitz_keygen(const unsigned char s[/*m*/], const unsigned short m, sponge_t *priv, sponge_t *hash, sponge_t *pubk, unsigned char v[/*m*/]);
-void winternitz_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/], const unsigned short m, const unsigned char *M, unsigned short len, sponge_t *priv, sponge_t *hash, unsigned char h[/*m*/], unsigned char sig[/*(m+2)*m*/] /* m+2 m-unsigned char blocks */);
-unsigned char winternitz_verify(const unsigned char v[/*m*/], const unsigned short m, const unsigned char *M, unsigned short len, sponge_t *pubk, sponge_t *hash, unsigned char h[/*m*/], const unsigned char sig[/*(2*m+3)*m*/] /* 2m+3 m-unsigned char blocks */, unsigned char x[/*m*/]);
+void winternitz_keygen(const unsigned char s[], const unsigned short m, sponge_t *pubk, sponge_t *hash, unsigned char v[]);
+void winternitz_sign(const unsigned char s[], const unsigned char v[], const unsigned short m, const char *M, unsigned short len, sponge_t *hash, unsigned char h[], unsigned char sig[]);
+unsigned char winternitz_verify(const unsigned char v[], const unsigned short m, const char *M, unsigned short len, sponge_t *pubk, sponge_t *hash, unsigned char h[], const unsigned char sig[], unsigned char x[]);
 
 
 #endif // __WINTERNITZ_H

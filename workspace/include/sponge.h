@@ -7,6 +7,7 @@
 
 typedef blake2s_state sponge_t;
 #else
+
 #include "mmo.h"
 
 typedef mmo_t sponge_t;

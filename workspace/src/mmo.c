@@ -1,8 +1,10 @@
 #include "mmo.h"
 #include <string.h>
 
+
 #ifdef DEBUG
-	#include <stdlib.h>
+	//#include <stdlib.h>
+	#include <assert.h>
 #endif
 
 /**
@@ -11,12 +13,12 @@
 /*
 extern void AES_encrypt(unsigned char ct[16], const unsigned char pt[16], const unsigned char key[16]);
 /*/
-void AES_encrypt(unsigned char ciphertext[16], const unsigned char plaintext[16], const unsigned char key[16]) {
+void AES_encrypt(unsigned char ciphertext[16], const unsigned char plaintext[16], unsigned char key[16]) {
 
     #ifdef PLATFORM_TELOSB
-/*
+//*
 		unsigned short i;
-		cc2420_aes_set_key(key, 0);
+		cc2420_aes_set_key(key, 0);		
 		//printf("AES key:");
 		//for (i = 0; i < 16; i++) printf(" %02X", key[i]);
 		//printf("AES plain:");
@@ -26,36 +28,30 @@ void AES_encrypt(unsigned char ciphertext[16], const unsigned char plaintext[16]
 		//	ciphertext[i] = plaintext[i];
 		//}
 		cc2420_aes_cipher(ciphertext, 16, 0); // ct will be overwritten with the computed ciphertext
-		//for (i = 0; i < 16; i++) printf(" %02X", plaintext[i]);		
+		//for (i = 0; i < 16; i++) printf(" %02X", plaintext[i]);
 		//printf("\n");
 /*/
 		//cipherCryptB((u8*) key, (u8*) plaintext, ciphertext);
-//*/
-		unsigned char expandedKey[175];
-		expandKey(expandedKey, key);
-		memcpy(ciphertext, plaintext, 16); // ct saves the plaintext
-		aes_encr(ciphertext, expandedKey);
+		memcpy(ciphertext, plaintext, 16); // ciphertext saves the plaintext
+		aes_encrypt(ciphertext, key);
 
+//*/
     #else
-        cipherCryptB((u8*) key, (u8*) plaintext, ciphertext);
+        //cipherCryptB((u8*) key, (u8*) plaintext, ciphertext);
+
+		memcpy(ciphertext, plaintext, 16); // ciphertext saves the plaintext
+		aes_encrypt(ciphertext, key);      // ciphertext is overwritten with its real value
     #endif // PLATFORM_TELOB
 
 }
 //*/
 
 void MMO_init(mmo_t *mmo) {
-    //unsigned int i;
-    //unsigned char *H = mmo->H;
     mmo->t = 16; // one AES block
     mmo->n = 0;
-    /*
-    for (i = 0; i < 16; i++) {
-        mmo->H[i] = 0;
-    }
-    /*/
+
     memset(mmo->H, 0, 16);
     // H[0] = 0; ... H[15] = 0;
-    //*/
 }
 
 void MMO_update(mmo_t *mmo, const unsigned char *M, unsigned int m) {
@@ -318,7 +314,7 @@ void davies_meyer_init(mmo_t *mmo) {
     memset(mmo->IV, 0, 16);
 }
 
-void davies_meyer_hash16(const unsigned char IV[16], const unsigned char M[16], unsigned char tag[16]) {
+void davies_meyer_hash16(unsigned char IV[16], const unsigned char M[16], unsigned char tag[16]) {
 
     AES_encrypt(tag, M, IV);
 

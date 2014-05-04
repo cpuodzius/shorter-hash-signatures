@@ -6,13 +6,14 @@
 #include "TI_aes.h"
 #include "TI_aes.c"
 #else
-#include "aes.h"
+//#include "aes.h"
+#include "TI_aes.h"
 #endif
 
 /**
  * Encrypt a single AES block under a 128-bit key.
  */
-void AES_encrypt(unsigned char ciphertext[16], const unsigned char plaintext[16], const unsigned char key[16]);
+void AES_encrypt(unsigned char ciphertext[16], const unsigned char plaintext[16], unsigned char key[16]);
 
 
 typedef struct {
@@ -36,7 +37,7 @@ void MMO_hash32(mmo_t *mmo, const unsigned char M[32], unsigned char tag[16]);
 
 void davies_meyer_init(mmo_t *mmo);
 
-void davies_meyer_hash16(const unsigned char IV[16], const unsigned char M[16], unsigned char tag[16]);
+void davies_meyer_hash16(unsigned char IV[16], const unsigned char M[16], unsigned char tag[16]);
 
 void davies_meyer_hash32(unsigned char IV[16], const unsigned char M0[16], const unsigned char M1[16], unsigned char tag[16]);
 

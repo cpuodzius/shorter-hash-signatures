@@ -1,7 +1,6 @@
 #ifndef __TEST
 #define __TEST
 
-#include "sponge.h"
 #include "mss.h"
 
 enum TEST {

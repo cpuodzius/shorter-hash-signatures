@@ -16,7 +16,6 @@ enum TREEHASH_STATE {
 
 #include <assert.h>
 #include "util.h"
-#include "test.h"
 
 char dbg_seed_initialized = 0;
 unsigned char dbg_seed[LEN_BYTES(MSS_SEC_LVL)];
@@ -101,7 +100,7 @@ void print_retain(const struct state_mt *state) {
 
 #endif
 
-void create_leaf(sponge_t *hash, sponge_t *priv, sponge_t *pubk, struct mss_node *node, const short pos, const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
+void _create_leaf(sponge_t *hash, sponge_t *pubk, struct mss_node *node, const short pos, const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
 	unsigned char seedPos[LEN_BYTES(MSS_SEC_LVL)];
 #if defined(DEBUG)
 	// seed must always be the same
@@ -116,12 +115,14 @@ void create_leaf(sponge_t *hash, sponge_t *priv, sponge_t *pubk, struct mss_node
 #endif
 	node->height = 0;
 	node->pos = pos;
+	//*
 	sinit(hash, MSS_SEC_LVL);
 	absorb(hash, seed, NODE_VALUE_SIZE);
 	absorb(hash, &pos, sizeof(pos));
 	squeeze(hash, seedPos, LEN_BYTES(MSS_SEC_LVL)); // seedPos <- H(seed, pos)
-	
-	winternitz_keygen(seedPos, LEN_BYTES(WINTERNITZ_SEC_LVL), priv, hash, pubk, node->value);
+	//*/
+
+	winternitz_keygen(seedPos, LEN_BYTES(WINTERNITZ_SEC_LVL), hash, pubk, node->value);
 
 #if defined(DEBUG)
 	assert(_node_valid(node));
@@ -210,13 +211,13 @@ void _get_parent(sponge_t *h, const struct mss_node *left_child, const struct ms
 	//*/
 #endif
 
-        /*
+    /*
 	sinit(h, MSS_SEC_LVL);
 	absorb(h, left_child->value, NODE_VALUE_SIZE);
 	absorb(h, right_child->value, NODE_VALUE_SIZE);
 	squeeze(h, parent->value, NODE_VALUE_SIZE);
 	//*/
-        hash32(h, left_child->value, right_child->value, parent->value);
+    hash32(h, left_child->value, right_child->value, parent->value);
 
 	parent->height = left_child->height + 1;
 	parent->pos = (left_child->pos >> 1);
@@ -297,16 +298,16 @@ unsigned char _treehash_height(struct state_mt *state, unsigned char h) {
 	return height;
 }
 
-void _treehash_update(sponge_t *hash, sponge_t *priv, sponge_t *pubk, struct state_mt *state, const unsigned char h, struct mss_node *node1, struct mss_node *node2, const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
+void _treehash_update(sponge_t *hash, sponge_t *pubk, struct state_mt *state, const unsigned char h, struct mss_node *node1, struct mss_node *node2, const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
 
-	create_leaf(hash, priv, pubk, node1, state->treehash_seed[h], seed);
+	_create_leaf(hash, pubk, node1, state->treehash_seed[h], seed);
 	state->treehash_seed[h]++;
 	_treehash_set_tailheight(state, h, 0);
 
 	while(state->stack_index > 0 && _treehash_get_tailheight(state, h) == state->stack[state->stack_index - 1].height && (_treehash_get_tailheight(state, h) + 1) < h) {
-	_stack_pop(state->stack, &state->stack_index, node2);
-	_get_parent(hash, node2, node1, node1);
-	_treehash_set_tailheight(state, h, _treehash_get_tailheight(state, h) + 1);
+        _stack_pop(state->stack, &state->stack_index, node2);
+        _get_parent(hash, node2, node1, node1);
+        _treehash_set_tailheight(state, h, _treehash_get_tailheight(state, h) + 1);
 	}
 
 	if(_treehash_get_tailheight(state, h) + 1 < h) {
@@ -356,19 +357,7 @@ void _retain_pop(struct state_mt *state, struct mss_node *node, short h) {
 #endif
 	*node = state->retain[index];
 	state->retain_index[h - (MSS_HEIGHT - MSS_K)]++;
-	/*
-	while(state->retain[index].height > h) {
-		index--;
-	}
-	while(state->retain[index].height == state->retain[index-1].height) {
-		index--;
-	}
-	*node = state->retain[index];
-	for (i = index; i < state->retain_index; i++) {
-		state->retain[i] = state->retain[i+1];
-	}
-	state->retain_index--;
-	//*/
+
 #if defined(DEBUG)
 	assert(_node_valid(node));
 	assert(node->height == h);
@@ -376,14 +365,6 @@ void _retain_pop(struct state_mt *state, struct mss_node *node, short h) {
 }
 
 void _init_state(struct state_mt *state, struct mss_node *node) {
-
-	/*
-	if (node->height == 0) {
-		if (node->pos == 3*(1 << state->nextseed_height) && node->height < MSS_HEIGHT - MSS_K) {
-			state->treehash_seed[state->nextseed_height] = node->pos;
-			state->nextseed_height = state->nextseed_height + 1;
-		}
-	}//*/
 
 	if(node->pos == 1 && node->height < MSS_HEIGHT) {
 #if defined(DEBUG)
@@ -413,12 +394,12 @@ void _init_state(struct state_mt *state, struct mss_node *node) {
 	}
 }
 
-void mss_keygen(sponge_t *hash, sponge_t *priv, sponge_t *pubk, unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], struct mss_node *node1, struct mss_node *node2, struct state_mt *state, unsigned char pkey[NODE_VALUE_SIZE]) {
+void mss_keygen(sponge_t *hash, sponge_t *pubk, unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], struct mss_node *node1, struct mss_node *node2, struct state_mt *state, unsigned char pkey[NODE_VALUE_SIZE]) {
 	short i, pos, index = 0;
 	init_state(state);
 
 	for(pos = 0; pos < (1 << MSS_HEIGHT); pos++) {
-		create_leaf(hash, priv, pubk, node1, pos, seed);
+		_create_leaf(hash, pubk, node1, pos, seed);
 #if defined(DEBUG) && VERBOSE > 2
 		printf("h=%d, pos=%d\n", node1->height, node1->pos);
 		Display("Node: ", node1->value, NODE_VALUE_SIZE);
@@ -444,7 +425,7 @@ void mss_keygen(sponge_t *hash, sponge_t *priv, sponge_t *pubk, unsigned char se
 		pkey[i] = node1->value[i];
 }
 
-void _nextAuth(struct state_mt *state, const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], sponge_t *hash, sponge_t *priv, sponge_t *pubk, struct mss_node *node1, struct mss_node *node2, const short s) {
+void _nextAuth(struct state_mt *state, const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], sponge_t *hash, sponge_t *pubk, struct mss_node *node1, struct mss_node *node2, const short s) {
 	short tau = MSS_HEIGHT - 1, h, min;
 
 	while((s + 1) % (1 << tau) != 0)
@@ -458,7 +439,7 @@ void _nextAuth(struct state_mt *state, const unsigned char seed[LEN_BYTES(MSS_SE
 		state->keep[tau] = state->auth[tau];
 
 	if(tau == 0)
-		create_leaf(hash, priv, pubk, &state->auth[0], s, seed);
+		_create_leaf(hash, pubk, &state->auth[0], s, seed);
 	else {
 		_get_parent(hash, &state->auth[tau - 1], &state->keep[tau - 1], &state->auth[tau]);
 		min = (tau - 1 < MSS_HEIGHT - MSS_K - 1) ? tau - 1 : MSS_HEIGHT - MSS_K - 1;
@@ -490,7 +471,7 @@ void _nextAuth(struct state_mt *state, const unsigned char seed[LEN_BYTES(MSS_SE
 
 	for(i = 0; i < (MSS_HEIGHT - MSS_K) / 2; i++) {
 		min = TREEHASH_HEIGHT_INFINITY;
-		k = MSS_HEIGHT - MSS_K - 1; //TODO: confirmar se é esse mesmo o valor inicial
+		k = MSS_HEIGHT - MSS_K - 1;
 		for(j = MSS_HEIGHT - MSS_K - 1; j >= 0; j--) {
 			if(_treehash_height(state, j) <= min) {
 				min = state->treehash[j].height;
@@ -498,7 +479,7 @@ void _nextAuth(struct state_mt *state, const unsigned char seed[LEN_BYTES(MSS_SE
 			}
 		}
 		if (!(state->treehash_state[k] & TREEHASH_FINISHED)) {
-			_treehash_update(hash, priv, pubk, state, k, node1, node2, seed);
+			_treehash_update(hash, pubk, state, k, node1, node2, seed);
 		}
 	}
 }
@@ -567,18 +548,22 @@ void _get_pkey(sponge_t *hash, const struct mss_node auth[MSS_HEIGHT], struct ms
  *
  */
 
-void mss_sign(struct state_mt *state, const unsigned char *seed, const unsigned char *v, const char *M, short len, sponge_t *hash, sponge_t *priv, sponge_t *pubk, unsigned char *h, short pos, struct mss_node *node1, struct mss_node *node2, unsigned char *sig, struct mss_node authpath[MSS_HEIGHT]) {
+void mss_sign(struct state_mt *state, const unsigned char *seed, struct mss_node *leaf, const char *M, short len,
+            sponge_t *hash, sponge_t *pubk, unsigned char *h, short pos, struct mss_node *node1, struct mss_node *node2, unsigned char *sig, struct mss_node authpath[MSS_HEIGHT]) {
 	unsigned char i;
 	unsigned char seedPos[LEN_BYTES(MSS_SEC_LVL)];
 #if defined(DEBUG)
 	assert((pos >= 0) && (pos < (1 << MSS_HEIGHT)));
 #endif
+
+    _create_leaf(hash, pubk, leaf, pos, seed);
+
 	sinit(hash, MSS_SEC_LVL);
 	absorb(hash, seed, NODE_VALUE_SIZE);
 	absorb(hash, &pos, sizeof(pos));
 	squeeze(hash, seedPos, LEN_BYTES(MSS_SEC_LVL)); // seed <- H(seed, pos)
 
-	winternitz_sign(seedPos, v, LEN_BYTES(WINTERNITZ_SEC_LVL), (const unsigned char *)M, len, priv, hash, h, sig);
+	winternitz_sign(seedPos, leaf->value, LEN_BYTES(WINTERNITZ_SEC_LVL), (const char *)M, len, hash, h, sig);
 
 	for(i = 0; i < MSS_HEIGHT; i++) {
 		memcpy(&authpath[i].height, &state->auth[i].height,sizeof(short));//authpath[i].height = state->auth[i].height;
@@ -587,7 +572,7 @@ void mss_sign(struct state_mt *state, const unsigned char *seed, const unsigned 
 	}
 
 	if(pos <= (1 << MSS_HEIGHT)-2)
-		_nextAuth(state, seed, hash, priv, pubk, node1, node2, pos);
+		_nextAuth(state, seed, hash, pubk, node1, node2, pos);
 
 }
 
@@ -597,10 +582,11 @@ void mss_sign(struct state_mt *state, const unsigned char *seed, const unsigned 
  *
  */
 
-unsigned char mss_verify(struct mss_node authpath[MSS_HEIGHT], const unsigned char *v, const char *M, short len, sponge_t *hash, sponge_t *priv, sponge_t *pubk, unsigned char *h, short pos, const unsigned char *sig, unsigned char *x, struct mss_node *currentLeaf, unsigned char merklePubKey[]) {
+unsigned char mss_verify(struct mss_node authpath[MSS_HEIGHT], const unsigned char *v, const char *M, short len,
+                         sponge_t *hash, sponge_t *pubk, unsigned char *h, short pos, const unsigned char *sig, unsigned char *x, struct mss_node *currentLeaf, unsigned char merklePubKey[]) {
 
 
-	if (winternitz_verify(v, LEN_BYTES(WINTERNITZ_SEC_LVL), (const unsigned char *)M, len, pubk, hash, h, sig, x) == WINTERNITZ_ERROR) {
+	if (winternitz_verify(v, LEN_BYTES(WINTERNITZ_SEC_LVL), (const char *)M, len, pubk, hash, h, sig, x) == WINTERNITZ_ERROR) {
 		return MSS_ERROR;
 	}
 
@@ -625,21 +611,23 @@ unsigned char mss_verify(struct mss_node authpath[MSS_HEIGHT], const unsigned ch
 
 #include <time.h>
 #include "util.h"
+#include "test.h"
 
 int main(int argc, char *argv[]) {
-	printf("\n Parameters:  sec lvlH=%u, H=%u, K=%u, W=%u \n\n", MSS_SEC_LVL, MSS_HEIGHT, MSS_K, WINTERNITZ_W);
+    printf("\n Parameters:  sec lvlH=%u, H=%u, K=%u, W=%u \n\n", MSS_SEC_LVL, MSS_HEIGHT, MSS_K, WINTERNITZ_W);
 
+#if defined(DEBUG)
 	// Execution variables
 	unsigned char seed[LEN_BYTES(MSS_SEC_LVL)];
 	unsigned char pkey[NODE_VALUE_SIZE];
-	sponge_t sponges[3];
+	sponge_t sponges[2];
 	struct mss_node nodes[2];
 	struct state_mt state;
 
 	// Test variables
 	clock_t elapsed;
 	short j;
-#if defined(DEBUG)
+
 	short auth_index[MSS_HEIGHT];
 	// Parameters for signing
 
@@ -649,8 +637,6 @@ int main(int argc, char *argv[]) {
 	unsigned char aux[LEN_BYTES(WINTERNITZ_SEC_LVL)];
 	struct mss_node currentLeaf;
 	struct mss_node authpath[MSS_HEIGHT];
-
-#endif
 
 	// Count only execution variables
 	printf("RAM total: %luB\n", (long unsigned int)(sizeof(seed) + sizeof(pkey) + sizeof(sponges) + sizeof(nodes) + sizeof(state)));
@@ -665,14 +651,12 @@ int main(int argc, char *argv[]) {
 	short i, ntest = 1;
 	elapsed = -clock();
 	for(i = 0; i < ntest; i++) {
-		mss_keygen(&sponges[0] , &sponges[1], &sponges[2], seed, &nodes[0], &nodes[1], &state, pkey);
+		mss_keygen(&sponges[0] , &sponges[1], seed, &nodes[0], &nodes[1], &state, pkey);
 
-#if defined(DEBUG)
 		Display(" Merkle Tree (pkey)\n", pkey, NODE_VALUE_SIZE);
 
-		create_leaf(&sponges[0], &sponges[1], &sponges[2], &currentLeaf, i, seed);
-		mss_sign(&state, seed, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], &sponges[2], h1, i, &nodes[0], &nodes[1], sig, authpath);
-		assert(mss_verify(authpath, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], &sponges[2], h2, i, sig, aux, &currentLeaf, pkey) == MSS_OK);
+		mss_sign(&state, seed, currentLeaf, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], h1, i, &nodes[0], &nodes[1], sig, authpath);
+		assert(mss_verify(authpath, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], h2, i, sig, aux, &currentLeaf, pkey) == MSS_OK);
 
 		printf("--------------- First authentication path ---------------\n");
 		print_auth(&state);
@@ -682,22 +666,22 @@ int main(int argc, char *argv[]) {
 			printf("\n--------------- s = %d ---------------\n", j);
 			printf("Authentication path for %dth leaf\n", j + 1);
 
-			create_leaf(&sponges[0], &sponges[1], &sponges[2], &currentLeaf, j+1, seed);
-			mss_sign(&state, seed, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], &sponges[2], h1, j+1, &nodes[0], &nodes[1], sig, authpath);
-			assert(mss_verify(authpath, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], &sponges[2], h2, j+1, sig, aux, &currentLeaf, pkey) == MSS_OK);
+			mss_sign(&state, seed, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], h1, j+1, &nodes[0], &nodes[1], sig, authpath);
+			assert(mss_verify(authpath, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], h2, j+1, sig, aux, &currentLeaf, pkey) == MSS_OK);
 
 			print_auth(&state);
 			print_auth_index(auth_index);
 			get_auth_index(j, auth_index);
 			printf("------------------------------------\n");
 		}
-
-#endif
 	}
 	elapsed += clock();
 	printf("Elapsed time: %.1f ms\n", 1000*(float)elapsed/CLOCKS_PER_SEC/ntest);
 
-	//do_test(TEST_MSS_SIGN);
+#endif // DEBUG
+	do_test(TEST_MSS_SIGN);
+
+    printf("\n Parameters:  sec lvl=%u, H=%u, K=%u, W=%u \n\n", MSS_SEC_LVL, MSS_HEIGHT, MSS_K, WINTERNITZ_W);
 
 	return 0;
 }

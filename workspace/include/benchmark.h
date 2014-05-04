@@ -1,8 +1,8 @@
 #ifndef __BENCHMARK
 #define __BENCHMARK
 
-#include "sponge.h"
 #include "mss.h"
+#include "string.h"
 
 enum BENCHMARK {
 	BENCHMARK_PREPARE,

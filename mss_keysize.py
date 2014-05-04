@@ -27,9 +27,10 @@ def MerkleSigLengthL(n,H,w):
 	return int(AuthLen + Sig_WOTS_Len)
 
 def MerkleSigLengthLl(n,H,w):
+	nonceLen = n / 8
 	AuthLen = (H * n) / 8
 	Sig_WOTS_Len = (CalcLl(n, w) * n) / 8
-	return int(AuthLen + Sig_WOTS_Len)
+	return int(nonceLen + AuthLen + Sig_WOTS_Len)
 
 def main(argv=None):
 	SEC_LVL = 128

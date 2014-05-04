@@ -15,7 +15,7 @@ unsigned char pkey[NODE_VALUE_SIZE];
 //unsigned char IV[16];
 struct mss_node nodes[2];
 struct state_mt state;
-sponge_t sponges[3];
+sponge_t sponges[2];
 
 //Merkle sign and verify
 char M[] = "Hello, world!";
@@ -43,17 +43,17 @@ void do_benchmark(enum BENCHMARK phase) {
 
 			sinit(&sponges[0], MSS_SEC_LVL);
 			sinit(&sponges[1], MSS_SEC_LVL);
-			sinit(&sponges[2], MSS_SEC_LVL);
+
 			davies_meyer_init(&sponges[0]);
-			mss_keygen(&sponges[0] , &sponges[1], &sponges[2], seed, &nodes[0], &nodes[1], &state, pkey);
+
+			mss_keygen(&sponges[0] , &sponges[1], seed, &nodes[0], &nodes[1], &state, pkey);
 			break;
 		case BENCHMARK_MSS_KEYGEN:
-			mss_keygen(&sponges[0] , &sponges[1], &sponges[2], seed, &nodes[0], &nodes[1], &state, pkey);
+			mss_keygen(&sponges[0] , &sponges[1], seed, &nodes[0], &nodes[1], &state, pkey);
 			break;
 		case BENCHMARK_MSS_SIGN:
 			for(j = 0; j < (1 << MSS_HEIGHT); j++) {
-			    create_leaf(&sponges[0],&sponges[1],&sponges[2],&currentLeaf,j,seed);
-			    mss_sign(&state, seed, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], &sponges[2], h1, j, &nodes[0], &nodes[1], sig, authpath);
+			    mss_sign(&state, seed, &currentLeaf, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], h1, j, &nodes[0], &nodes[1], sig, authpath);
 			}
 			break;
 		case BENCHMARK_MSS_PREPARE_VERIFY:
@@ -65,23 +65,21 @@ void do_benchmark(enum BENCHMARK phase) {
 			sinit(&sponges[2], MSS_SEC_LVL);
 			davies_meyer_init(&sponges[0]);
 			pos = 0;
-			mss_keygen(&sponges[0], &sponges[1], &sponges[2], seed, &nodes[0], &nodes[1], &state, pkey);
-			create_leaf(&sponges[0],&sponges[1],&sponges[2],&currentLeaf,pos,seed);
-			mss_sign(&state, seed, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], &sponges[2], h1, pos, &nodes[0], 
+			mss_keygen(&sponges[0], &sponges[1], seed, &nodes[0], &nodes[1], &state, pkey);
+			mss_sign(&state, seed, &currentLeaf, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], h1, pos, &nodes[0],
 				 &nodes[1], sig, authpath);
 		case BENCHMARK_MSS_VERIFY:
-		        mss_verify(authpath, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], &sponges[2], h2, pos, sig, aux, 
+		        mss_verify(authpath, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], h2, pos, sig, aux,
 				   &currentLeaf, pkey);
 			break;
 		case BENCHMARK_WINTERNITZ_KEYGEN:
-			winternitz_keygen(seed, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], &sponges[2], nodes[1].value);
+			winternitz_keygen(seed, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], nodes[1].value);
 			break;
 		case BENCHMARK_WINTERNITZ_SIGN:
-			winternitz_sign(seed, nodes[1].value, LEN_BYTES(WINTERNITZ_SEC_LVL), M, strlen(M)+1, &sponges[0], 
-					&sponges[2], h1, sig);
+			winternitz_sign(seed, nodes[1].value, LEN_BYTES(WINTERNITZ_SEC_LVL), M, strlen(M)+1, &sponges[0], h1, sig);
 			break;
 		case BENCHMARK_WINTERNITZ_VERIFY:
-			winternitz_verify(nodes[1].value, LEN_BYTES(WINTERNITZ_SEC_LVL), M, strlen(M)+1, &sponges[1], &sponges[2], h1, sig, aux);
+			winternitz_verify(nodes[1].value, LEN_BYTES(WINTERNITZ_SEC_LVL), M, strlen(M)+1, &sponges[0], &sponges[1], h1, sig, aux);
 			break;
 		case BENCHMARK_HASH_CALC:
 #if HASH == BLAKE2S

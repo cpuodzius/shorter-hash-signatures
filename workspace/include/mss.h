@@ -44,16 +44,14 @@ struct state_mt {
 
 void init_state(struct state_mt* state);
 
-void create_leaf(sponge_t *hash, sponge_t *priv, sponge_t *pubk, struct mss_node *node, const short pos, const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]);
+void mss_keygen(sponge_t *hash, sponge_t *pubk, unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], struct mss_node *node1, struct mss_node *node2, struct state_mt *state, unsigned char pkey[NODE_VALUE_SIZE]);
 
-void mss_keygen(sponge_t *hash, sponge_t *priv, sponge_t *pubk, unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], struct mss_node *node1, struct mss_node *node2, struct state_mt *state, unsigned char pkey[NODE_VALUE_SIZE]);
+void mss_sign(struct state_mt *state, const unsigned char *seed, struct mss_node *leaf, const char *M, short len,
+              sponge_t *hash, sponge_t *pubk, unsigned char *h, short pos, struct mss_node *node1, struct mss_node *node2,
+              unsigned char *sig, struct mss_node authpath[MSS_HEIGHT]);
 
-void mss_sign(struct state_mt *state, const unsigned char *seed,
-                    const unsigned char *v, const char *M, short len, sponge_t *hash,
-                    sponge_t *priv, sponge_t *pubk, unsigned char *h, short pos, struct mss_node *node1, struct mss_node *node2,
-                    unsigned char *sig, struct mss_node authpath[MSS_HEIGHT]);
-
-unsigned char mss_verify(struct mss_node authpath[MSS_HEIGHT], const unsigned char *v, const char *M, short len, sponge_t *hash, sponge_t *priv, sponge_t *pubk,
-                               unsigned char *h, short pos, const unsigned char *sig, unsigned char *x, struct mss_node *currentLeaf, unsigned char merklePubKey[]);
+unsigned char mss_verify(struct mss_node authpath[MSS_HEIGHT], const unsigned char *v, const char *M, short len,
+                         sponge_t *hash, sponge_t *pubk, unsigned char *h, short pos, const unsigned char *sig,
+                         unsigned char *x, struct mss_node *currentLeaf, unsigned char merklePubKey[]);
 
 #endif // __MSS_H
