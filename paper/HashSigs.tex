@@ -1,0 +1,282 @@
+%\documentclass{llncs}
+\documentclass[11pt]{llncs}
+%\usepackage[hmargin=1.25in]{geometry}
+
+\usepackage[T1]{fontenc}
+%\usepackage[latin1]{inputenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+%\usepackage{amsthm}
+\usepackage{bm}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+%\usepackage{algorithmicx}
+\usepackage[nocompress]{cite}
+\usepackage{enumerate}
+\usepackage{mathrsfs}
+\usepackage{ifthen}
+\usepackage{url}
+\usepackage{comment}
+\usepackage{graphicx}
+
+\newcommand{\samples}{\stackrel{\;_\$}{\gets}}
+
+\newboolean{anonymous}
+\setboolean{anonymous}{true}
+%\setboolean{anonymous}{false}
+
+\sloppy
+
+\begin{document}
+
+\pagestyle{plain}
+
+\title{Shorter Hash-Based Signatures}
+
+\ifthenelse{\boolean{anonymous}}
+{ % begin then
+\author{
+Anonymized for submission
+}
+\institute{
+}
+} % end then
+{ % begin else
+\author{
+Paulo S. L. M. Barreto\inst{1}\thanks{
+P. Barreto, G. Pereira and J. Ricardini are supported by Intel Research grant ``Energy-efficient Security for SoC Devices -- Asymmetric Cryptography for Embedded Systems'' 2012.
+P. Barreto is also supported by CNPq research productivity grant 306935/2012-0.
+}
+\and
+Geovandro C. C. F. Pereira\inst{1}
+\and\\
+Cassius Puodzius\inst{1}
+\and
+Jefferson E. Ricardini\inst{1}
+}
+\institute{
+Escola Polit\'{e}cnica, University of S\~{a}o Paulo.
+E-mails: \url{{pbarreto,geovandro,cpuodzius,jricardini}@larc.usp.br}
+}
+} % end else
+
+\maketitle
+
+\begin{abstract}
+We describe an efficient hash-based signature scheme that yields shorter signatures than the state of the art. Signing and verification are fast as well, and the overall scheme is suitable for constrained platforms typical of the so-called Internet of Things.\\
+\\
+\emph{Keywords:} hash-based signatures, Merkle trees, Winternitz one-time signature, Internet of Things.
+\end{abstract}
+
+\section{Introduction}
+
+The so-called Internet of Things (IoT) purports to connect a vast range of equipment via the Internet, as long as the underlying processor is large enough to support the TCP/IP protocol. This includes platforms extremely constrained devices, with as little as 8 KiB ROM and 2 KiB RAM as certain SIM cards. While this is commonly enough for symmetric primitives (hash functions, block and stream ciphers, and even richer constructions like authenticated encryption with associated data), it may stress most asymmetric primitives beyond their implementability on such platforms. Yet, securing a typical Internet of Things scenario requires, at the very least, a basic public-key infrastructure (PKI) able to support public-key encryption and digital signatures, which are themselves based on asymmetric primitives.
+
+While encryption can be attained with fairly modest resources by adopting lattice-based schemes~\cite{hoffstein-pipher-silverman} or code-based schemes~\cite{misoczki-sendrier-tillich-barreto}, offering even the most basic functionality of digital signatures on the most stringent platforms is no easy task. Obvious and more exotic candidates alike suffer from the extreme lack of computational resources on some of those platforms, which currently seem to be at, or already beyond, the bare minimum needed to establish a full-fledged PKI. This lack of an efficient signature functionality constitutes a serious hindrance to the very concept of the IoT, especially if resorting to more expensive processors or co-processors is not an option.
+
+Hash-based signatures, which originally appeared somewhat too far-fetched for actual deployment, turned out to be a very promising tool for the aforementioned scenario. On the one hand, their main drawback -- which was a very long key generation time, have been for the most part successfully addressed in recent research works~\cite{buchman-dahmen-klintsevich-okeya-vuillaume}. On the other hand, practical considerations like the actual signature size and consequent bandwidth occupation, as well as leakage-resilience, have also been addressed, with very promising results~\cite{buchmann-dahmen-huelsing,eisenbarth-maurich-ye,huelsing,rohde-eisenbarth-dahmen-buchmann-paar}. Besides, although they do constitute true digital signatures in the sense of public-key cryptosystems, such schemes are based on entirely symmetric primitives, which are readily available on constrained platforms, are typically very efficient, and appear to resist attacks mounted even with the help of quantum computers, to the extent that hash-based signatures have been promoted to the category of quantum-resistant, or post-quantum, cryptosystems. Yet, given the extreme scarcity of resources one finds in IoT processors, full establishment of a secure environment for realistic applications requires that all cryptographic functionalities be made as lightweight as possible, and hash-based signatures are no exception. It therefore makes sense to look for the most efficient constructions rather than sticking with proofs of concept.
+
+Our contribution in this paper is an efficient hash-based signature scheme that not only yields shorter signatures than the previous state of the art, but also enables faster signature generation and verification for the same security level and word size parameters.
+%Our proposal follows the so-called \emph{strong Fiat-Shamir} heuristic~\cite{bernhard-pereira-warinschi}, which sports stronger security properties than other schemes in the literature.
+We argue that the resulting scheme is very suitable for constrained platforms typical of the IoT, as well as similar or related scenarios, like wireless sensor networks and intelligent habitats and environments.
+
+The remainder of this document is organized as follows.
+In Section~\ref{sec:prelim} we introduce the essential concepts behind digital signatures in general, and hash-based signatures in particular.
+We describe our proposal in Section~\ref{sec:proposal}, and we assess it in Section~\ref{sec:assess}.
+We conclude in Section~\ref{sec:conclusion}.
+
+\section{Preliminaries}\label{sec:prelim}
+
+A \emph{signature scheme} is a triple of algorithms $(\textsf{Gen}, \textsf{Sig}, \textsf{Ver})$ such that:
+\begin{itemize}
+\item $\textsf{Gen}$ (the key pair generation algorithm) is a probabilistic algorithm which, given an input $1^k$ (the so-called security level), outputs a pair of matching private and public keys $(sk, pk)$.
+\item $\textsf{Sig}$ (the signing algorithm) is a probabilistic algorithm which, given as input the secret key $sk$ and a message $M \in \{0,1\}^*$, outputs a signature $\sigma \gets \textsf{Sig}(sk, M)$.
+\item $\textsf{Ver}$ (the verification algorithm) is an algorithm which, given as input a public key $pk$, a message $M \in \{0,1\}^*$, and a purported signature $\sigma$, outputs a bit $b = \textsf{Ver}(pk, M, \sigma)$. The signature is accepted iff $b = 1$, and $\textsf{Ver}(pk, M, \sigma) = 1$ for all $\sigma \gets \textsf{Sig}(sk, M)$.
+\end{itemize}
+
+%EUF-CMA?
+
+A \emph{sigma protocol} is a protocol whereby two parties, a prover and a verifier, share a public key $Y$, associated to a private key $s$ that only the prover is presumed to know. In a sigma protocol, the prover initially sends a \emph{commitment} $v$ to the verifier, which replies with a uniformly sampled \emph{challenge} $c$. The prover then sends the verifier a \emph{response} $S$, and the verifier applies to the quadruple $(Y, v, c, S)$ a deterministic algorithm that returns either 0 (meaning rejection) or 1 (meaning acceptance) so that, if the prover does indeed know a private key $s$ associated to $Y$, then the verification algorithm outputs 1 with certainty.
+
+The Fiat-Shamir heuristics transforms an interactive sigma protocol into a non-interactive version by means of a preimage-resistant hash function $H$. Specifically, in the (weak) Fiat-Shamir transform of a sigma protocol, the prover, beginning with a pair $(s, Y)$, obtains a commitment $v$, computes a simulated challenge $c \gets H(v)$, and generates from it a response $S$. The prover output is the pair $(c, S)$. The verifier, once receiving that pair, runs the verification algorithm on the quadruple $(Y, v, c, S)$. The intuition behind this heuristic is that, since $H$ is preimage-resistant, a fake prover (who does not know the private key $s$) cannot feasibly start from any chosen challenge-response pair $(c, S)$ and then compute for it a valid commitment $v$. The strong Fiat-Shamir transform includes $Y$ in the hash function invocation that computes the challenge. The weak version is by far the most common, but it has several drawbacks that can be easily avoided by resorting to the strong version~\cite{bernhard-pereira-warinschi}.
+
+\subsection{Winternitz one-time signatures}
+
+The Winternitz one-time signature scheme views the message representative that will be signed as a sequence of $L$ w-bit words, denoted by $m = (m_0, \dots, m_{L-1})$, where $m_i$ stands for an integer value in range $0 \dots 2^w-1$. The signature component for any particular such word $m_i$ will be an $m_i$-th iterated preimage of some (public) $\ell$-word hash value univocally associated to the $i$-th component of the message representative.
+
+Formally, let $H: \{0 \dots 2^w-1\}^* \rightarrow \{0 \dots 2^w-1\}^\ell$ be a preimage-resistant hash function, and let $H^k := H \circ H \circ \dots \circ H$ iterated $k$ times. 
+
+\subsubsection{Message representative preparation:}
+
+Let $M \in \{0 \dots 2^w-1\}^* $ denote the original document. First compute $(m_0, \cdots, m_{\ell-1}) := H(M)$. Then, compute the checksum part $(m_{\ell}, \cdots, m_{L-1}) := \sum_{i=0}^{\ell-1}{(2^w - 1 - m_i)}$. The value $L$ is computed based on the maximum number of words needed for the checksum. The checksum maximum integer value is $(2^w-1)*\ell$ which fits in $\lceil (lg((2^w-1)*\ell) / w \rceil$ w-bit words. The message representative is $m = (m_0, \cdots, m_{\ell-1}, m_{\ell}, \cdots, m_{L-1})$, where $L = \ell + \lceil (lg((2^w-1)*\ell) / w \rceil$.
+
+The triple of algorithms that defines this scheme is:
+\begin{itemize}
+\item \textsf{Gen}: Choose $L$ strings $s_i \samples \{0 \dots 2^w-1\}^\ell$ uniformly at random, and compute $v_i \gets H^{2^w-1}(s_i)$, for $i = 0, \dots, L-1$. The private key is the sequence $(s_0, \dots, s_{L-1})$, and the public key is $v = H(v_0 \mid\mid \dots \mid\mid v_{L-1}) \in \{0 \dots 2^w-1\}^\ell$.
+%
+\item \textsf{Sig}: To sign a message representative $m = (m_0, \dots, m_{L-1})$, compute $S_i \gets H^{2^w - 1 - m_i}(s_i)$, and let the signature be the sequence of resulting values $S = (S_0, \dots, S_{L-1}) \in (\{0 \dots 2^w-1\}^\ell)^L$. Notice that $S_i$ is an $m_i$-th iterated preimage of $v_i$ for all $i = 0, \dots, L-1$.
+%
+\item \textsf{Ver}: To verify a signature $S = (S_0, \dots, S_{L-1})$ for the message representative $m = (m_0, \dots, m_{L-1})$, compute $t_i = H^{m_i}(S_i)$ for $i = 0, \dots, L-1$ and check if $v = H(t_0 \mid\mid \dots \mid\mid t_{L-1})$.
+\end{itemize}
+
+An obvious improvement to the scheme is to adopt a short secret string $s \in \{0 \dots 2^w-1\}^\ell$ as the private key, and then compute either $s_i \gets H(s \mid\mid i)$, or else, given a longer hash $K: \{0 \dots 2^w-1\}^\ell \rightarrow (\{0 \dots 2^w-1\}^\ell)^L$ (say, a cryptographic sponge~\cite{sponge}), set $(s_0, \dots, s_{L-1}) \gets K(s)$.
+
+\subsection{Merkle tree signatures}
+
+The Merkle tree-based signature scheme of height $h$ (defined as the distance between the root and the leaves of the tree, so as to have $2^h$ leaves and $2^{h+1}-1$ total nodes) and a hash function $H$ extends a one-time signature scheme to $2^h$ signable messages for each public key.
+
+The technique consists of generating $2^h$ one-time key pairs $(s^{(j)}, v^{(j)})$, $0 \leqslant j < 2^h$, for a given one-time signature scheme, and the computing a tree of hash values $q_1, \dots, q_{2^{h+1}-1}$ so that $q_i = H(q_{2i} \mid\mid q_{2i+1})$ for $1 \leqslant i < 2^h$, and $q_{2^h + j} = H(v^{(j)})$ for $0 \leqslant j < 2^h$. The overall public key for the scheme is $Y = q_1$.
+
+Given the one-time signature $S^{(j)}$ verifiable under the public key $v^{(j)}$, the Merkle technique assembles an \emph{authentication path} consisting of the tree nodes whose values are not directly computable from $v^{(j)}$ alone, but are nevertheless needed to compute the values of the parent nodes leading from $v^{(j)}$ to the root $Y$.
+
+Thus, a Merkle signature is a triple $\Sigma^{(j)} = (S^{(j)}, v^{(j)}, Q^{(j)})$ where $Q^{(j)}$ is the sequence of values $(q_{\lfloor j/2^u \rfloor \oplus 1} \mid u = 0, \dots, h-1)$ along the authentication path. The Merkle signature length is $z = |S^{(j)}| + |v^{(j)}| + h |q_i|$.
+
+This scheme allows the root value to be computed from an as yet unused (and publicly unknown) $v^{(j)}$, and then compared to $Y$. This ensures that $v^{(j)}$ is itself authentic, whereby $S^{(j)}$ can be verified as well.
+
+The BDS algorithm~\cite{buchmann-dahmen-schneider} provides an efficient way to compute the authentication path along a Merkle tree, initializing it during key pair generation and updating it on the fly as each new signature is computed.
+
+The Merkle-Winternitz scheme, which combines Winternitz one-time signatures with an overall Merkle tree scheme, yields one of the most efficient hash-based signatures known.
+For a Merkle-Winternitz scheme, the signature length is $z = \ell L + \ell + h\ell = \ell(L + 1 + h)$ $w$-bit words. 
+%Example: $w = 8$ (bytewise signatures), $L = 10, \ell = 10, h = 12$, hence $z = 230$ bytes for $2^{12}$ signable messages.
+
+\begin{comment}
+\subsubsection{Implementation:}
+Tree node indices of the $q_0, \dots, q_{h-1}$ for the $j$-th message, $0 \leqslant j < 2^h$:
+\begin{itemize}
+\item The leaf nodes have indices in range $2^h$ and $2^{h+1}-1$, and the leaf index associated with $M^{(j)}$ is $2^h + j$.
+\item The path from the $k$-th leaf node and the root (which is node 1, not 0) consists of the node indices $\lfloor k/2^u \rfloor$, $u = 0, 1, \dots, h$. For instance, the path from node 12 to the root in a tree of height $h = 3$ consists of nodes
+$\lfloor 12/2^0 \rfloor = 12$ (the lead node itself),
+$\lfloor 12/2^1 \rfloor = 6$,
+$\lfloor 12/2^2 \rfloor = 3$,
+$\lfloor 12/2^3 \rfloor = 1$ (the root).
+\item The $q$-nodes associated to the leaf node of index $k$ are the siblings of the non-root nodes on the path to the root, hence $\lfloor k/2^u \rfloor \oplus 1$, $u = 0, 1, \dots, h - 1$. For instance, the $q$-nodes for the above example are the nodes
+$\lfloor 12/2^0 \rfloor \oplus 1 = 13$,
+$\lfloor 12/2^1 \rfloor \oplus 1 = 7$,
+$\lfloor 12/2^2 \rfloor \oplus 1 = 2$.
+\end{itemize}
+\end{comment}
+
+\subsection{Hierarchical tree-based signatures}
+
+Since the Merkle scheme requires the computation of all $2^{h+1}-1$ tree nodes for key pair generation, it quickly becomes impractical. On the other hand, keeping the tree too low seriously limits the number of signable messages. The BDKOV scheme~\cite{buchman-dahmen-klintsevich-okeya-vuillaume} solves this problem by building a hierarchy of tree-based signatures.
+
+Specifically, the BDKOV construction establishes $N$ layers of Merkle trees. Only the topmost layer defined the signer's public key. Each layer is only used to sign the public key of the layer immediately below it, except for the bottom layer which is actually used to sign messages. Only one tree at each layer needs to be kept at any point, namely, the trees from the currently available one-time key pair up to the topmost layer. The overall signature of a message consists of its proper Merkle signature together with all signed public keys from the intermediate layers up to the top (except for the topmost public key, which is assumed to be distributed independently in a public-key infrastructure). Thus, if each individual Merkle signature has size $z$ and each public key has size $\ell$, the $N$-layer BDKVO hierarchical signature has size $Z = (N-1)\ell + Nz$.
+
+%The proper public key corresponds to the topmost layer. There are $N-1$ subordinate layers, each contributing a subtree root public key ($\ell$ words only: there is no need to resort to $L$ words because no collision attack is meaningful, since the attacker cannot force the signer to sign anything that is not of the signer's own choice here) with its respective  Merkle-Winternitz signature made with a leaf of the immediately superior layer $(\ell(L + 1 + h)$ $w$-bit words each), plus the Merkle-Winternitz signature on the message representative itself $(\ell(L + 1 + h)$ $w$-bit words). Total size: $Z = (N-1)\ell + N\ell(L + 1 + h)$ $w$-bit words, for $2^{Nh}$ possible signatures.
+%Example: $w = 8$ (bytewise signatures), $N = 3, L = 10, \ell = 10, h = 12$, hence $Z = 710$ bytes for $2^{36}$ signable messages.
+
+\section{Proposed scheme}\label{sec:proposal}
+
+Our scheme is related to that by Rohde \emph{et al.}~\cite{rohde-eisenbarth-dahmen-buchmann-paar}, which we call here the REDBP scheme for short. A small conceptual difference is responsible for the reduced signature size and higher processing speeds attainable.
+
+%\textbf{TODO: discuss this statement in Rohde \emph{et al.}: ``Due to the heavy computations required, the key generation is not done on the microcontroller but on a standard PC.''}
+
+Specifically, the REDBP scheme adopts a hash function $G: \{0, 1\}^* \rightarrow \{0 \dots 2^w-1\}^L$ to create message representatives of form $m \gets G(M)$. It then proceeds to sign this message representative with a straightforward Merkle tree construction on top of Winternitz signatures. For security level roughly $2^k$ (whereby forging existentially a signature takes about $2^k$ computational steps), that scheme sets $\ell w = k$ and $L w = 2k$. 
+Thus the $G$ hash size is twice that of the $H$ hash size, $L = 2\ell$. As a result, each Winternitz signature has length $|S^{(j)}| = 2\ell^2$, and each Merkle-Winternitz signature has length $z = \ell(2\ell + 1 + h)$.
+
+Intuitively, this is necessary to prevent precomputed collision attacks. Indeed, since only the message $M$ is fed to the hash function $G$, an attacker could mount a Yuval-style attack~\cite{yuval}, preparing beforehand two sets of semantically equivalent messages, the first favorable to the signer and the second unfavorable, and looking for a collision between a favorable message $M$ and an unfavorable one $M'$, finally presenting $M$ to the signer (and $M'$ to an arbitrating third party after a valid signature is obtained that holds for both messages).
+
+In contrast, we adopt a hash function
+\[
+G: \{0 \dots 2^w-1\}^L \times \{0 \dots 2^w-1\}^L \times \{0, 1\}^* \rightarrow \{0 \dots 2^w-1\}^L
+\]
+to create message representatives of form $m \gets G(Y, v, M)$, and the setting $L = \ell$.
+
+%\textbf{TODO: add $M$ to the signature, modify the scheme to compute $v$ from $S$ and $m$, and check at the end that $m = G(Y, v, M)$. This almost yields a provably secure scheme!}
+
+The presence of $Y$ in the hash is a reflex of the strong Fiat-Shamir heuristic.
+It would make sense to hash together \emph{all} elements involved in generating a signature, i.e. not only $Y$, $M$ and $v$, but the whole authentication path as well. However, $Y$ itself implicitly contains information on all possible authentication paths, so this does not seem to be major concern. Including the authentication path, however, would not create an efficiency bottleneck, having a modest impact at most.
+
+The one-time public key $v$ associated to some signed message is only revealed together with the already computed signature for that message. It is therefore not known, and cannot be known let alone chosen by an adversary.
+The presence of $v$ alone already precludes the possibility of mounting a Yuval-style attack: because $v$ is not known beforehand, the attacker can no longer precompute a collision $G(Y, v, M) = G(Y, v, M')$. Furthermore, once $v$ is revealed with the signature (and will never again be used in another signature because of the one-timeness of the construction), the adversary cannot meaningfully work towards a collision anymore since the message is already signed, being faced with the considerably harder task of finding a preimage $M'$ for it. Apart from this, our scheme inherits all other security properties from the REDBP construction.
+
+As in the REDBP scheme, a signature in our proposal is a triple $\Sigma^{(j)} = (S^{(j)}, v^{(j)}, Q^{(j)})$ where $Q^{(j)}$ is the sequence of values $(q_{\lfloor j/2^u \rfloor \oplus 1} \mid u = 0, \dots, h-1)$ along the authentication path. However, its length is now $z' = |S'^{(j)}| + |v^{(j)}| + h |q_i| = \ell^2 + \ell + h\ell = \ell(\ell + 1 + h)$ $w$-bit words.
+
+The ratio between the size of our proposal and that of the REDBP scheme is
+\[
+z'/z = \dfrac{1 + h/\ell + 1/\ell}{2 + h/\ell + 1/\ell}.
+\]
+
+For practical parameters with $h \approx \ell$, the signatures in our scheme tend to take roughly $2/3$ the size of REDBP signatures, and proportionally even smaller than other proposals in the literature.
+
+Also, because both signing and verification involve a loop of length $L$, the overall number of operation is clearly shorter in our proposal than it is in the REDBP construction, being a simple consequence of the shorter hash that has to be signed in the Winternitz scheme. That is actually the most time-consuming part of the process, since each individual $w$-bit word of the leaf-level hash incurs up to $2^w - 1$ hash computations (or about $2^{w/2}$ on average) for both signing and verification.
+
+%One particular tradeoff is possible in the scheme of~\cite{rohde-eisenbarth-dahmen-buchmann-paar} but not here. Namely, since $v_i$ is not needed when the leaf-level hash is computed in that scheme, it can be postponed until the remainder of the signature is calculated, by completing the iterations needed to go from each piece of the signature to the corresponding input for $v_i$. In the present variant, $v_i$ has to be known beforehand. %\textbf{TODO: check the effect on signing efficiency!}
+
+Our proposal can then be summarized as follows, considering only one hierarchical layer for simplicity:
+
+\begin{itemize}
+\item \textsf{Gen}: Choose $s \samples \{0 \dots 2^w-1\}^\ell$ uniformly at random, compute the $\ell \cdot 2^h$ strings $s_i^{(j)} \gets H(s \mid\mid i \mid\mid j)$ and correspondingly the $\ell \cdot 2^h$ strings $v_i^{(j)} \gets H^{2^w-1}(s_i^{(j)})$, compute  $v^{(j)} \gets H(v_0^{(j)} \mid\mid \dots \mid\mid v_{\ell-1}^{(j)})$, compute the Merkle tree nodes $q_u = H(q_{2u} \mid\mid q_{2u+1})$ for $1 \leqslant u < 2^h$, and $q_{2^h + j} = H(v^{(j)})$ for $0 \leqslant i < \ell$, $0 \leqslant j < 2^h$. 
+The private key is $s$, and the public key is $Y := q_1$, each consisting of $\ell$ $w$-bit words\footnote{The BDS algorithm, if adopted, would compute some ancillary information to expedite signing as well.}. The $s_i^{(j)}$ and $v^{(j)}$ keys as well as the authentication path can be recomputed on demand during a signing operation.
+%
+\item \textsf{Sig}: To sign the $j$-th message $M^{(j)}$, compute the message representative $m^{(j)} := (m_0^{(j)}, \dots, m_{\ell-1}^{(j)}) \gets G(Y, v^{(j)}, M^{(j)})$, compute $s_i^{(j)} \gets H(s \mid\mid i \mid\mid j)$ and $S_i^{(j)} \gets H^{2^w - 1 - m_i}(s_i^{(j)})$ for $0 \leqslant i < \ell$, compute $S^{(j)} \gets (S_0^{(j)}, \dots, S_{\ell-1}^{(j)})$ and the authentication path $Q^{(j)} := (q_{\lfloor j/2^u \rfloor \oplus 1} \mid u = 0, \dots, h-1)$, and finally let the signature be the triple $(S^{(j)}, v^{(j)}, Q^{(j)})$.
+%
+\item \textsf{Ver}: To verify a signature $(S^{(j)}, v^{(j)}, Q^{(j)})$ for the $j$-th message $M^{(j)}$, compute the message representative $m^{(j)} := (m_0^{(j)}, \dots, m_{\ell-1}^{(j)}) \gets G(Y, v^{(j)}, M^{(j)})$, compute $t_i^{(j)} = H^{m_i^{(j)}}(S_i^{(j)})$ for $0 \leqslant i < \ell$ and $t^{(j)} \gets H(t_0^{(j)} \mid\mid \dots \mid\mid t_{\ell-1}^{(j)})$. Then compute the nodes from the $j$-th leaf to the root via $q_{2^h + j} = H(v^{(j)})$ and $q_i \gets H(q_{2i} \mid\mid q_{2i+1})$ for $1 \leqslant i < 2^h$, taking the missing nodes from the authentication path $Q^{(j)}$. Accept iff $q_1 = Y$ and $v^{(j)} = t^{(j)}$.
+\end{itemize}
+
+As a final observation, to see in more detail how this scheme fits the Fiat-Shamir transform, notice that there is an entirely equivalent description where the message representative $m^{(j)}$ rather than the one-time public key $v^{(j)}$ is sent as part of the signature, which becomes the triple $(S^{(j)}, m^{(j)}, Q^{(j)})$, while $v^{(j)}$ becomes the commitment. Indeed, from this triple one can easily compute the commitment as $v^{(j)} \gets H(H^{m_0^{(j)}}(S_0^{(j)}) \mid\mid \dots \mid\mid H^{m_{\ell-1}^{(j)}}(S_{\ell-1}^{(j)}))$, then check if $m^{(j)} = G(Y, v^{(j)}, M^{(j)})$ and if the authentication path does indeed lead to $Y$.
+
+\section{Efficiency assessment}\label{sec:assess}
+
+Table~\ref{tab:compare} compares the key and signature sizes of several hash-based signature proposals in the literature (specifically, XMSS~\cite{buchmann-dahmen-huelsing}, XMSS+~\cite{huelsing}, SPR-MSS~\cite{dahmen-okeya-takagi-vuillaume}, and REDBP~\cite{rohde-eisenbarth-dahmen-buchmann-paar}) with several parametrizations of our proposed construction. All sizes are expressed in bytes. For all schemes, $n$ denotes the output hash size, $h$ is the height of the Merkle tree and $w$ is the word size in bits. For simplicity we do not consider more than one hierarchical layer. The somewhat unusual hash sizes do not constitute a problem for a modern sponge-based hash function with capacity at least twice the exponent of the desired security level.
+
+To estimate the security level of Winternitz signatures based on pre\-image-resistant hash functions as needed in our proposal, we adopt the analysis from~\cite[Section~5]{buchmann-dahmen-ereth-huelsing-rueckert}, i.e. the security level for a hash of length $\ell$ $w$-bit words is at least $2^k$ for $k = w\ell - w - 1 - 2\lg(w\ell)$. Although we follow this lower bound for the suggested parameters, it may be somewhat too conservative, and smaller signatures could be possible in practice by taking $n$ to be the target security level itself (this seems to be the choice in~\cite{rohde-eisenbarth-dahmen-buchmann-paar}, since a security level of $2^{128}$ is claimed rather than $2^{112}$ for $w = 2$ or $2^{110}$ for $w = 4$).
+
+\begin{table}[hptb]\centering
+\caption{Comparison of hash-based signature schemes}\label{tab:compare}
+\begin{tabular}{cccc}\hline
+scheme                   &  $|pk|$ & $|sig|$ & security\\\hline
+XMSS/SHA256$(n=256,w=2)$ &   1696  &  4899   & $2^{210}$\\
+XMSS/SHA256$(n=256,w=4)$ &   1696  &  2787   & $2^{196}$\\
+ours $(n=216,h=16,w=4)$  &     27  &  1917   & $2^{196}$\\
+ours $(n=216,h=16,w=8)$  &     27  &  1188   & $2^{192}$\\
+\hline
+REDBP-MSS$(n=128,w=2)$   &     16  &  2350   & $2^{128}$\\
+REDBP-MSS$(n=128,w=4)$   &     16  &  1330   & $2^{128}$\\
+ours $(n=144,h=16,w=4)$  &     18  &   954   & $2^{126}$\\
+ours $(n=152,h=16,w=8)$  &     19  &   684   & $2^{129}$\\
+\hline
+SPR-MSS$(n=128)$         &    928  &  4416   & $2^{98}$\\
+XMSS+$(h=16,w=2)$        &    544  &  3476   & $2^{96}$\\
+XMSS+$(h=16,w=4)$        &    512  &  1892   & $2^{93}$\\
+XMSS+$(h=16,w=5)$        &    480  &  1588   & $2^{92}$\\
+ours $(n=120,h=16,w=4)$  &     15  &   705   & $2^{101}$\\
+ours $(n=120,h=16,w=8)$  &     15  &   480   & $2^{97}$\\
+\hline
+XMSS/AES128$(n=128,w=2)$ &    912  &  2451   & $2^{82}$\\
+ours $(n=104,h=16,w=4)$  &     13  &   559   & $2^{86}$\\
+ours $(n=104,h=16,w=8)$  &     13  &   390   & $2^{82}$\\
+\hline
+\end{tabular}\end{table}
+
+As for RAM requirements, as we have seen the signature itself fits $\ell(\ell + 1 + h)$ $w$-bit words; the BDS algorithm takes $(3.5h - 4)\ell$ $w$-bit words for ancillary information, and a modern hash function like BLAKE2~\cite{aumasson-neves-wilcoxohearn-winnerlein} would require a fixed amount of 336 bytes. An implementation would also require a few (2--4) auxiliary buffers of length $\ell$ $w$-bit words as well. 
+\begin{comment}
+w := 4; h := 16; aux := 4; l := 152/w; ((3/2)*h - 4)*l*(w/8) + l*(l + 1 + h)*(w/8) + aux*l*(w/8) + 336; // sec 2^125
+w := 8; h := 16; aux := 4; l := 144/w; ((3/2)*h - 4)*l*(w/8) + l*(l + 1 + h)*(w/8) + aux*l*(w/8) + 336; // sec 2^128
+w := 4; h := 16; aux := 4; l := 216/w; ((3/2)*h - 4)*l*(w/8) + l*(l + 1 + h)*(w/8) + aux*l*(w/8) + 336; // sec 2^196
+w := 8; h := 16; aux := 4; l := 216/w; ((3/2)*h - 4)*l*(w/8) + l*(l + 1 + h)*(w/8) + aux*l*(w/8) + 336; // sec 2^192
+w := 4; h := 16; aux := 4; l := 120/w; ((3/2)*h - 4)*l*(w/8) + l*(l + 1 + h)*(w/8) + aux*l*(w/8) + 336; // sec 2^101
+w := 8; h := 16; aux := 4; l := 120/w; ((3/2)*h - 4)*l*(w/8) + l*(l + 1 + h)*(w/8) + aux*l*(w/8) + 336; // sec 2^97
+
+w := 4; h := 10; aux := 4; l := 104/w; ((3/2)*h - 4)*l*(w/8) + l*(l + 1 + h)*(w/8) + aux*l*(w/8) + 336; // sec 2^86
+w := 8; h := 10; aux := 4; l := 104/w; ((3/2)*h - 4)*l*(w/8) + l*(l + 1 + h)*(w/8) + aux*l*(w/8) + 336; // sec 2^82
+\end{comment}
+
+Overall, assuming $h = 16$ this amounts to between 1400 (for $w = 8$) and 1900 (for $w = 4$) bytes at the $2^{128}$ security level, which is quite acceptable for processors with 4--8 KiB RAM. Those storage requirements reflect a trade-off between storage and processing speed (smaller $w$ leads to much faster signing but takes a somewhat larger space). Even at the higher $2^{192}$ level the storage stays at less than 3 KiB so it is possible to increase security on many typical IoT platforms.
+
+On the most stringent cases where only about 2 KiB RAM is available, if the security needs are not too high (say, about $2^{80}$, matching the expected level of RSA-1024) and the number of signable messages at each hierarchical layer can be reduced to $h = 10$ at the cost of roughly doubling the total signature size (which need not be kept on the processor in its entirety at once), then one can implement our proposal within less than 1 KiB.
+
+%Given the similarity of our scheme and that of~\cite{rohde-eisenbarth-dahmen-buchmann-paar}, we implemented a straightforward variant of that scheme to compare with, the difference being the underlying hash function (which was an \emph{a priori} 128- and 256-bit construction on top of the AES block cipher, while here we adopted 128- and 256-bit outputs from the BLAKE2s~\cite{blake2} sponge-based hash function for both the variant of that scheme and our proposal).
+
+%TBS: efficiency implementation results.
+
+For completion, we mention that, at face value, the Dahmen-{Krau\ss} scheme~\cite{dahmen-krauss} would seem to yield far shorter signatures, comparable in size to an ECDSA signature or similar (namely, 330--336 bits long at the $2^{80}$ security level. However, that scheme is not generic: it is limited to signing extremely short messages, no longer than about 3 bytes. For this reason, it is not included on Table~\ref{tab:compare}.
+
+\section{Conclusion}\label{sec:conclusion}
+
+We have described a hash-based signature scheme that yields shorter signatures and smaller generation and verification times than the previous state of the art. Our proposal depends on a preimage-resistant (rather than collision-resistant) hash function and follows the strong Fiat-Shamir heuristic, which offers strong security properties, and is suitable for constrained platforms typical of the IoT.
+
+\bibliography{HashSigs}
+\bibliographystyle{plain}
+
+\end{document}
