@@ -88,8 +88,10 @@ def main(argv=None):
 				suffix = "_" + str(random.randint(50000, 1000000)) + ".txt"
 			fpath += suffix
 			f = open(fpath, 'w+')
-			subprocess.call([os.path.join(binpath, benchmark["executable"])], stdout=f)
+			subprocess.call("python benchmark_telosb.py", stdout=f, shell=True)	#subprocess.call([os.path.join(binpath, benchmark["executable"])], stdout=f)			
 			f.seek(0)
+			ram = ''
+			time = ''
 			for line in f.readlines():
 				if "Parameters" in line:
 					seclvl = line[line.find("SEC_LVL="):line.find(",", line.find("SEC_LVL"))]

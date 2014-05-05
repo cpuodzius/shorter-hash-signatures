@@ -25,8 +25,6 @@ int test_merkle_signature() {
 	short errors, j;
 	char M[] = "Hello, world!";
 
-	printf("\nTesting merkle, w=%d, H=%d, K=%d\n\n", WINTERNITZ_W, MSS_HEIGHT, MSS_K);
-
     davies_meyer_init(&sponges[0]);
 
 	// Set seed

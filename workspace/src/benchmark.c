@@ -105,7 +105,7 @@ void do_benchmark(enum BENCHMARK phase) {
         int mark = 1000;
         clock_t elapsed;
 
-        printf("\n Parameters:  sec lvl=%u, H=%u, K=%u, W=%u \n\n", MSS_SEC_LVL, MSS_HEIGHT, MSS_K, WINTERNITZ_W);
+        printf("\n Parameters:  SEC_LVL=%u, H=%u, K=%u, W=%u \n\n", MSS_SEC_LVL, MSS_HEIGHT, MSS_K, WINTERNITZ_W);
 
         do_benchmark(BENCHMARK_PREPARE);
 

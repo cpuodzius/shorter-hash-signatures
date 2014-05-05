@@ -2,8 +2,9 @@
 #include "sys/clock.h"
 
 #include <stdio.h>
+#include "mss.h"
 
-/*
+//*
 #include "benchmark.h"
 #include "benchmark.c"
 /*/
@@ -39,7 +40,7 @@ PROCESS_THREAD(bench_hashsig_process, ev, data)
   //*/
 
 
-//* Run Merkle Signature TESTS  
+/* Run Merkle Signature TESTS  
   ret = do_test(TEST_MSS_SIGN); 
   printf("Errors after tests: %d\n", ret);
 
@@ -51,7 +52,10 @@ PROCESS_THREAD(bench_hashsig_process, ev, data)
   //do_benchmark(BENCHMARK_MSS_PREPARE_VERIFY);
 
   
-  printf("Starting bench...\n");
+  printf("Starting bench/tests...\n");
+  
+  printf("\n Parameters:  SEC_LVL=%u, H=%u, K=%u, W=%u \n\n", MSS_SEC_LVL, MSS_HEIGHT, MSS_K, WINTERNITZ_W);
+  
   t1 = clock_time();
   
   //do_benchmark(BENCHMARK_WINTERNITZ_KEYGEN);

@@ -1,7 +1,6 @@
 PLATFORM: TELOSB_CONTIKI-C
 COMMAND: make clean
 COMMAND: make TARGET=sky hashsig-app.upload
-COMMAND: $CONTIKI_HOME/tools/sky/serialdump-linux -b115200 /dev/ttyUSB0
 H = 4, K = 2, W = 2, SEC_LVL = 128
 H = 5, K = 3, W = 2, SEC_LVL = 128
 #H = 6, K = 2, W = 2, SEC_LVL = 128
