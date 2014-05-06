@@ -7,6 +7,7 @@
 *.o
 *.so
 *.pyc
+*.aux
 
 # Packages #
 ############
@@ -45,3 +46,7 @@ Thumbs.db
 *.depend
 *.layout
 *.metadata
+
+# Others #
+##########
+paper/*.pdf
