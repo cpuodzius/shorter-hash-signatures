@@ -121,7 +121,7 @@ void _create_leaf(sponge_t *hash, sponge_t *pubk, struct mss_node *node, const s
 	absorb(hash, &pos, sizeof(pos));
 	squeeze(hash, seedPos, LEN_BYTES(MSS_SEC_LVL)); // seedPos <- H(seed, pos)
 	//*/
-
+    printf("\n--Leaf %d. \n", pos);
 	winternitz_keygen(seedPos, LEN_BYTES(WINTERNITZ_SEC_LVL), hash, pubk, node->value);
 
 #if defined(DEBUG)
@@ -221,7 +221,7 @@ void _get_parent(sponge_t *h, const struct mss_node *left_child, const struct ms
 
 	parent->height = left_child->height + 1;
 	parent->pos = (left_child->pos >> 1);
-#if defined(DEBUG)
+#ifdef DEBUG
 	printf("Parent\n");
 	printf("h=%d, pos=%d\n", parent->height, parent->pos);
 	Display("Node", parent->value, NODE_VALUE_SIZE);
@@ -426,7 +426,7 @@ void mss_keygen(sponge_t *hash, sponge_t *pubk, unsigned char seed[LEN_BYTES(MSS
 		pkey[i] = node1->value[i];
 }
 
-void _nextAuth(struct state_mt *state, const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], sponge_t *hash, sponge_t *pubk, struct mss_node *node1, struct mss_node *node2, const short s) {
+void _nextAuth(struct state_mt *state, struct mss_node *rightLeaf, const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], sponge_t *hash, sponge_t *pubk, struct mss_node *node1, struct mss_node *node2, const short s) {
 	short tau = MSS_HEIGHT - 1, h, min;
 
 	while((s + 1) % (1 << tau) != 0)
@@ -440,7 +440,7 @@ void _nextAuth(struct state_mt *state, const unsigned char seed[LEN_BYTES(MSS_SE
 		state->keep[tau] = state->auth[tau];
 
 	if(tau == 0) { // next leaf is a right node
-		_create_leaf(hash, pubk, &state->auth[0], s, seed);
+		state->auth[0] = *rightLeaf;//_create_leaf(hash, pubk, &state->auth[0], s, seed); // Leaf was already computed because our nonce
 	} else { // next leaf is a left node
 		_get_parent(hash, &state->auth[tau - 1], &state->keep[tau - 1], &state->auth[tau]);
 		min = (tau - 1 < MSS_HEIGHT - MSS_K - 1) ? tau - 1 : MSS_HEIGHT - MSS_K - 1;
@@ -573,13 +573,13 @@ void mss_sign(struct state_mt *state, const unsigned char *seed, struct mss_node
 	winternitz_sign(seedPos, leaf->value, LEN_BYTES(WINTERNITZ_SEC_LVL), (const char *)M, len, hash, h, sig);
 
 	for(i = 0; i < MSS_HEIGHT; i++) {
-		memcpy(&authpath[i].height, &state->auth[i].height,sizeof(short));//authpath[i].height = state->auth[i].height;
-		memcpy(&authpath[i].pos, &state->auth[i].pos, sizeof(short));//authpath[i].pos = state->auth[i].pos;
+		authpath[i].height = state->auth[i].height;
+		authpath[i].pos = state->auth[i].pos;
 		memcpy(authpath[i].value, state->auth[i].value, NODE_VALUE_SIZE);
 	}
 
 	if(pos <= (1 << MSS_HEIGHT)-2)
-		_nextAuth(state, seed, hash, pubk, node1, node2, pos);
+		_nextAuth(state, leaf, seed, hash, pubk, node1, node2, pos);
 
 }
 
@@ -662,7 +662,7 @@ int main(int argc, char *argv[]) {
 
 		Display(" Merkle Tree (pkey)\n", pkey, NODE_VALUE_SIZE);
 
-		mss_sign(&state, seed, currentLeaf, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], h1, i, &nodes[0], &nodes[1], sig, authpath);
+		mss_sign(&state, seed, &currentLeaf, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], h1, i, &nodes[0], &nodes[1], sig, authpath);
 		assert(mss_verify(authpath, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], h2, i, sig, aux, &currentLeaf, pkey) == MSS_OK);
 
 		printf("--------------- First authentication path ---------------\n");
@@ -673,7 +673,7 @@ int main(int argc, char *argv[]) {
 			printf("\n--------------- s = %d ---------------\n", j);
 			printf("Authentication path for %dth leaf\n", j + 1);
 
-			mss_sign(&state, seed, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], h1, j+1, &nodes[0], &nodes[1], sig, authpath);
+			mss_sign(&state, seed, &currentLeaf, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], h1, j+1, &nodes[0], &nodes[1], sig, authpath);
 			assert(mss_verify(authpath, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], h2, j+1, sig, aux, &currentLeaf, pkey) == MSS_OK);
 
 			print_auth(&state);

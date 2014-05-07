@@ -12,8 +12,8 @@
 #define odd(x)	((x) % 2)
 
 #define MSS_SEC_LVL                     WINTERNITZ_SEC_LVL
-#define MSS_HEIGHT			5
-#define MSS_K				3
+#define MSS_HEIGHT			4
+#define MSS_K				2
 
 #if odd(MSS_HEIGHT - MSS_K)
 #error (H - K) must be even
