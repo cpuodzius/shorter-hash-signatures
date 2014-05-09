@@ -112,6 +112,7 @@ void _create_leaf(sponge_t *hash, sponge_t *pubk, struct mss_node *node, const s
 		assert(memcmp(dbg_seed, seed, LEN_BYTES(MSS_SEC_LVL)) == 0);
 	// pos must be a valid leaf index
 	assert(_node_valid_index(0, pos));
+	printf("\n--Leaf %d. \n", pos);
 #endif
 	node->height = 0;
 	node->pos = pos;
@@ -121,7 +122,7 @@ void _create_leaf(sponge_t *hash, sponge_t *pubk, struct mss_node *node, const s
 	absorb(hash, &pos, sizeof(pos));
 	squeeze(hash, seedPos, LEN_BYTES(MSS_SEC_LVL)); // seedPos <- H(seed, pos)
 	//*/
-    printf("\n--Leaf %d. \n", pos);
+    
 	winternitz_keygen(seedPos, LEN_BYTES(WINTERNITZ_SEC_LVL), hash, pubk, node->value);
 
 #if defined(DEBUG)
@@ -301,7 +302,14 @@ unsigned char _treehash_height(struct state_mt *state, unsigned char h) {
 void _treehash_update(sponge_t *hash, sponge_t *pubk, struct state_mt *state, const unsigned char h, struct mss_node *node1, struct mss_node *node2, const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
 
     //printf("New leaf from treehash:%d \n",state->treehash_seed[h]);
-	_create_leaf(hash, pubk, node1, state->treehash_seed[h], seed);
+	if(h == 0 && state->treehash_seed[0] >= 11 && (state->treehash_seed[0]%4 == 3)) {
+		node1->height = 0;
+		node1->pos = state->treehash_seed[0];
+		memcpy(node1->value, state->store.value, NODE_VALUE_SIZE);
+	} else { 
+		_create_leaf(hash, pubk, node1, state->treehash_seed[h], seed);
+	}
+
 	state->treehash_seed[h]++;
 	_treehash_set_tailheight(state, h, 0);
 
@@ -318,6 +326,11 @@ void _treehash_update(sponge_t *hash, sponge_t *pubk, struct state_mt *state, co
 	} else {
 		//if((state->treehash_state[h] & TREEHASH_RUNNING) && (_treehash_get_tailheight(state, h) > 0 && _treehash_get_tailheight(state, h) < h)) {
 		if((state->treehash_state[h] & TREEHASH_RUNNING) && (state->treehash_used[h] == 1) ) {
+			if(h == 1 && (state->treehash_seed[1] >= 12) && (state->treehash_seed[1]%4 == 0)) {
+				state->store.height = 0;
+				state->store.pos = state->treehash_seed[1]-1;
+				memcpy(state->store.value,node1->value,NODE_VALUE_SIZE); 
+			}
 			*node2 = state->treehash[h];
 			_get_parent(hash, node2, node1, node1);
 			_treehash_set_tailheight(state, h, _treehash_get_tailheight(state, h) + 1);
@@ -427,7 +440,7 @@ void mss_keygen(sponge_t *hash, sponge_t *pubk, unsigned char seed[LEN_BYTES(MSS
 }
 
 void _nextAuth(struct state_mt *state, struct mss_node *rightLeaf, const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], sponge_t *hash, sponge_t *pubk, struct mss_node *node1, struct mss_node *node2, const short s) {
-	short tau = MSS_HEIGHT - 1, h, min;
+	short tau = MSS_HEIGHT - 1, h, min, i, j, k;
 
 	while((s + 1) % (1 << tau) != 0)
 		tau--;
@@ -449,13 +462,7 @@ void _nextAuth(struct state_mt *state, struct mss_node *rightLeaf, const unsigne
 			//Do Treehash_h.pop()
 			state->auth[h] = state->treehash[h];
 			state->treehash_used[h] = 0; //Consumed, so not used
-			/*
-			if (_treehash_height(state, h) == 0) {
-					_treehash_state(state, h, TREEHASH_FINISHED);
-			} else {
-				_treehash_set_tailheight(state, h, _treehash_get_tailheight(state, h) - 1);
-			}
-			//*/
+			
 			if((s + 1 + 3 * (1 << h)) < (1 << MSS_HEIGHT))
 				_treehash_initialize(state, h, s + 1 + 3 * (1 << h));
 			else
@@ -468,8 +475,6 @@ void _nextAuth(struct state_mt *state, struct mss_node *rightLeaf, const unsigne
 		}
 	}
 	// UPDATE
-	short i, j, k;
-
 	for(i = 0; i < (MSS_HEIGHT - MSS_K) / 2; i++) {
 		min = TREEHASH_HEIGHT_INFINITY;
 		k = MSS_HEIGHT - MSS_K - 1;
@@ -561,7 +566,7 @@ void mss_sign(struct state_mt *state, const unsigned char *seed, struct mss_node
         _create_leaf(hash, pubk, leaf, pos, seed);
     } else {
         leaf->height = 0;
-        memcpy(&leaf->pos, &pos, sizeof(short));
+        leaf->pos = pos;
         memcpy(leaf->value, authpath[0].value, NODE_VALUE_SIZE);
     }
 

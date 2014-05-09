@@ -227,6 +227,7 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
     squeeze(hash, h, m); // NB: hash length is m here, but was 2*m in the predecessor scheme
     //sq++;
 
+
 #ifdef DEBUG
     assert(10 <= m && m <= 21); // lower bound: min sec level (80 bits), upper bound: max checksum count must fit one byte
 #endif
@@ -626,7 +627,7 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
         // 2 part:
         memcpy(x, sig, m); // x holds now the current signature block
         c = 3 - ((h[i] >> 4) & 3); // chunk
-        checksum += (uint)c;
+        checksum += (unsigned short)c;
         for (j = 0; j < c; j++) {
               hash16(hash, x, x); // x holds the hash of its previous value
             //sq++;

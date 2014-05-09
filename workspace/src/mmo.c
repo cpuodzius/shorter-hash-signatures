@@ -16,7 +16,7 @@ extern void AES_encrypt(unsigned char ct[16], const unsigned char pt[16], const 
 void AES_encrypt(unsigned char ciphertext[16], const unsigned char plaintext[16], unsigned char key[16]) {
 
     #ifdef PLATFORM_TELOSB
-//*
+/*
 		unsigned short i;
 		cc2420_aes_set_key(key, 0);		
 		//printf("AES key:");

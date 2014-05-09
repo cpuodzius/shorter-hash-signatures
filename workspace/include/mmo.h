@@ -2,7 +2,8 @@
 #define __MMO_H
 
 #ifdef PLATFORM_TELOSB
-#include "cc2420-aes.h"
+//#include "cc2420-aes.h"
+//#include "cc2420-aes.c"
 #include "TI_aes.h"
 #include "TI_aes.c"
 #else

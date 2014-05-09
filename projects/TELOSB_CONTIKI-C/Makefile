@@ -11,3 +11,4 @@ all: hashsig-app -DWATCHDOG_CONF_TIMEOUT -1
 
 include $(CONTIKI)/Makefile.include
 
+

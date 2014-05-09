@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include "mss.h"
 
-//*
+/*
 #include "benchmark.h"
 #include "benchmark.c"
 /*/
@@ -40,7 +40,7 @@ PROCESS_THREAD(bench_hashsig_process, ev, data)
   //*/
 
 
-/* Run Merkle Signature TESTS  
+//* Run Merkle Signature TESTS  
   ret = do_test(TEST_MSS_SIGN); 
   printf("Errors after tests: %d\n", ret);
 

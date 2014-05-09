@@ -12,7 +12,7 @@
 #define odd(x)	((x) % 2)
 
 #define MSS_SEC_LVL                     WINTERNITZ_SEC_LVL
-#define MSS_HEIGHT			4
+#define MSS_HEIGHT			6
 #define MSS_K				2
 
 #if odd(MSS_HEIGHT - MSS_K)
@@ -40,6 +40,7 @@ struct state_mt {
         struct mss_node retain[MSS_RETAIN_SIZE];
         struct mss_node keep[MSS_KEEP_SIZE];
         struct mss_node auth[MSS_HEIGHT];
+	struct mss_node store;
 };
 
 void init_state(struct state_mt* state);

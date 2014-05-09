@@ -1,0 +1,10 @@
+COMPONENT=HashSigAppC
+
+CFLAGS += -I $(TOSDIR)/lib/printf #-DPRINTF_BUFFER_SIZE=10000
+CFLAGS += -I include -I src -I resources
+CFLAGS += -DPLATFORM_TELOSB
+OPTFLAGS += -O1
+#CFLAGS += -DNEW_PRINTF_SEMANTICS
+
+include $(MAKERULES)
+
