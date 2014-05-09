@@ -5,9 +5,9 @@ from sys import exit
 for arg in sys.argv:
     if arg = 'make'
 		os.system("make clean")
-		os.system("make TARGET=sky hashsig-app.upload")
+		os.system("make micaz install mib510,/dev/ttyUSB0")
 	elif arg = 'run'
-		ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=2, xonxoff=False, rtscts=False, dsrdtr=False)
+		ser = serial.Serial('/dev/ttyUSB0', 57600, timeout=2, xonxoff=False, rtscts=False, dsrdtr=False)
 
 		ser.flushInput()
 		ser.flushOutput()
@@ -23,6 +23,6 @@ for arg in sys.argv:
 			  exit(0);
 		  elif start_reception == 1:
 			  saida += data_raw
-  	
+			
   
   
