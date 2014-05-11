@@ -301,18 +301,18 @@ unsigned char _treehash_height(struct state_mt *state, unsigned char h) {
 
 void _treehash_update(sponge_t *hash, sponge_t *pubk, struct state_mt *state, const unsigned char h, struct mss_node *node1, struct mss_node *node2, const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
 
-    
+
 	if(h < MSS_TREEHASH_SIZE-1 && (state->treehash_seed[h] >= 11*(1<<h)) && (((state->treehash_seed[h] - 11*(1<<h)) % (1<<(2+h))) == 0) ) {
 		node1->height = 0;
 		node1->pos = state->treehash_seed[h];
 		memcpy(node1->value, state->store[h].value, NODE_VALUE_SIZE);
 	} else {
-#ifdef DEBUG		
-		printf("Calc leaf in treehash %d: %d \n",h,state->treehash_seed[h]);		
-#endif		
+#ifdef DEBUG
+		printf("Calc leaf in treehash %d: %d \n",h,state->treehash_seed[h]);
+#endif
 		_create_leaf(hash, pubk, node1, state->treehash_seed[h], seed);
 	}
-	
+
 	if( (state->treehash_seed[h] >= 11*(1<<(h-1))) && ((state->treehash_seed[h]-11*(1<<(h-1))) % (1<<(h+1)) ==0) ) {
 		state->store[h-1].height = 0;
 		state->store[h-1].pos = state->treehash_seed[h];
@@ -560,7 +560,7 @@ void _get_pkey(sponge_t *hash, const struct mss_node auth[MSS_HEIGHT], struct ms
 
 void mss_sign(struct state_mt *state, const unsigned char *seed, struct mss_node *leaf, const char *M, short len,
             sponge_t *hash, sponge_t *pubk, unsigned char *h, short pos, struct mss_node *node1, struct mss_node *node2, unsigned char *sig, struct mss_node authpath[MSS_HEIGHT]) {
-	unsigned char i; 
+	unsigned char i;
 	unsigned char seedPos[LEN_BYTES(MSS_SEC_LVL)];
 #if defined(DEBUG)
 	assert((pos >= 0) && (pos < (1 << MSS_HEIGHT)));
@@ -658,8 +658,6 @@ int main(int argc, char *argv[]) {
 
 	// Count only execution variables
 	printf("RAM total: %luB\n", (long unsigned int)(sizeof(seed) + sizeof(pkey) + sizeof(sponges) + sizeof(nodes) + sizeof(state)));
-
-	davies_meyer_init(&sponges[0]);
 
 	for (j = 0; j < LEN_BYTES(MSS_SEC_LVL); j++) {
 		seed[j] = 0xA0 ^ j; // sample private key, for debugging only

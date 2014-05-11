@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "benchmark.h"
+#include <string.h>
 
 #ifdef PLATFORM_TELOSB
 #include "sponge.h"
@@ -27,7 +28,7 @@ unsigned char aux[LEN_BYTES(WINTERNITZ_SEC_LVL)];
 
 
 void do_benchmark(enum BENCHMARK phase) {
-	
+
 	switch(phase) {
 		case BENCHMARK_PREPARE:
 			for (j = 0; j < LEN_BYTES(MSS_SEC_LVL); j++) {

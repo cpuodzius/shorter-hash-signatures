@@ -20,9 +20,10 @@ unsigned char h1[LEN_BYTES(WINTERNITZ_SEC_LVL)];
 unsigned char sig[WINTERNITZ_L*LEN_BYTES(WINTERNITZ_SEC_LVL)];
 unsigned char aux[LEN_BYTES(WINTERNITZ_SEC_LVL)];
 short errors, j;
-char M[] = "Hello, world!";
-		
+
 int test_merkle_signature() {
+
+    char M[] = "Hello, world!";
 
 	// Set seed
 	for (j = 0; j < LEN_BYTES(MSS_SEC_LVL); j++) {

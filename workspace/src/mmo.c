@@ -105,7 +105,7 @@ void MMO_update(mmo_t *mmo, const unsigned char *M, unsigned int m) {
         mmo->t = 16;
         ZZ = mmo->M;
 #ifdef DEBUG
-        assert(m > 0);
+        //assert(m > 0);
 #endif
     }
     mmo->t -= m;
