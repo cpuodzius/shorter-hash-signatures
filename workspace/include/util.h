@@ -1,7 +1,7 @@
 #ifndef _UTIL_H_
 #define _UTIL_H_
 
-#include "sponge.h"
+#include "winternitz.h"
 
 typedef unsigned char rand_dig_f_type(void);
 

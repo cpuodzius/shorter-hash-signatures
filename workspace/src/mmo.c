@@ -1,11 +1,10 @@
 #include "mmo.h"
 #include <string.h>
 
-
 #ifdef DEBUG
-	//#include <stdlib.h>
 	#include <assert.h>
 #endif
+
 
 /**
  * Encrypt a single AES block under a 128-bit key.
@@ -18,7 +17,7 @@ void AES_encrypt(unsigned char ciphertext[16], const unsigned char plaintext[16]
     #ifdef PLATFORM_TELOSB
 /*
 		unsigned short i;
-		cc2420_aes_set_key(key, 0);		
+		cc2420_aes_set_key(key, 0);
 		//printf("AES key:");
 		//for (i = 0; i < 16; i++) printf(" %02X", key[i]);
 		//printf("AES plain:");
@@ -41,7 +40,7 @@ void AES_encrypt(unsigned char ciphertext[16], const unsigned char plaintext[16]
 
 		memcpy(ciphertext, plaintext, 16); // ciphertext saves the plaintext
 		aes_encrypt(ciphertext, key);      // ciphertext is overwritten with its real value
-    #endif // PLATFORM_TELOB
+    #endif // PLATFORM_SENSOR
 
 }
 //*/
@@ -51,11 +50,10 @@ void MMO_init(mmo_t *mmo) {
     mmo->n = 0;
 
     memset(mmo->H, 0, 16);
-    // H[0] = 0; ... H[15] = 0;
+    memset(mmo->IV, 0, 16);
 }
 
 void MMO_update(mmo_t *mmo, const unsigned char *M, unsigned int m) {
-    unsigned int i;
     unsigned char *ZZ = &mmo->M[16 - mmo->t];
     mmo->n += m;
     for (;;) {
@@ -84,15 +82,31 @@ void MMO_update(mmo_t *mmo, const unsigned char *M, unsigned int m) {
 
         AES_encrypt(mmo->H, mmo->M, mmo->H);
 
-        for (i = 0; i < 16; i++) {
-            mmo->H[i] ^= mmo->M[i];
-        }
+        mmo->H[ 0] ^= mmo->M[ 0];
+        mmo->H[ 1] ^= mmo->M[ 1];
+        mmo->H[ 2] ^= mmo->M[ 2];
+        mmo->H[ 3] ^= mmo->M[ 3];
+        mmo->H[ 4] ^= mmo->M[ 4];
+        mmo->H[ 5] ^= mmo->M[ 5];
+        mmo->H[ 6] ^= mmo->M[ 6];
+        mmo->H[ 7] ^= mmo->M[ 7];
+        mmo->H[ 8] ^= mmo->M[ 8];
+        mmo->H[ 9] ^= mmo->M[ 9];
+        mmo->H[10] ^= mmo->M[10];
+        mmo->H[11] ^= mmo->M[11];
+        mmo->H[12] ^= mmo->M[12];
+        mmo->H[13] ^= mmo->M[13];
+        mmo->H[14] ^= mmo->M[14];
+        mmo->H[15] ^= mmo->M[15];
+
         // proceed to the next block:
         m -= mmo->t;
         M += mmo->t;
         mmo->t = 16;
         ZZ = mmo->M;
-        //assert(m > 0);
+#ifdef DEBUG
+        assert(m > 0);
+#endif
     }
     mmo->t -= m;
 #ifdef DEBUG
@@ -119,9 +133,23 @@ void MMO_final(mmo_t *mmo, unsigned char tag[16]) {
 
         AES_encrypt(mmo->H, mmo->M, mmo->H);
 
-        for (i = 0; i < 16; i++) {
-            mmo->H[i] ^= mmo->M[i];
-        }
+        mmo->H[ 0] ^= mmo->M[ 0];
+        mmo->H[ 1] ^= mmo->M[ 1];
+        mmo->H[ 2] ^= mmo->M[ 2];
+        mmo->H[ 3] ^= mmo->M[ 3];
+        mmo->H[ 4] ^= mmo->M[ 4];
+        mmo->H[ 5] ^= mmo->M[ 5];
+        mmo->H[ 6] ^= mmo->M[ 6];
+        mmo->H[ 7] ^= mmo->M[ 7];
+        mmo->H[ 8] ^= mmo->M[ 8];
+        mmo->H[ 9] ^= mmo->M[ 9];
+        mmo->H[10] ^= mmo->M[10];
+        mmo->H[11] ^= mmo->M[11];
+        mmo->H[12] ^= mmo->M[12];
+        mmo->H[13] ^= mmo->M[13];
+        mmo->H[14] ^= mmo->M[14];
+        mmo->H[15] ^= mmo->M[15];
+
         mmo->t = 16; // start new block
         ZZ = mmo->M;
     }
@@ -144,18 +172,30 @@ void MMO_final(mmo_t *mmo, unsigned char tag[16]) {
 
 	AES_encrypt(mmo->H, mmo->M, mmo->H);
 
-    for (i = 0; i < 16; i++) {
-        mmo->H[i] ^= mmo->M[i];
-    }
-    for (i = 0; i < 16; i++) {
-        tag[i] = mmo->H[i];
-    }
+    mmo->H[ 0] ^= mmo->M[ 0];
+    mmo->H[ 1] ^= mmo->M[ 1];
+    mmo->H[ 2] ^= mmo->M[ 2];
+    mmo->H[ 3] ^= mmo->M[ 3];
+    mmo->H[ 4] ^= mmo->M[ 4];
+    mmo->H[ 5] ^= mmo->M[ 5];
+    mmo->H[ 6] ^= mmo->M[ 6];
+    mmo->H[ 7] ^= mmo->M[ 7];
+    mmo->H[ 8] ^= mmo->M[ 8];
+    mmo->H[ 9] ^= mmo->M[ 9];
+    mmo->H[10] ^= mmo->M[10];
+    mmo->H[11] ^= mmo->M[11];
+    mmo->H[12] ^= mmo->M[12];
+    mmo->H[13] ^= mmo->M[13];
+    mmo->H[14] ^= mmo->M[14];
+    mmo->H[15] ^= mmo->M[15];
+
+    memcpy(tag, mmo->H, 16);
+
     mmo->t = 16; // reset
     mmo->n = 0;
 }
 
 void MMO_hash16(mmo_t *mmo, const unsigned char M[16], unsigned char tag[16]) {
-    //unsigned int i;
     unsigned char *H = mmo->H;
     //unsigned char *ZZ = mmo->M;
 
@@ -164,11 +204,6 @@ void MMO_hash16(mmo_t *mmo, const unsigned char M[16], unsigned char tag[16]) {
 
     AES_encrypt(H, M, H);
 
-    /*
-    for (i = 0; i < 16; i++) {
-        H[i] ^= M[i];
-    }
-    /*/
     H[ 0] ^= M[ 0];
     H[ 1] ^= M[ 1];
     H[ 2] ^= M[ 2];
@@ -185,7 +220,6 @@ void MMO_hash16(mmo_t *mmo, const unsigned char M[16], unsigned char tag[16]) {
     H[13] ^= M[13];
     H[14] ^= M[14];
     H[15] ^= M[15];
-    //*/
 
 /*
     // compute padding:
@@ -218,7 +252,6 @@ void MMO_hash16(mmo_t *mmo, const unsigned char M[16], unsigned char tag[16]) {
 }
 
 void MMO_hash32(mmo_t *mmo, const unsigned char M[32], unsigned char tag[16]) {
-    //unsigned int i;
     unsigned char *H = mmo->H;
     //unsigned char *ZZ = mmo->M;
 
@@ -227,11 +260,6 @@ void MMO_hash32(mmo_t *mmo, const unsigned char M[32], unsigned char tag[16]) {
 
     AES_encrypt(H, M, H);
 
-    /*
-    for (i = 0; i < 16; i++) {
-        H[i] ^= M[i];
-    }
-    /*/
     H[ 0] ^= M[ 0];
     H[ 1] ^= M[ 1];
     H[ 2] ^= M[ 2];
@@ -248,17 +276,11 @@ void MMO_hash32(mmo_t *mmo, const unsigned char M[32], unsigned char tag[16]) {
     H[13] ^= M[13];
     H[14] ^= M[14];
     H[15] ^= M[15];
-    //*/
 
     M += 16;
 
     AES_encrypt(H, M, H);
 
-    /*
-    for (i = 0; i < 16; i++) {
-        H[i] ^= M[i];
-    }
-    /*/
     H[ 0] ^= M[ 0];
     H[ 1] ^= M[ 1];
     H[ 2] ^= M[ 2];
@@ -275,7 +297,6 @@ void MMO_hash32(mmo_t *mmo, const unsigned char M[32], unsigned char tag[16]) {
     H[13] ^= M[13];
     H[14] ^= M[14];
     H[15] ^= M[15];
-    //*/
 
 /*
     // compute padding:
@@ -310,14 +331,8 @@ void MMO_hash32(mmo_t *mmo, const unsigned char M[32], unsigned char tag[16]) {
     memcpy(tag, H, 16);
 }
 
-void davies_meyer_init(mmo_t *mmo) {
-    memset(mmo->IV, 0, 16);
-}
-
 void davies_meyer_hash16(unsigned char IV[16], const unsigned char M[16], unsigned char tag[16]) {
-
     AES_encrypt(tag, M, IV);
-
 }
 
 void davies_meyer_hash32(unsigned char IV[16], const unsigned char M0[16], const unsigned char M1[16], unsigned char tag[16]) {

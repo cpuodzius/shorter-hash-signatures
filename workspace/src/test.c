@@ -25,8 +25,6 @@ int test_merkle_signature() {
 	short errors, j;
 	char M[] = "Hello, world!";
 
-    davies_meyer_init(&sponges[0]);
-
 	// Set seed
 	for (j = 0; j < LEN_BYTES(MSS_SEC_LVL); j++) {
 		seed[j] = 0xA0 ^ j; // sample private key, for debugging only
@@ -38,16 +36,21 @@ int test_merkle_signature() {
 	mss_keygen(&sponges[0] , &sponges[1], seed, &nodes[0], &nodes[1], &state, pkey);
 
 	//Sign and verify for all j-th authentication paths
-
 	errors = 0;
 	for (j = 0; j < (1 << MSS_HEIGHT); j++) {
-	    //printf("Testing merkle signature for leaf %d ...", j);
+#ifdef MSS_SELFTEST
+	    printf("Testing merkle signature for leaf %d ...", j);
+#endif
 	    mss_sign(&state, seed, &currentLeaf, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], h1, j, &nodes[0], &nodes[1], sig, authpath);
         if(mss_verify(authpath, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], h2, j, sig, aux, &currentLeaf, pkey) == MSS_OK) {
-            //printf(" [OK]\n");
+#ifdef MSS_SELFTEST
+            printf(" [OK]\n");
+#endif
 	    } else {
             errors++;
-            //printf(" [ERROR]\n");
+#ifdef MSS_SELFTEST
+            printf(" [ERROR]\n");
+#endif
 	    }
 	}
 
@@ -60,7 +63,9 @@ int do_test(enum TEST operation) {
 	switch(operation) {
 		case TEST_MSS_SIGN:
 			ret = test_merkle_signature();
+#ifdef MSS_SELFTEST
             printf("Errors: %d \n", ret);
+#endif
 			break;
 	}
 	return ret;

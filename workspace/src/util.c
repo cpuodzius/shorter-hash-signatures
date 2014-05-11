@@ -1,14 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "util.h"
-#include "winternitz.h"
 
 unsigned char rand_dig_f(void) {
     return (unsigned char)rand();
 }
 
 void Display(const char *tag, const unsigned char *u, unsigned short n) {
-    uint i;
+    unsigned short i;
     printf("%s:\n", tag);
     for (i = 0; i < n; i++) {
         printf("%02X", u[i]);

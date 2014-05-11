@@ -3,8 +3,8 @@
 
 #include "winternitz.h"
 
-// Merkle Tree interface:
-// 16 is the Heighest tree for this implementation (because type of index is short)
+// Improved Merkle Signature Scheme targeting 16-bit platforms
+// 16 is the Heighest tree for this implementation (since leaf index is of type short)
 
 #define MSS_OK 1
 #define MSS_ERROR 0

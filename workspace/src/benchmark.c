@@ -17,17 +17,13 @@ struct mss_node nodes[2];
 struct state_mt state;
 sponge_t sponges[2];
 
-//Merkle sign and verify
+//Merkle sign and verify aux variables
 char M[] = "Hello, world!";
 unsigned char h1[LEN_BYTES(WINTERNITZ_SEC_LVL)],h2[LEN_BYTES(WINTERNITZ_SEC_LVL)];
 short pos = 0;
 struct mss_node currentLeaf;
 struct mss_node authpath[MSS_HEIGHT];
 unsigned char sig[WINTERNITZ_L*LEN_BYTES(WINTERNITZ_SEC_LVL)];
-
-//struct mss_node currentLeafVerify[1 << MSS_HEIGHT];
-//struct mss_node authpathVerify[1 << MSS_HEIGHT][MSS_HEIGHT];
-//unsigned char sigAndVerify[1 << MSS_HEIGHT][WINTERNITZ_L*LEN_BYTES(WINTERNITZ_SEC_LVL)];
 
 unsigned char aux[LEN_BYTES(WINTERNITZ_SEC_LVL)];
 
@@ -43,8 +39,6 @@ void do_benchmark(enum BENCHMARK phase) {
 
 			sinit(&sponges[0], MSS_SEC_LVL);
 			sinit(&sponges[1], MSS_SEC_LVL);
-
-			davies_meyer_init(&sponges[0]);
 
 			mss_keygen(&sponges[0] , &sponges[1], seed, &nodes[0], &nodes[1], &state, pkey);
 			break;
@@ -62,8 +56,7 @@ void do_benchmark(enum BENCHMARK phase) {
 			}
 			sinit(&sponges[0], MSS_SEC_LVL);
 			sinit(&sponges[1], MSS_SEC_LVL);
-			sinit(&sponges[2], MSS_SEC_LVL);
-			davies_meyer_init(&sponges[0]);
+
 			pos = 0;
 			mss_keygen(&sponges[0], &sponges[1], seed, &nodes[0], &nodes[1], &state, pkey);
 			mss_sign(&state, seed, &currentLeaf, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], h1, pos, &nodes[0],
@@ -82,16 +75,9 @@ void do_benchmark(enum BENCHMARK phase) {
 			winternitz_verify(nodes[1].value, LEN_BYTES(WINTERNITZ_SEC_LVL), M, strlen(M)+1, &sponges[0], &sponges[1], h1, sig, aux);
 			break;
 		case BENCHMARK_HASH_CALC:
-#if HASH == BLAKE2S
-			//blake2s_init(&sponges[0], LEN_BYTES(WINTERNITZ_SEC_LVL));
-			//blake2s_update(&sponges[0], seed, LEN_BYTES(WINTERNITZ_SEC_LVL));
-			//blake2s_final(&sponges[0], seed, LEN_BYTES(WINTERNITZ_SEC_LVL));
-#elif HASH == MMO
-			MMO_init(&sponges[0]);
-			MMO_update(&sponges[0], seed, LEN_BYTES(WINTERNITZ_SEC_LVL));
-			MMO_final(&sponges[0], seed);
-#endif
-
+			sinit(&sponges[0], WINTERNITZ_SEC_LVL);
+			absorb(&sponges[0], seed, LEN_BYTES(WINTERNITZ_SEC_LVL));
+			squeeze(&sponges[0], seed, LEN_BYTES(WINTERNITZ_SEC_LVL));
 			break;
 	}
 }

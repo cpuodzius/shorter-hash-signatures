@@ -122,7 +122,7 @@ void _create_leaf(sponge_t *hash, sponge_t *pubk, struct mss_node *node, const s
 	absorb(hash, &pos, sizeof(pos));
 	squeeze(hash, seedPos, LEN_BYTES(MSS_SEC_LVL)); // seedPos <- H(seed, pos)
 	//*/
-    
+
 	winternitz_keygen(seedPos, LEN_BYTES(WINTERNITZ_SEC_LVL), hash, pubk, node->value);
 
 #if defined(DEBUG)
@@ -306,7 +306,7 @@ void _treehash_update(sponge_t *hash, sponge_t *pubk, struct state_mt *state, co
 		node1->height = 0;
 		node1->pos = state->treehash_seed[0];
 		memcpy(node1->value, state->store.value, NODE_VALUE_SIZE);
-	} else { 
+	} else {
 		_create_leaf(hash, pubk, node1, state->treehash_seed[h], seed);
 	}
 
@@ -329,7 +329,7 @@ void _treehash_update(sponge_t *hash, sponge_t *pubk, struct state_mt *state, co
 			if(h == 1 && (state->treehash_seed[1] >= 12) && (state->treehash_seed[1]%4 == 0)) {
 				state->store.height = 0;
 				state->store.pos = state->treehash_seed[1]-1;
-				memcpy(state->store.value,node1->value,NODE_VALUE_SIZE); 
+				memcpy(state->store.value,node1->value,NODE_VALUE_SIZE);
 			}
 			*node2 = state->treehash[h];
 			_get_parent(hash, node2, node1, node1);
@@ -453,7 +453,7 @@ void _nextAuth(struct state_mt *state, struct mss_node *rightLeaf, const unsigne
 		state->keep[tau] = state->auth[tau];
 
 	if(tau == 0) { // next leaf is a right node
-		state->auth[0] = *rightLeaf;//_create_leaf(hash, pubk, &state->auth[0], s, seed); // Leaf was already computed because our nonce
+		state->auth[0] = *rightLeaf; // Leaf was already computed because our nonce
 	} else { // next leaf is a left node
 		_get_parent(hash, &state->auth[tau - 1], &state->keep[tau - 1], &state->auth[tau]);
 		min = (tau - 1 < MSS_HEIGHT - MSS_K - 1) ? tau - 1 : MSS_HEIGHT - MSS_K - 1;
@@ -462,7 +462,7 @@ void _nextAuth(struct state_mt *state, struct mss_node *rightLeaf, const unsigne
 			//Do Treehash_h.pop()
 			state->auth[h] = state->treehash[h];
 			state->treehash_used[h] = 0; //Consumed, so not used
-			
+
 			if((s + 1 + 3 * (1 << h)) < (1 << MSS_HEIGHT))
 				_treehash_initialize(state, h, s + 1 + 3 * (1 << h));
 			else
@@ -628,6 +628,8 @@ unsigned char mss_verify(struct mss_node authpath[MSS_HEIGHT], const unsigned ch
 int main(int argc, char *argv[]) {
     printf("\n Parameters:  sec lvlH=%u, H=%u, K=%u, W=%u \n\n", MSS_SEC_LVL, MSS_HEIGHT, MSS_K, WINTERNITZ_W);
 
+    do_test(TEST_MSS_SIGN);
+
 #if defined(DEBUG)
 	// Execution variables
 	unsigned char seed[LEN_BYTES(MSS_SEC_LVL)];
@@ -691,7 +693,6 @@ int main(int argc, char *argv[]) {
 	printf("Elapsed time: %.1f ms\n", 1000*(float)elapsed/CLOCKS_PER_SEC/ntest);
 
 #endif // DEBUG
-	do_test(TEST_MSS_SIGN);
 
     printf("\n Parameters:  sec lvl=%u, H=%u, K=%u, W=%u \n\n", MSS_SEC_LVL, MSS_HEIGHT, MSS_K, WINTERNITZ_W);
 
