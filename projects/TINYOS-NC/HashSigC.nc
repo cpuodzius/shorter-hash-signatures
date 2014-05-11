@@ -1,7 +1,6 @@
 #include "printf.h"
 
 #include <stdio.h>
-#include "mss.h"
 
 /*
 #include "benchmark.h"
@@ -29,17 +28,18 @@ implementation {
 		//call Leds.set(7);
 		
 
-		//* Run Merkle Signature TESTS  
+		//* Run Merkle Signature TESTS
+		printf("Starting tests...\n");
 		ret = do_test(TEST_MSS_SIGN); 
-		printf("Errors after tests: %d\n", ret);
+		printf("Errors after tests: %lu\n", ret);
 
 		/*/ //Run the specified benchmark
 		benchs = 1;
 
 		  
-		printf("Starting bench/tests...\n");
+		printf("Starting benchs...\n");
 		  
-		printf("\n Parameters:  SEC_LVL=%u, H=%u, K=%u, W=%u \n\n", MSS_SEC_LVL, MSS_HEIGHT, MSS_K, WINTERNITZ_W);
+		printf("\n Parameters: SEC_LVL=%u, H=%u, K=%u, W=%u \n\n", MSS_SEC_LVL, MSS_HEIGHT, MSS_K, WINTERNITZ_W);
 		  
 		t1 = call Timer.getNow();
 		  
@@ -52,7 +52,7 @@ implementation {
 		//do_benchmark(BENCHMARK_MSS_VERIFY);
 
 		t2 = call Timer.getNow();
-		printf("Time elapsed: %lu ms\n", t2 - t1);
+		printf("Elapsed: %lu ms\n", t2 - t1);
 		//*/
 				
 		//call Leds.set(1);
@@ -69,7 +69,7 @@ implementation {
 		//printf("Oi!\n");
 		//printfflush();
 		//call Leds.led2On();
-		call Timer.startOneShot(3000);
+		call Timer.startOneShot(2000);
 	}
 
 	event void Timer.fired() {				

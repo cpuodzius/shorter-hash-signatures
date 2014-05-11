@@ -12,8 +12,8 @@
 #define odd(x)	((x) % 2)
 
 #define MSS_SEC_LVL                     WINTERNITZ_SEC_LVL
-#define MSS_HEIGHT			6
-#define MSS_K				2
+#define MSS_HEIGHT			8
+#define MSS_K				4
 
 #if odd(MSS_HEIGHT - MSS_K)
 #error (H - K) must be even
@@ -27,7 +27,8 @@
 #define NODE_VALUE_SIZE LEN_BYTES(MSS_SEC_LVL)         // each value element is a byte
 
 struct mss_node {
-        short height, pos;
+        unsigned char height;
+        short pos;
         unsigned char value[NODE_VALUE_SIZE];           // node's value for auth path
 };
 
@@ -40,7 +41,7 @@ struct state_mt {
         struct mss_node retain[MSS_RETAIN_SIZE];
         struct mss_node keep[MSS_KEEP_SIZE];
         struct mss_node auth[MSS_HEIGHT];
-	struct mss_node store;
+		struct mss_node store[MSS_TREEHASH_SIZE-1];
 };
 
 void init_state(struct state_mt* state);

@@ -20,8 +20,8 @@ enum TREEHASH_STATE {
 char dbg_seed_initialized = 0;
 unsigned char dbg_seed[LEN_BYTES(MSS_SEC_LVL)];
 
-short _node_valid_index(short height, short pos) {
-	short valid_height = 0;
+short _node_valid_index(unsigned char height, short pos) {
+	unsigned char valid_height = 0;
 	short valid_pos = 0;
 	if(height >= 0 && height <= MSS_HEIGHT) {
 		valid_height = 1;
@@ -198,7 +198,7 @@ void _get_parent(sponge_t *h, const struct mss_node *left_child, const struct ms
 	assert(_is_left_node(left_child));
 	assert(_is_right_node(right_child));
 	assert(right_child->pos == left_child->pos + 1);
-	const short parent_height = right_child->height + 1;
+	const unsigned char parent_height = right_child->height + 1;
 	const short parent_pos = (right_child->pos / 2);
 	/*
 	printf("----- _get_parent -----\n\n");
@@ -301,13 +301,22 @@ unsigned char _treehash_height(struct state_mt *state, unsigned char h) {
 
 void _treehash_update(sponge_t *hash, sponge_t *pubk, struct state_mt *state, const unsigned char h, struct mss_node *node1, struct mss_node *node2, const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
 
-    //printf("New leaf from treehash:%d \n",state->treehash_seed[h]);
-	if(h == 0 && state->treehash_seed[0] >= 11 && (state->treehash_seed[0]%4 == 3)) {
+    
+	if(h < MSS_TREEHASH_SIZE-1 && (state->treehash_seed[h] >= 11*(1<<h)) && (((state->treehash_seed[h] - 11*(1<<h)) % (1<<(2+h))) == 0) ) {
 		node1->height = 0;
-		node1->pos = state->treehash_seed[0];
-		memcpy(node1->value, state->store.value, NODE_VALUE_SIZE);
+		node1->pos = state->treehash_seed[h];
+		memcpy(node1->value, state->store[h].value, NODE_VALUE_SIZE);
 	} else {
+#ifdef DEBUG		
+		printf("Calc leaf in treehash %d: %d \n",h,state->treehash_seed[h]);		
+#endif		
 		_create_leaf(hash, pubk, node1, state->treehash_seed[h], seed);
+	}
+	
+	if( (state->treehash_seed[h] >= 11*(1<<(h-1))) && ((state->treehash_seed[h]-11*(1<<(h-1))) % (1<<(h+1)) ==0) ) {
+		state->store[h-1].height = 0;
+		state->store[h-1].pos = state->treehash_seed[h];
+		memcpy(state->store[h-1].value,node1->value,NODE_VALUE_SIZE);
 	}
 
 	state->treehash_seed[h]++;
@@ -326,11 +335,6 @@ void _treehash_update(sponge_t *hash, sponge_t *pubk, struct state_mt *state, co
 	} else {
 		//if((state->treehash_state[h] & TREEHASH_RUNNING) && (_treehash_get_tailheight(state, h) > 0 && _treehash_get_tailheight(state, h) < h)) {
 		if((state->treehash_state[h] & TREEHASH_RUNNING) && (state->treehash_used[h] == 1) ) {
-			if(h == 1 && (state->treehash_seed[1] >= 12) && (state->treehash_seed[1]%4 == 0)) {
-				state->store.height = 0;
-				state->store.pos = state->treehash_seed[1]-1;
-				memcpy(state->store.value,node1->value,NODE_VALUE_SIZE);
-			}
 			*node2 = state->treehash[h];
 			_get_parent(hash, node2, node1, node1);
 			_treehash_set_tailheight(state, h, _treehash_get_tailheight(state, h) + 1);
@@ -440,8 +444,8 @@ void mss_keygen(sponge_t *hash, sponge_t *pubk, unsigned char seed[LEN_BYTES(MSS
 }
 
 void _nextAuth(struct state_mt *state, struct mss_node *rightLeaf, const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], sponge_t *hash, sponge_t *pubk, struct mss_node *node1, struct mss_node *node2, const short s) {
-	short tau = MSS_HEIGHT - 1, h, min, i, j, k;
-
+	unsigned char tau = MSS_HEIGHT - 1, min, h, i, k;
+	short j;
 	while((s + 1) % (1 << tau) != 0)
 		tau--;
 
@@ -514,7 +518,7 @@ void print_auth_index(short auth_index[MSS_HEIGHT - 1]) {
 #endif
 
 void _get_pkey(sponge_t *hash, const struct mss_node auth[MSS_HEIGHT], struct mss_node *node, unsigned char *pkey) {
-	short i, h;
+	unsigned char h, i;
 	for(h = 0; h < MSS_HEIGHT; h++) {
 
 #if defined(DEBUG)
@@ -556,7 +560,7 @@ void _get_pkey(sponge_t *hash, const struct mss_node auth[MSS_HEIGHT], struct ms
 
 void mss_sign(struct state_mt *state, const unsigned char *seed, struct mss_node *leaf, const char *M, short len,
             sponge_t *hash, sponge_t *pubk, unsigned char *h, short pos, struct mss_node *node1, struct mss_node *node2, unsigned char *sig, struct mss_node authpath[MSS_HEIGHT]) {
-	unsigned char i;
+	unsigned char i; 
 	unsigned char seedPos[LEN_BYTES(MSS_SEC_LVL)];
 #if defined(DEBUG)
 	assert((pos >= 0) && (pos < (1 << MSS_HEIGHT)));

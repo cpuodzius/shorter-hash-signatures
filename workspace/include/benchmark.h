@@ -2,7 +2,6 @@
 #define __BENCHMARK
 
 #include "mss.h"
-#include "string.h"
 
 enum BENCHMARK {
 	BENCHMARK_PREPARE,

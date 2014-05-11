@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include "benchmark.h"
-#include "mss.h"
 
 #ifdef PLATFORM_TELOSB
 #include "sponge.h"
@@ -10,33 +9,30 @@
 #include "mmo.c"
 #endif
 
+//Merkle sign and verify aux variables
 
-unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], seedPos[LEN_BYTES(MSS_SEC_LVL)];
+unsigned char seed[LEN_BYTES(MSS_SEC_LVL)];
 unsigned char pkey[NODE_VALUE_SIZE];
 struct mss_node nodes[2];
+struct mss_node currentLeaf;
+struct mss_node authpath[MSS_HEIGHT];
 struct state_mt state;
 sponge_t sponges[2];
 
-//Merkle sign and verify aux variables
 char M[] = "Hello, world!";
-unsigned char h1[LEN_BYTES(WINTERNITZ_SEC_LVL)],h2[LEN_BYTES(WINTERNITZ_SEC_LVL)];
-short pos = 0;
-struct mss_node currentLeaf;
-struct mss_node authpath[MSS_HEIGHT];
+unsigned char h1[LEN_BYTES(WINTERNITZ_SEC_LVL)];
+short j;
 unsigned char sig[WINTERNITZ_L*LEN_BYTES(WINTERNITZ_SEC_LVL)];
-
 unsigned char aux[LEN_BYTES(WINTERNITZ_SEC_LVL)];
 
 
 void do_benchmark(enum BENCHMARK phase) {
-	short j;
-
+	
 	switch(phase) {
 		case BENCHMARK_PREPARE:
 			for (j = 0; j < LEN_BYTES(MSS_SEC_LVL); j++) {
 				seed[j] = 0xA0 ^ j; // sample private key, for debugging only
 			}
-
 			sinit(&sponges[0], MSS_SEC_LVL);
 			sinit(&sponges[1], MSS_SEC_LVL);
 
@@ -57,12 +53,11 @@ void do_benchmark(enum BENCHMARK phase) {
 			sinit(&sponges[0], MSS_SEC_LVL);
 			sinit(&sponges[1], MSS_SEC_LVL);
 
-			pos = 0;
 			mss_keygen(&sponges[0], &sponges[1], seed, &nodes[0], &nodes[1], &state, pkey);
-			mss_sign(&state, seed, &currentLeaf, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], h1, pos, &nodes[0],
+			mss_sign(&state, seed, &currentLeaf, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], h1, 0, &nodes[0],
 				 &nodes[1], sig, authpath);
 		case BENCHMARK_MSS_VERIFY:
-		        mss_verify(authpath, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], h2, pos, sig, aux,
+		        mss_verify(authpath, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], h1, 0, sig, aux,
 				   &currentLeaf, pkey);
 			break;
 		case BENCHMARK_WINTERNITZ_KEYGEN:
