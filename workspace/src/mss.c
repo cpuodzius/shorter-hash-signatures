@@ -185,7 +185,7 @@ void _stack_pop(struct mss_node stack[MSS_KEEP_SIZE], short *index, struct mss_n
 #endif
 }
 
-void _get_parent(sponge_t *h, const struct mss_node *left_child, const struct mss_node *right_child, struct mss_node *parent) {
+void _get_parent(sponge_t *hash, const struct mss_node *left_child, const struct mss_node *right_child, struct mss_node *parent) {
 #if defined(DEBUG)
 	assert(_node_valid(left_child));
 	assert(_node_valid(right_child));
@@ -198,7 +198,7 @@ void _get_parent(sponge_t *h, const struct mss_node *left_child, const struct ms
 	assert(_is_left_node(left_child));
 	assert(_is_right_node(right_child));
 	assert(right_child->pos == left_child->pos + 1);
-	const unsigned char parent_height = right_child->height + 1;
+	const short parent_height = right_child->height + 1;
 	const short parent_pos = (right_child->pos / 2);
 	/*
 	printf("----- _get_parent -----\n\n");
@@ -218,7 +218,8 @@ void _get_parent(sponge_t *h, const struct mss_node *left_child, const struct ms
 	absorb(h, right_child->value, NODE_VALUE_SIZE);
 	squeeze(h, parent->value, NODE_VALUE_SIZE);
 	//*/
-    hash32(h, left_child->value, right_child->value, parent->value);
+	
+    hash32(hash, left_child->value, right_child->value, parent->value);
 
 	parent->height = left_child->height + 1;
 	parent->pos = (left_child->pos >> 1);
@@ -299,7 +300,8 @@ unsigned char _treehash_height(struct state_mt *state, unsigned char h) {
 	return height;
 }
 
-void _treehash_update(sponge_t *hash, sponge_t *pubk, struct state_mt *state, const unsigned char h, struct mss_node *node1, struct mss_node *node2, const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
+void _treehash_update(sponge_t *hash, sponge_t *pubk, struct state_mt *state, const unsigned char h, struct mss_node *node1, struct mss_node *node2, 
+                      const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
 
 
 	if(h < MSS_TREEHASH_SIZE-1 && (state->treehash_seed[h] >= 11*(1<<h)) && (((state->treehash_seed[h] - 11*(1<<h)) % (1<<(2+h))) == 0) ) {
@@ -313,7 +315,7 @@ void _treehash_update(sponge_t *hash, sponge_t *pubk, struct state_mt *state, co
 		_create_leaf(hash, pubk, node1, state->treehash_seed[h], seed);
 	}
 
-	if( (state->treehash_seed[h] >= 11*(1<<(h-1))) && ((state->treehash_seed[h]-11*(1<<(h-1))) % (1<<(h+1)) ==0) ) {
+	if( h > 0 && (state->treehash_seed[h] >= 11*(1<<(h-1))) && ((state->treehash_seed[h]-11*(1<<(h-1))) % (1<<(h+1)) ==0) ) {
 		state->store[h-1].height = 0;
 		state->store[h-1].pos = state->treehash_seed[h];
 		memcpy(state->store[h-1].value,node1->value,NODE_VALUE_SIZE);
@@ -444,8 +446,8 @@ void mss_keygen(sponge_t *hash, sponge_t *pubk, unsigned char seed[LEN_BYTES(MSS
 }
 
 void _nextAuth(struct state_mt *state, struct mss_node *rightLeaf, const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], sponge_t *hash, sponge_t *pubk, struct mss_node *node1, struct mss_node *node2, const short s) {
-	unsigned char tau = MSS_HEIGHT - 1, min, h, i, k;
-	short j;
+	short tau = MSS_HEIGHT - 1, min, h, i, j, k;
+	
 	while((s + 1) % (1 << tau) != 0)
 		tau--;
 
@@ -518,7 +520,7 @@ void print_auth_index(short auth_index[MSS_HEIGHT - 1]) {
 #endif
 
 void _get_pkey(sponge_t *hash, const struct mss_node auth[MSS_HEIGHT], struct mss_node *node, unsigned char *pkey) {
-	unsigned char h, i;
+	short i, h;
 	for(h = 0; h < MSS_HEIGHT; h++) {
 
 #if defined(DEBUG)

@@ -9,6 +9,8 @@
 #include "mmo.c"
 #endif
 
+int test_merkle_signature() {
+	
 struct mss_node nodes[2];
 struct state_mt state;
 struct mss_node currentLeaf;
@@ -16,12 +18,10 @@ struct mss_node authpath[MSS_HEIGHT];
 sponge_t sponges[2];
 unsigned char pkey[NODE_VALUE_SIZE];
 unsigned char seed[LEN_BYTES(MSS_SEC_LVL)];
-unsigned char h1[LEN_BYTES(WINTERNITZ_SEC_LVL)];
+unsigned char h1[LEN_BYTES(WINTERNITZ_SEC_LVL)], h2[LEN_BYTES(WINTERNITZ_SEC_LVL)];
 unsigned char sig[WINTERNITZ_L*LEN_BYTES(WINTERNITZ_SEC_LVL)];
 unsigned char aux[LEN_BYTES(WINTERNITZ_SEC_LVL)];
-short errors, j;
-
-int test_merkle_signature() {
+short errors, j;	
 
     char M[] = "Hello, world!";
 
@@ -31,6 +31,7 @@ int test_merkle_signature() {
 	}
 	sinit(&sponges[0], MSS_SEC_LVL);
 	sinit(&sponges[1], MSS_SEC_LVL);
+	DM_init(&sponges[0]);
 
 	// Compute Merkle Public Key
 	mss_keygen(&sponges[0] , &sponges[1], seed, &nodes[0], &nodes[1], &state, pkey);
@@ -41,8 +42,8 @@ int test_merkle_signature() {
 #ifdef DEBUG
 	    printf("Testing merkle signature for leaf %d ...", j);
 #endif
-	    mss_sign(&state, seed, &currentLeaf, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], h1, j, &nodes[0], &nodes[1], sig, authpath);
-        if(mss_verify(authpath, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], h1, j, sig, aux, &currentLeaf, pkey) == MSS_OK) {
+	    mss_sign(&state, seed, &currentLeaf, (const char *)M, strlen(M)+1, &sponges[0], &sponges[1], h1, j, &nodes[0], &nodes[1], sig, authpath);
+        if(mss_verify(authpath, currentLeaf.value, (const char *)M, strlen(M)+1, &sponges[0], &sponges[1], h2, j, sig, aux, &currentLeaf, pkey) == MSS_OK) {
 #ifdef DEBUG
             printf(" [OK]\n");
 #endif

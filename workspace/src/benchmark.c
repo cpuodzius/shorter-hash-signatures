@@ -36,6 +36,7 @@ void do_benchmark(enum BENCHMARK phase) {
 			}
 			sinit(&sponges[0], MSS_SEC_LVL);
 			sinit(&sponges[1], MSS_SEC_LVL);
+			DM_init(&sponges[0]);
 
 			mss_keygen(&sponges[0] , &sponges[1], seed, &nodes[0], &nodes[1], &state, pkey);
 			break;
@@ -53,6 +54,7 @@ void do_benchmark(enum BENCHMARK phase) {
 			}
 			sinit(&sponges[0], MSS_SEC_LVL);
 			sinit(&sponges[1], MSS_SEC_LVL);
+			DM_init(&sponges[0]);
 
 			mss_keygen(&sponges[0], &sponges[1], seed, &nodes[0], &nodes[1], &state, pkey);
 			mss_sign(&state, seed, &currentLeaf, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], h1, 0, &nodes[0],

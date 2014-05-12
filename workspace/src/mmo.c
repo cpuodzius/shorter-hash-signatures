@@ -50,6 +50,10 @@ void MMO_init(mmo_t *mmo) {
     mmo->n = 0;
 
     memset(mmo->H, 0, 16);
+    //memset(mmo->IV, 0, 16);
+}
+
+void DM_init(mmo_t *mmo) {
     memset(mmo->IV, 0, 16);
 }
 
