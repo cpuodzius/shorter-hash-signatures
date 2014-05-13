@@ -13,6 +13,9 @@
 #define WINTERNITZ_SEC_LVL	128
 #define WINTERNITZ_W		2
 
+#if WINTERNITZ_W > 8
+#error the maximum w value is 8 due to chosen data type in this implementation
+#endif
 
 #define WINTERNITZ_l1 ((WINTERNITZ_SEC_LVL + WINTERNITZ_W - 1) / WINTERNITZ_W)
 #if (WINTERNITZ_W == 2)
@@ -29,9 +32,9 @@
 //#define GET_CHUNK(x, startbit) ((x & (unsigned)( (unsigned)((1 << WINTERNITZ_W) - 1) << startbit)) >> startbit)
 #define LEN_BYTES(len_bits) ((len_bits+7)/8)
 
-void winternitz_keygen(const unsigned char s[], const unsigned short m, sponge_t *pubk, sponge_t *hash, unsigned char v[]);
-void winternitz_sign(const unsigned char s[], const unsigned char v[], const unsigned short m, const char *M, unsigned short len, sponge_t *hash, unsigned char h[], unsigned char sig[]);
-unsigned char winternitz_verify(const unsigned char v[], const unsigned short m, const char *M, unsigned short len, sponge_t *pubk, sponge_t *hash, unsigned char h[], const unsigned char sig[], unsigned char x[]);
+void winternitz_keygen(const unsigned char s[], const unsigned short m, sponge_t *pubk, dm_t *f, unsigned char v[]);
+void winternitz_sign(const unsigned char s[], const unsigned char v[], const unsigned short m, const char *M, unsigned short len, sponge_t *hash, dm_t *f, unsigned char h[], unsigned char sig[]);
+unsigned char winternitz_verify(const unsigned char v[], const unsigned short m, const char *M, unsigned short len, sponge_t *pubk, sponge_t *hash, dm_t *f, unsigned char h[], const unsigned char sig[], unsigned char x[]);
 
 
 #endif // __WINTERNITZ_H

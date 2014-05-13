@@ -12,8 +12,8 @@
 #define odd(x)	((x) % 2)
 
 #define MSS_SEC_LVL                     WINTERNITZ_SEC_LVL
-#define MSS_HEIGHT			8
-#define MSS_K				4
+#define MSS_HEIGHT			5
+#define MSS_K				3
 
 #if odd(MSS_HEIGHT - MSS_K)
 #error (H - K) must be even
@@ -28,7 +28,7 @@
 
 struct mss_node {
         unsigned char height;
-        short pos;
+        short index;
         unsigned char value[NODE_VALUE_SIZE];           // node's value for auth path
 };
 
@@ -44,16 +44,14 @@ struct state_mt {
 		struct mss_node store[MSS_TREEHASH_SIZE-1];
 };
 
-void init_state(struct state_mt* state);
+void mss_keygen(dm_t *hash, sponge_t *pubk, unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], struct mss_node *node1, struct mss_node *node2, struct state_mt *state, unsigned char pkey[NODE_VALUE_SIZE]);
 
-void mss_keygen(sponge_t *hash, sponge_t *pubk, unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], struct mss_node *node1, struct mss_node *node2, struct state_mt *state, unsigned char pkey[NODE_VALUE_SIZE]);
-
-void mss_sign(struct state_mt *state, const unsigned char *seed, struct mss_node *leaf, const char *M, short len,
-              sponge_t *hash, sponge_t *pubk, unsigned char *h, short pos, struct mss_node *node1, struct mss_node *node2,
+void mss_sign(struct state_mt *state, unsigned char *seed, struct mss_node *leaf, const char *M, short len,
+              sponge_t *hash, sponge_t *pubk, dm_t *f, unsigned char *h, short leaf_index, struct mss_node *node1, struct mss_node *node2,
               unsigned char *sig, struct mss_node authpath[MSS_HEIGHT]);
 
 unsigned char mss_verify(struct mss_node authpath[MSS_HEIGHT], const unsigned char *v, const char *M, short len,
-                         sponge_t *hash, sponge_t *pubk, unsigned char *h, short pos, const unsigned char *sig,
-                         unsigned char *x, struct mss_node *currentLeaf, unsigned char merklePubKey[]);
+                         sponge_t *hash, sponge_t *pubk, dm_t *f, unsigned char *h, short leaf_index, const unsigned char *sig,
+                         unsigned char *x, struct mss_node *currentLeaf, unsigned char merklePubKey[NODE_VALUE_SIZE]);
 
 #endif // __MSS_H

@@ -50,11 +50,10 @@ void MMO_init(mmo_t *mmo) {
     mmo->n = 0;
 
     memset(mmo->H, 0, 16);
-    //memset(mmo->IV, 0, 16);
 }
 
-void DM_init(mmo_t *mmo) {
-    memset(mmo->IV, 0, 16);
+void DM_init(dm_t *dm) {
+    memset(dm->AES_KEY, 0, 16);
 }
 
 void MMO_update(mmo_t *mmo, const unsigned char *M, unsigned int m) {
@@ -335,20 +334,20 @@ void MMO_hash32(mmo_t *mmo, const unsigned char M[32], unsigned char tag[16]) {
     memcpy(tag, H, 16);
 }
 
-void davies_meyer_hash16(unsigned char IV[16], const unsigned char M[16], unsigned char tag[16]) {
-    AES_encrypt(tag, M, IV);
+void davies_meyer_hash16(dm_t *dm, const unsigned char M[16], unsigned char tag[16]) {
+    AES_encrypt(tag, M, dm->AES_KEY);
 }
 
-void davies_meyer_hash32(unsigned char IV[16], const unsigned char M0[16], const unsigned char M1[16], unsigned char tag[16]) {
+void davies_meyer_hash32(dm_t *dm, const unsigned char M0[16], const unsigned char M1[16], unsigned char tag[16]) {
 
     unsigned char tmp[16];
 
     memcpy(tmp, M1, 16); // this was need because M1 and tag are the same memory address from merkle's algorithm
 
-    IV[0] = 1;
-    AES_encrypt(tag, M0, IV);
+    dm->AES_KEY[0] = 1;
+    AES_encrypt(tag, M0, dm->AES_KEY);
     tag[0] ^= 0x01;
-    IV[0] = 0;
+    dm->AES_KEY[0] = 0;
 
     AES_encrypt(tmp, tmp, tag);
 
@@ -368,6 +367,30 @@ void davies_meyer_hash32(unsigned char IV[16], const unsigned char M0[16], const
     tag[13] ^= tmp[13];
     tag[14] ^= tmp[14];
     tag[15] ^= tmp[15];
+}
+
+/*
+//Forward secure pseudo-random generator proposed in Christoph Busold's thesis
+// (out1,out2) = (AES_{seed}(counter), AES_{seed}(counter+1))
+void fsprg(unsigned char seed[16], unsigned char out1[16], unsigned char out2[16]) {
+    memset(out2, 0, 16); // out2 is used as a 16-byte vector input of AES-encrypt holding the value of counter
+    memcpy(out2, &fsprg_counter, sizeof(short));
+    AES_encrypt(out1, out2, seed);
+    fsprg_counter++;
+    memcpy(out2, &fsprg_counter, sizeof(short));
+    AES_encrypt(out2, out2, seed);
+    fsprg_counter++;
+}
+
+void fsprg_restart() {
+    fsprg_counter = 0;
+}
+//*/
+
+void prg16(short input, unsigned char seed[16], unsigned char output[16]) {
+        memset(output, 0, 16);
+        memcpy(output, &input, sizeof(short));
+        AES_encrypt(output, output, seed);
 }
 
 

@@ -16,33 +16,40 @@ void sinit(sponge_t *sponge, short seclevel) {
 }
 
 void absorb(sponge_t *sponge, const void *data, short len) {
-    if (sponge != NULL) {
+#ifdef DEBUG
+    if (sponge != NULL)
+#endif
         //blake2s_update(sponge, (uint8_t *)data, len);
         MMO_update(sponge, data, len);
-    }
 }
 
 void squeeze(sponge_t *sponge, void *digest, short len) {
-    if (sponge != NULL) {
+#ifdef DEBUG
+    if (sponge != NULL)
+#endif
         //blake2s_final(sponge, digest, len);
         MMO_final(sponge, digest);
-    }
 }
 
 void cleanup(sponge_t *sponge) {
-    if (sponge != NULL) {
+#ifdef DEBUG
+    if (sponge != NULL)
+#endif
         memset(sponge, 0, sizeof(sponge_t));
-    }
+
 }
 
-void hash16(sponge_t *sponge, const unsigned char data[16], unsigned char digest[16]) {
-    if (sponge != NULL) {	
-        davies_meyer_hash16(sponge->IV, data, digest);
-    }
+void hash16(dm_t *dm, const unsigned char data[16], unsigned char digest[16]) {
+#ifdef DEBUG
+    if (dm != NULL)
+#endif
+        davies_meyer_hash16(dm, data, digest);
+
 }
 
-void hash32(sponge_t *sponge, const unsigned char data0[16], const unsigned char data1[16], unsigned char digest[16]) {
-    if (sponge != NULL) {
-        davies_meyer_hash32(sponge->IV, data0, data1, digest);
-    }
+void hash32(dm_t *dm, const unsigned char data0[16], const unsigned char data1[16], unsigned char digest[16]) {
+#ifdef DEBUG
+    if (dm != NULL)
+#endif
+        davies_meyer_hash32(dm, data0, data1, digest);
 }
