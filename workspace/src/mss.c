@@ -233,7 +233,6 @@ void init_state(struct state_mt *state) {
 	state->stack_index = 0;
 
 	memset(state->treehash_state, TREEHASH_FINISHED, MSS_TREEHASH_SIZE);
-    memset(state->treehash_used, 1, MSS_TREEHASH_SIZE);
 	memset(state->retain_index, 0, (MSS_K-1)*sizeof(short));
 }
 
@@ -327,13 +326,12 @@ void _treehash_update(dm_t *hash, sponge_t *pubk, struct state_mt *state, const 
 		_stack_push(state->stack, &state->stack_index, node1);
 		_treehash_state(state, h, TREEHASH_RUNNING);
 	} else {
-		if((state->treehash_state[h] & TREEHASH_RUNNING) && state->treehash_used[h]) { // if treehash *is used*
+		if((state->treehash_state[h] & TREEHASH_RUNNING) && (node1->index & 1)) { // if treehash *is used*
 			*node2 = state->treehash[h];
 			_get_parent(hash, node2, node1, node1);
 			_treehash_set_tailheight(state, h, _treehash_get_tailheight(state, h) + 1);
 		}
 		state->treehash[h] = *node1;
-		state->treehash_used[h] = 1;
 		if (node1->height == h) {
 			_treehash_state(state, h, TREEHASH_FINISHED);
 		} else {
@@ -456,7 +454,6 @@ void _nextAuth(struct state_mt *state, struct mss_node *current_leaf, unsigned c
 
 			//Do Treehash_h.pop()
 			state->auth[h] = state->treehash[h];
-			state->treehash_used[h] = 0; //Consumed, so not used
 
 			if((s + 1 + 3 * (1 << h)) < (1 << MSS_HEIGHT))
 				_treehash_initialize(state, h, s + 1 + 3 * (1 << h));

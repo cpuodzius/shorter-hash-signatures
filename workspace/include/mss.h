@@ -12,8 +12,8 @@
 #define odd(x)	((x) % 2)
 
 #define MSS_SEC_LVL                     WINTERNITZ_SEC_LVL
-#define MSS_HEIGHT			5
-#define MSS_K				3
+#define MSS_HEIGHT			8
+#define MSS_K				2
 
 #if odd(MSS_HEIGHT - MSS_K)
 #error (H - K) must be even
@@ -34,7 +34,7 @@ struct mss_node {
 
 //treehash_seed: index of the seed for the treehash of height h
 struct state_mt {
-	unsigned char treehash_state[MSS_TREEHASH_SIZE], treehash_used[MSS_TREEHASH_SIZE];
+	unsigned char treehash_state[MSS_TREEHASH_SIZE];
 	short stack_index, retain_index[MSS_K-1], treehash_seed[MSS_TREEHASH_SIZE];
         struct mss_node treehash[MSS_TREEHASH_SIZE];
         struct mss_node stack[MSS_STACK_SIZE];
