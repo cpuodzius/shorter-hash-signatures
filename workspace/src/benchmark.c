@@ -69,6 +69,8 @@ void do_benchmark(enum BENCHMARK phase) {
 		    }
 			break;
 		case BENCHMARK_WINTERNITZ_KEYGEN:
+			DM_init(&f);
+			_start_seed(seed);
 			winternitz_keygen(seed, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[1], &f, nodes[1].value);
 			break;
 		case BENCHMARK_WINTERNITZ_SIGN:
@@ -78,9 +80,15 @@ void do_benchmark(enum BENCHMARK phase) {
 			winternitz_verify(nodes[1].value, LEN_BYTES(WINTERNITZ_SEC_LVL), M, strlen(M)+1, &sponges[0], &sponges[1], &f, h1, sig, aux);
 			break;
 		case BENCHMARK_HASH_CALC:
-			sinit(&sponges[0], WINTERNITZ_SEC_LVL);
-			absorb(&sponges[0], seed, LEN_BYTES(WINTERNITZ_SEC_LVL));
-			squeeze(&sponges[0], seed, LEN_BYTES(WINTERNITZ_SEC_LVL));
+			_start_seed(seed);
+			for(j = 0; j < 1000; j++) {
+				//* //MMO
+				sinit(&sponges[0], WINTERNITZ_SEC_LVL);
+				absorb(&sponges[0], seed, LEN_BYTES(WINTERNITZ_SEC_LVL));
+				squeeze(&sponges[0], seed, LEN_BYTES(WINTERNITZ_SEC_LVL));
+				//*/			
+				//hash16(&f,seed,seed);
+			}
 			break;
 	}
 }
