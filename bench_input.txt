@@ -1,6 +1,6 @@
 PLATFORM: TELOSB_CONTIKI-C
-COMMAND: make clean
-COMMAND: make TARGET=sky hashsig-app.upload
+COMMAND: python benchmark_telosb.py make
+RUN: python benchmark_telosb.py run
 H = 4, K = 2, W = 2, SEC_LVL = 128
 H = 5, K = 3, W = 2, SEC_LVL = 128
 #H = 6, K = 2, W = 2, SEC_LVL = 128

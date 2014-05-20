@@ -23,9 +23,9 @@ def read_input(basepath):
 		elif "COMMAND" in line:
 			command = line[len("COMMAND "):]
 			benchmarks[-1]["commands"].append(command)
-		elif "EXECUTABLE" in line:
-			executable = line[len("EXECUTABLE: "):-1]
-			benchmarks[-1]["executable"] = executable
+		elif "RUN" in line:
+			run = line[len("RUN: "):-1]
+			benchmarks[-1]["RUN"] = run
 		else:
 			line += ","	# Formatando para facilitar a extração
 			param = {"H": None, "K": None, "W": None, "SEC_LVL": None}
@@ -74,25 +74,36 @@ def main(argv=None):
 		platform = benchmark["platform"]
 		basepath = os.path.join(os.path.abspath(os.path.dirname(__file__)), "projects" , platform)
 		includepath = os.path.join(basepath, 'include')
-		binpath = os.path.join(basepath, 'bin')
 		for param in benchmark["params"]:
 			edit_merkletree_h(includepath, param["H"], param["K"])
 			edit_winternitz_h(includepath, param["W"], param["SEC_LVL"])
 			os.chdir(basepath)
 			for command in benchmark["commands"]:
+				#flags = "-DMSS_HEIGHT " + benchmark["H"]
+				#flags += "-DMSS_K " + benchmark["K"]
+				#flags += "-DWINTERNITZ_W " + benchmark["W"]
+				#flags += "-DWINTERNITZ_SEC_LVL " + benchmark["SEC_LVL"]
+				print command
 				os.system(command)
-			fname = benchmark["platform"] + "_SEC_LVL_" + param["SEC_LVL"] + "_W_" + param["W"] + "_H_" + param["H"] + "_K_" + param["K"] + "_" + strftime("%Y-%m-%d_%Hh%Mm%Ss", gmtime())
-			fpath = os.path.join(benchbasepath, fname)
+			dirout = os.path.join(benchbasepath, strftime("%Y-%m-%d_%Hh%Mm%Ss", gmtime()))
+			os.makedirs(dirout)
+			fname = benchmark["platform"] + "_SEC_LVL_" + param["SEC_LVL"] + "_W_" + param["W"] + "_H_" + param["H"] + "_K_" + param["K"]
+			fpath = os.path.join(dirout, fname)
 			suffix = ".txt"
 			while(os.path.isfile(fpath + suffix)):
 				suffix = "_" + str(random.randint(50000, 1000000)) + ".txt"
 			fpath += suffix
 			f = open(fpath, 'w+')
-			subprocess.call("python benchmark_telosb.py", stdout=f, shell=True)	#subprocess.call([os.path.join(binpath, benchmark["executable"])], stdout=f)			
+			if benchmark["platform"] == "PC-C":
+				binpath = os.path.join(basepath, 'bin')
+				subprocess.call(os.path.join(binpath, benchmark["RUN"]), stdout=f, shell=True)
+			else:
+				subprocess.call("python " + benchmark["RUN"], stdout=f, shell=True)			
 			f.seek(0)
 			ram = ''
 			time = ''
 			for line in f.readlines():
+				print line
 				if "Parameters" in line:
 					seclvl = line[line.find("SEC_LVL="):line.find(",", line.find("SEC_LVL"))]
 					h = line[line.find("H="):line.find(",", line.find("H="))]

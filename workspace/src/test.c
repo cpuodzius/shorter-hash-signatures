@@ -10,8 +10,6 @@
 #include "mmo.c"
 #endif
 
-int test_merkle_signature() {
-
 struct mss_node nodes[2];
 struct state_mt state;
 struct mss_node currentLeaf;
@@ -23,7 +21,10 @@ unsigned char seed[LEN_BYTES(MSS_SEC_LVL)];
 unsigned char h1[LEN_BYTES(WINTERNITZ_SEC_LVL)], h2[LEN_BYTES(WINTERNITZ_SEC_LVL)];
 unsigned char sig[WINTERNITZ_L*LEN_BYTES(WINTERNITZ_SEC_LVL)];
 unsigned char aux[LEN_BYTES(WINTERNITZ_SEC_LVL)];
-short errors, j;
+
+int test_merkle_signature() {
+
+	short errors, j;
 
     char M[] = "Hello, world!";
 

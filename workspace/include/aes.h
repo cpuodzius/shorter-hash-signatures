@@ -17,6 +17,7 @@
 #define u8 unsigned char
 #endif
 
+
 //Used to indicate that data is stored as program-memory (not RAM)
 //You may need to edit this. The following defines can be used when
 //there is EEPROM available or when an AVR device is used

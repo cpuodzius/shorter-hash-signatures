@@ -1,18 +1,22 @@
-#define NEW_PRINTF_SEMANTICS
-#include "printf.h"
-
+#ifndef READ_ENERGY 
+  #define NEW_PRINTF_SEMANTICS
+  #include "printf.h"
+#endif
 
 configuration HashSigAppC{
 }
 implementation {
-  components MainC, HashSigC, LedsC;
+  components MainC, HashSigC;
   components new TimerMilliC();
-  components PrintfC;
+
+#ifndef READ_ENERGY  
+  components PrintfC, LedsC;
   components SerialStartC;
+  HashSigC.Leds -> LedsC;
+#endif
 
   HashSigC.Boot -> MainC;
-  HashSigC.Timer -> TimerMilliC;
-  HashSigC.Leds -> LedsC;
+  HashSigC.Timer -> TimerMilliC;  
 
 }
 

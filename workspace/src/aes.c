@@ -168,7 +168,7 @@ static void unkeyedRound(u8* bl, u8 doMixColumn){
  * @param dst Pointer to the destination block
  */
 void cipherCryptB(u8* key, u8* src, u8* dst){
-	u8 i, round; 
+	u8 i, aes_round; 
 	//Loads the key into the 'k' buffer (so it is not replaced
 	//by the key evolution process) and applies the first key
 	for(i = 0 ; i < BLOCK_SIZE ; i++){
@@ -180,14 +180,14 @@ void cipherCryptB(u8* key, u8* src, u8* dst){
 	constantsOffSet  = 1;
 
     //round function applied 10 times
-    for(round = 1; round <= N_ROUNDS ; round++){
+    for(aes_round = 1; aes_round <= N_ROUNDS ; aes_round++){
 
         //Creates the key for this round
         createNextKey();
 
         //Computes a single unkeyed round.
 		//The last round does not include the multiplication by matrix D
-        unkeyedRound(dst, round < N_ROUNDS);
+        unkeyedRound(dst, aes_round < N_ROUNDS);
 
         //Applies the key for this round
 		for(i = 0 ; i < BLOCK_SIZE ; i++){
@@ -196,7 +196,7 @@ void cipherCryptB(u8* key, u8* src, u8* dst){
 
 #ifdef ENABLE_DEBUG_CIPHER
 dbsp("\nDEBUG. Round ");
-dbch(round);
+dbch(aes_round);
 dbsp("\nKey:");
 printMatrix(k);
 dbsp("\nBLock:");
@@ -216,7 +216,7 @@ printMatrix(dst);
  * @param dst Pointer to the destination block
  */
 void cipherCryptB(u8* key, u8* src, u8* dst){
-	u8 i, j, round, aux1, aux2;
+	u8 i, j, aes_round, aux1, aux2;
 	//Loads the key into the 'k' buffer (so it is not replaced
 	//by the key evolution process) and applies the first key
 	for(i = 0 ; i < BLOCK_SIZE ; i++){
@@ -228,7 +228,7 @@ void cipherCryptB(u8* key, u8* src, u8* dst){
 	constantsOffSet  = 1;
 
 	//round function
-	for(round = 0;  ; ){
+	for(aes_round = 0;  ; ){
 		
 		//----ShiftRows
 		//2nd row
@@ -250,7 +250,7 @@ void cipherCryptB(u8* key, u8* src, u8* dst){
 		createNextKey();
 
         //Checks if the final round is achieved
-		if(++round == 10){
+		if(++aes_round == 10){
 			//Final round lacks mixCollumns operation
 			for(i = 0 ; i < BLOCK_SIZE ; i++){
 				dst[i] ^= k[i];
@@ -275,7 +275,7 @@ void cipherCryptB(u8* key, u8* src, u8* dst){
 
 #ifdef ENABLE_DEBUG_CIPHER
 dbsp("\nDEBUG. Round ");
-dbch(round);
+dbch(aes_round);
 dbsp("\nKey:");
 printMatrix(k);
 dbsp("\nBLock:");
