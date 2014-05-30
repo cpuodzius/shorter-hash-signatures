@@ -8,7 +8,11 @@ ECCN 5D002 TSU - Technology / Software Unrestricted
 **************************************************************/
 
 // foreward sbox
+//#ifdef PLATFORM_TELOSB
+//static const unsigned char PROGMEM sBox[256] =   {
+//#else
 const unsigned char sbox[256] =   { 
+//#endif	
 //0     1    2      3     4    5     6     7      8    9     A      B    C     D     E     F
 0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76, //0
 0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0, //1
@@ -41,10 +45,18 @@ void expandKey(unsigned char *expandedKey,
     expandedKey[ii] = key[ii];
   for (ii=1;ii<11;ii++){
     buf1 = expandedKey[ii*16 - 4];
+/*
+#ifdef PLATFORM_TELOSB
+    expandedKey[ii*16 + 0] = sbox(expandedKey[ii*16 - 3])^expandedKey[(ii-1)*16 + 0]^Rcon[ii];
+    expandedKey[ii*16 + 1] = sbox(expandedKey[ii*16 - 2])^expandedKey[(ii-1)*16 + 1];
+    expandedKey[ii*16 + 2] = sbox(expandedKey[ii*16 - 1])^expandedKey[(ii-1)*16 + 2];
+    expandedKey[ii*16 + 3] = sbox(buf1                  )^expandedKey[(ii-1)*16 + 3];
+#else//*/
     expandedKey[ii*16 + 0] = sbox[expandedKey[ii*16 - 3]]^expandedKey[(ii-1)*16 + 0]^Rcon[ii];
     expandedKey[ii*16 + 1] = sbox[expandedKey[ii*16 - 2]]^expandedKey[(ii-1)*16 + 1];
     expandedKey[ii*16 + 2] = sbox[expandedKey[ii*16 - 1]]^expandedKey[(ii-1)*16 + 2];
     expandedKey[ii*16 + 3] = sbox[buf1                  ]^expandedKey[(ii-1)*16 + 3];
+//#endif    
     expandedKey[ii*16 + 4] = expandedKey[(ii-1)*16 + 4]^expandedKey[ii*16 + 0];
     expandedKey[ii*16 + 5] = expandedKey[(ii-1)*16 + 5]^expandedKey[ii*16 + 1];
     expandedKey[ii*16 + 6] = expandedKey[(ii-1)*16 + 6]^expandedKey[ii*16 + 2];
@@ -88,7 +100,91 @@ void aes_encr(unsigned char *state, unsigned char *expandedKey)
   unsigned char buf1, buf2, buf3, aes_round;
 
     
-  for (aes_round = 0; aes_round < 9; aes_round ++){
+  for (aes_round = 0; aes_round < 9; aes_round ++) {
+/*
+#ifdef PLATFORM_TELOSB
+    // addroundkey, sbox and shiftrows
+    // row 0
+    state[ 0]  = sbox((state[ 0] ^ expandedKey[(aes_round*16)     ]));
+    state[ 4]  = sbox((state[ 4] ^ expandedKey[(aes_round*16) +  4]));
+    state[ 8]  = sbox((state[ 8] ^ expandedKey[(aes_round*16) +  8]));
+    state[12]  = sbox((state[12] ^ expandedKey[(aes_round*16) + 12]));
+    // row 1
+    buf1 = state[1] ^ expandedKey[(aes_round*16) + 1];
+    state[ 1]  = sbox((state[ 5] ^ expandedKey[(aes_round*16) +  5]));
+    state[ 5]  = sbox((state[ 9] ^ expandedKey[(aes_round*16) +  9]));
+    state[ 9]  = sbox((state[13] ^ expandedKey[(aes_round*16) + 13]));
+    state[13]  = sbox(buf1);
+    // row 2
+    buf1 = state[2] ^ expandedKey[(aes_round*16) + 2];
+    buf2 = state[6] ^ expandedKey[(aes_round*16) + 6];
+    state[ 2]  = sbox((state[10] ^ expandedKey[(aes_round*16) + 10]));
+    state[ 6]  = sbox((state[14] ^ expandedKey[(aes_round*16) + 14]));
+    state[10]  = sbox(buf1);
+    state[14]  = sbox(buf2);
+    // row 3
+    buf1 = state[15] ^ expandedKey[(aes_round*16) + 15];
+    state[15]  = sbox((state[11] ^ expandedKey[(aes_round*16) + 11]));
+    state[11]  = sbox((state[ 7] ^ expandedKey[(aes_round*16) +  7]));
+    state[ 7]  = sbox((state[ 3] ^ expandedKey[(aes_round*16) +  3]));
+    state[ 3]  = sbox(buf1);
+    
+    // mixcolums //////////
+    // col1
+    buf1 = state[0] ^ state[1] ^ state[2] ^ state[3];
+    buf2 = state[0];
+    buf3 = state[0]^state[1]; buf3=galois_mul2(buf3); state[0] = state[0] ^ buf3 ^ buf1;
+    buf3 = state[1]^state[2]; buf3=galois_mul2(buf3); state[1] = state[1] ^ buf3 ^ buf1;
+    buf3 = state[2]^state[3]; buf3=galois_mul2(buf3); state[2] = state[2] ^ buf3 ^ buf1;
+    buf3 = state[3]^buf2;     buf3=galois_mul2(buf3); state[3] = state[3] ^ buf3 ^ buf1;
+    // col2
+    buf1 = state[4] ^ state[5] ^ state[6] ^ state[7];
+    buf2 = state[4];
+    buf3 = state[4]^state[5]; buf3=galois_mul2(buf3); state[4] = state[4] ^ buf3 ^ buf1;
+    buf3 = state[5]^state[6]; buf3=galois_mul2(buf3); state[5] = state[5] ^ buf3 ^ buf1;
+    buf3 = state[6]^state[7]; buf3=galois_mul2(buf3); state[6] = state[6] ^ buf3 ^ buf1;
+    buf3 = state[7]^buf2;     buf3=galois_mul2(buf3); state[7] = state[7] ^ buf3 ^ buf1;
+    // col3
+    buf1 = state[8] ^ state[9] ^ state[10] ^ state[11];
+    buf2 = state[8];
+    buf3 = state[8]^state[9];   buf3=galois_mul2(buf3); state[8] = state[8] ^ buf3 ^ buf1;
+    buf3 = state[9]^state[10];  buf3=galois_mul2(buf3); state[9] = state[9] ^ buf3 ^ buf1;
+    buf3 = state[10]^state[11]; buf3=galois_mul2(buf3); state[10] = state[10] ^ buf3 ^ buf1;
+    buf3 = state[11]^buf2;      buf3=galois_mul2(buf3); state[11] = state[11] ^ buf3 ^ buf1;
+    // col4
+    buf1 = state[12] ^ state[13] ^ state[14] ^ state[15];
+    buf2 = state[12];
+    buf3 = state[12]^state[13]; buf3=galois_mul2(buf3); state[12] = state[12] ^ buf3 ^ buf1;
+    buf3 = state[13]^state[14]; buf3=galois_mul2(buf3); state[13] = state[13] ^ buf3 ^ buf1;
+    buf3 = state[14]^state[15]; buf3=galois_mul2(buf3); state[14] = state[14] ^ buf3 ^ buf1;
+    buf3 = state[15]^buf2;      buf3=galois_mul2(buf3); state[15] = state[15] ^ buf3 ^ buf1;    
+
+  }
+  // 10th round without mixcols
+  state[ 0]  = sbox((state[ 0] ^ expandedKey[(aes_round*16)     ]));
+  state[ 4]  = sbox((state[ 4] ^ expandedKey[(aes_round*16) +  4]));
+  state[ 8]  = sbox((state[ 8] ^ expandedKey[(aes_round*16) +  8]));
+  state[12]  = sbox((state[12] ^ expandedKey[(aes_round*16) + 12]));
+  // row 1
+  buf1 = state[1] ^ expandedKey[(aes_round*16) + 1];
+  state[ 1]  = sbox((state[ 5] ^ expandedKey[(aes_round*16) +  5]));
+  state[ 5]  = sbox((state[ 9] ^ expandedKey[(aes_round*16) +  9]));
+  state[ 9]  = sbox((state[13] ^ expandedKey[(aes_round*16) + 13]));
+  state[13]  = sbox(buf1);
+  // row 2
+  buf1 = state[2] ^ expandedKey[(aes_round*16) + 2];
+  buf2 = state[6] ^ expandedKey[(aes_round*16) + 6];
+  state[ 2]  = sbox((state[10] ^ expandedKey[(aes_round*16) + 10]));
+  state[ 6]  = sbox((state[14] ^ expandedKey[(aes_round*16) + 14]));
+  state[10]  = sbox(buf1);
+  state[14]  = sbox(buf2);
+  // row 3
+  buf1 = state[15] ^ expandedKey[(aes_round*16) + 15];
+  state[15]  = sbox((state[11] ^ expandedKey[(aes_round*16) + 11]));
+  state[11]  = sbox((state[ 7] ^ expandedKey[(aes_round*16) +  7]));
+  state[ 7]  = sbox((state[ 3] ^ expandedKey[(aes_round*16) +  3]));
+  state[ 3]  = sbox(buf1);
+#else //*/
     // addroundkey, sbox and shiftrows
     // row 0
     state[ 0]  = sbox[(state[ 0] ^ expandedKey[(aes_round*16)     ])];
@@ -169,7 +265,9 @@ void aes_encr(unsigned char *state, unsigned char *expandedKey)
   state[15]  = sbox[(state[11] ^ expandedKey[(aes_round*16) + 11])];
   state[11]  = sbox[(state[ 7] ^ expandedKey[(aes_round*16) +  7])];
   state[ 7]  = sbox[(state[ 3] ^ expandedKey[(aes_round*16) +  3])];
-  state[ 3]  = sbox[buf1];
+  state[ 3]  = sbox[buf1];  
+//#endif  
+  
   // last addroundkey
   state[ 0]^=expandedKey[160];
   state[ 1]^=expandedKey[161];
@@ -190,7 +288,7 @@ void aes_encr(unsigned char *state, unsigned char *expandedKey)
 } 
 
 // encrypt
-void aes_encrypt(unsigned char *state,
+void ti_aes_encrypt(unsigned char *state,
                  unsigned char *key)
 {
     unsigned char expandedKey[176];

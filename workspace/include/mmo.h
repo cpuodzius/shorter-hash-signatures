@@ -2,15 +2,21 @@
 #define __MMO_H
 
 #ifdef PLATFORM_TELOSB
+#ifdef AES_ASM
+#include "aes.h"
+#else
 //#include "cc2420-aes.h"
 //#include "cc2420-aes.c"
-#include "TI_aes.h"
-#include "TI_aes.c"
 //#include "aes.h"
 //#include "aes.c"
+#include "TI_aes.h"
+//#include "TI_aes_128_encr_only.h"
+//#include "aes_avr.c"
+#endif
 #else
 //#include "aes.h"
 #include "TI_aes.h"
+//#include "TI_aes_128_encr_only.h"
 #endif
 
 
@@ -50,8 +56,8 @@ void davies_meyer_hash32(dm_t *dm, const unsigned char M0[16], const unsigned ch
 
 //forward secure pseudo-random generator
 //short fsprg_counter = 0;
-void fsprg(unsigned char seed[16], unsigned char out1[16], unsigned char out2[32]);
-void fsprg_restart();
+//void fsprg(unsigned char seed[16], unsigned char out1[16], unsigned char out2[32]);
+//void fsprg_restart();
 
 void prg16(short input, unsigned char seed[16], unsigned char output[16]);
 

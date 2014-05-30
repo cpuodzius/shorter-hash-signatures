@@ -1,0 +1,25 @@
+SRC=src/winternitz.c src/mss.c src/util.c src/benchmark.c src/test.c src/mmo.c src/sponge.c 
+#SRC+= src/TI_aes.c #src/TI_aes_128_encr_only.c src/TI_aes.c
+ASRC=src/avr-asm-macros.S src/aes_sbox-asm.S src/aes_keyschedule-asm.S src/aes_enc-asm.S
+ASFLAGS=
+OBJ=$(SRC:.c=.o) $(ASRC:.S=.o)
+OUT=lib/libhashsigs.a
+INCLUDES= -I. -Iinclude
+LDFLAGS=-g
+.SUFFIXES: .c
+CC=avr-gcc
+CFLAGS=-std=c99 -O3 -Wall -pedantic -I include -mmcu=atmega128
+CFLAGS += -DPLATFORM_TELOSB 
+CFLAGS += -DAES_ASM
+AR=avr-ar
+ALL_ASFLAGS=-mmcu=atmega128 -I. -x assembler-with-cpp $(ASFLAGS)
+default: $(OUT)
+.c.o:
+	$(CC) $(INCLUDES) $(CFLAGS) -c $< -o $@
+%.o : %.S
+	$(CC) -c $(ALL_ASFLAGS) $< -o $@ 
+$(OUT): $(OBJ)
+	$(AR) rcs $(OUT) $(OBJ)
+ 
+clean:
+	rm -f $(OBJ) $(OUT) Makefile.bak

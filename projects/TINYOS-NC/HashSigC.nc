@@ -5,10 +5,8 @@
 
 //*
 #include "benchmark.h"
-#include "benchmark.c"
 /*/
 #include "test.h"
-#include "test.c"
 //*/
 
 module HashSigC {
@@ -35,10 +33,10 @@ implementation {
 		ret = do_test(TEST_MSS_SIGN); 
 		printf("Errors after tests: %lu\n", ret);
 		printf("DONE \n");
-		printfflush();
+		printfflush();		
 
-		/*/ //Run the specified benchmark		
-
+		/*/ //Run the specified benchmark
+		
 #ifndef READ_ENERGY
 		call Leds.set(7);
 
@@ -48,7 +46,7 @@ implementation {
 		  
 		t1 = call Timer.getNow();
 #endif
-
+		benchs = 1;
 		/*
 		benchs = 1000;
 		do_benchmark(BENCHMARK_AES_CALC, benchs);
@@ -56,19 +54,18 @@ implementation {
 		benchs = 1000;
 		do_benchmark(BENCHMARK_HASH_CALC, benchs);
 		/*
-		do_benchmark(BENCHMARK_WINTERNITZ_KEYGEN);
+		do_benchmark(BENCHMARK_WINTERNITZ_KEYGEN,benchs);
 		/*
-		do_benchmark(BENCHMARK_WINTERNITZ_SIGN);
+		do_benchmark(BENCHMARK_WINTERNITZ_SIGN,benchs);
 		/*
-		do_benchmark(BENCHMARK_WINTERNITZ_VERIFY);
+		do_benchmark(BENCHMARK_WINTERNITZ_VERIFY,benchs);
 		/*
-		do_benchmark(BENCHMARK_MSS_KEYGEN);  
+		do_benchmark(BENCHMARK_MSS_KEYGEN,benchs);  
 		/*/
-		benchs = 1;
 		do_benchmark(BENCHMARK_MSS_SIGN, benchs);
 		/*
-		do_benchmark(BENCHMARK_MSS_VERIFY);
-		//*/
+		do_benchmark(BENCHMARK_MSS_VERIFY,benchs);
+		/*/
 
 #ifndef READ_ENERGY
 		t2 = call Timer.getNow();
@@ -78,7 +75,7 @@ implementation {
 		printf("DONE \n");
 		printfflush();
 #endif
-		//*/
+		//*/		
 	}
 
 	event void Boot.booted() {
@@ -86,13 +83,12 @@ implementation {
 		do_benchmark(BENCHMARK_PREPARE, 1);
 		//do_benchmark(BENCHMARK_WINTERNITZ_SIGN,1);
 		//do_benchmark(BENCHMARK_MSS_PREPARE_VERIFY,1);
+		//do_benchmark(BENCHMARK_AES_CALC,1);
 
-		//printf("Oi!\n");
-		//printfflush();
 		//call Leds.led2On();
-		call Timer.startOneShot(2000);
+		call Timer.startOneShot(3000);
 	}
-	
+
 	event void Timer.fired() {				
 		run();
 	}
