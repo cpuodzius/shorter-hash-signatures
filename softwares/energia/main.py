@@ -3,13 +3,13 @@
 import sys
 import os
 from PyQt4 import QtGui
-from gui import Ui_MainWindow
+from gui import Ui_Sembei
 
 class GUI(QtGui.QMainWindow):
 
     def __init__(self):
         super(GUI, self).__init__()
-        self.ui=Ui_MainWindow()
+        self.ui=Ui_Sembei()
         self.ui.setupUi(self)
         self.show()
 
