@@ -1,7 +1,7 @@
 //#include <stdio.h>
 //#include <stdint.h>
 #include "benchmark.h"
-//#include <string.h>
+#include <string.h>
 
 #ifdef PLATFORM_TELOSB
 #include "sponge.h"
@@ -49,12 +49,12 @@ void _start_seed(unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
     }
 }
 
-void do_benchmark(enum BENCHMARK phase, short benchs) {	
+void do_benchmark(enum BENCHMARK phase, short benchs) {
 	switch(phase) {
 		case BENCHMARK_PREPARE:
 			sinit(&hash_mmo, MSS_SEC_LVL);
 			DM_init(&f_bench);
-			mss_keygen(&f_bench, &hash_mmo, seed_bench, &nodes[0], &nodes[1], &state_bench, pkey_bench);			
+			mss_keygen(&f_bench, &hash_mmo, seed_bench, &nodes[0], &nodes[1], &state_bench, pkey_bench);
 			break;
 		case BENCHMARK_MSS_KEYGEN:
 			mss_keygen(&f_bench, &hash_mmo, seed_bench, &nodes[0], &nodes[1], &state_bench, pkey_bench);
@@ -96,7 +96,7 @@ void do_benchmark(enum BENCHMARK phase, short benchs) {
 				sinit(&hash_mmo, WINTERNITZ_SEC_LVL);
 				absorb(&hash_mmo, seed_bench, LEN_BYTES(WINTERNITZ_SEC_LVL));
 				squeeze(&hash_mmo, seed_bench, LEN_BYTES(WINTERNITZ_SEC_LVL));
-				//*/			
+				//*/
 				//hash16(&f_bench,seed_bench,seed_bench);
 			}
 			break;
@@ -106,7 +106,7 @@ void do_benchmark(enum BENCHMARK phase, short benchs) {
 			//res[4] = 0x02; res[5] = 0xdc; res[6] = 0x09; res[7] = 0xfb;
 			//res[8] = 0xdc; res[9] = 0x11; res[10] = 0x85; res[11] = 0x97;
 			//res[12] = 0x19; res[13] = 0x6a; res[14] = 0x0b; res[15] = 0x32;
-			
+
 			//memcpy(local_key,key_bench,16);
 			//Display("key", key_bench, 16);
 			//Display("plain", plaintext_bench, 16);
@@ -120,7 +120,7 @@ void do_benchmark(enum BENCHMARK phase, short benchs) {
 			//Display("cipher", ciphertext_bench, 16);
 
 			//printfflush();
-			
+
 			break;
 	}
 }

@@ -28,7 +28,7 @@ void AES_encrypt(unsigned char ciphertext[16], const unsigned char plaintext[16]
 		cc2420_aes_cipher(ciphertext, 16, 0); // ct will be overwritten with the computed ciphertext
 		//for (i = 0; i < 16; i++) printf(" %02X", plaintext[i]);
 		//printf("\n");
-	
+
 	#elif defined(AES_ASM)
 			aes128_ctx_t ctx_mmo; // the context where the round keys are stored
 			aes128_init(key, &ctx_mmo); // generating the round keys from the 128 bit key
@@ -52,11 +52,11 @@ void AES_encrypt(unsigned char ciphertext[16], const unsigned char plaintext[16]
 
 #else
 	//cipherCryptB((u8*) key, (u8*) plaintext, ciphertext);
-	
+
 	unsigned char local_key[16];
 	memcpy(local_key,key,16);
 	memcpy(ciphertext, plaintext, 16); // ciphertext saves the plaintext
-	aes_encrypt(ciphertext, local_key);  // ciphertext is overwritten with its final value
+	ti_aes_encrypt(ciphertext, local_key); // ciphertext is overwritten with its final value
 #endif
 
 }

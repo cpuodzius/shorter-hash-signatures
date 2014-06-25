@@ -368,8 +368,8 @@ void _retain_pop(struct state_mt *state, struct mss_node *node, short h) {
 	memcpy_P(&node->index,&retain_pos[index],1);
 	memcpy_P(node->value,&retain_values[index],NODE_VALUE_SIZE);
 #else
-	*node = state->retain[index];	
-#endif	
+	*node = state->retain[index];
+#endif
 	state->retain_index[h - (MSS_HEIGHT - MSS_K)]++;
 
 #if defined(DEBUG)
@@ -414,7 +414,7 @@ void mss_keygen(dm_t *hash, sponge_t *pubk, unsigned char seed[LEN_BYTES(MSS_SEC
 
 	for(pos = 0; pos < (1 << MSS_HEIGHT); pos++) {
         _create_leaf(hash, pubk, node1, pos, seed);
-	
+
 #if defined(DEBUG) && VERBOSE > 2
 		printf("h=%d, pos=%d\n", node1->height, node1->pos);
 		Display("Node: ", node1->value, NODE_VALUE_SIZE);
@@ -674,8 +674,8 @@ int main(int argc, char *argv[]) {
 
 		Display(" Merkle Tree (pkey)\n", pkey, NODE_VALUE_SIZE);
 
-		mss_sign(&state, seed, &currentLeaf, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], &f, h1, i, &nodes[0], &nodes[1], sig, authpath);
-		assert(mss_verify(authpath, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], &f, h2, i, sig, aux, &currentLeaf, pkey) == MSS_OK);
+		mss_sign(&state, seed, &currentLeaf, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &f, h1, i, &nodes[0], &nodes[1], sig, authpath);
+		assert(mss_verify(authpath, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &f, h2, i, sig, aux, &currentLeaf, pkey) == MSS_OK);
 
 		printf("--------------- First authentication path ---------------\n");
 		print_auth(&state);
@@ -685,8 +685,8 @@ int main(int argc, char *argv[]) {
 			printf("\n--------------- s = %d ---------------\n", j);
 			printf("Authentication path for %dth leaf\n", j + 1);
 
-			mss_sign(&state, seed, &currentLeaf, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], &f, h1, j+1, &nodes[0], &nodes[1], sig, authpath);
-			assert(mss_verify(authpath, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &sponges[1], &f, h2, j+1, sig, aux, &currentLeaf, pkey) == MSS_OK);
+			mss_sign(&state, seed, &currentLeaf, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &f, h1, j+1, &nodes[0], &nodes[1], sig, authpath);
+			assert(mss_verify(authpath, currentLeaf.value, M, LEN_BYTES(WINTERNITZ_SEC_LVL), &sponges[0], &f, h2, j+1, sig, aux, &currentLeaf, pkey) == MSS_OK);
 
 			print_auth(&state);
 			print_auth_index(auth_index);
