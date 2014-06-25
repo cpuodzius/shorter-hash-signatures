@@ -27,7 +27,7 @@ unsigned char sig_test[WINTERNITZ_L*LEN_BYTES(WINTERNITZ_SEC_LVL)];
 unsigned char aux[LEN_BYTES(WINTERNITZ_SEC_LVL)];
 
 int test_merkle_signature() {
-	
+
 	short errors, j;
 
 	char M[] = "Hello, world!";
@@ -40,9 +40,11 @@ int test_merkle_signature() {
 	DM_init(&f_test);
 
 #if MSS_HEIGHT != 10 || (MSS_HEIGHT == 10 && defined(MSS_CALC_RETAIN))
-	// Compute Merkle Public Key
+	// Compute Merkle Public Key and TreeHash state
 	mss_keygen(&f_test, &hash_mmo, seed_test, &nodes[0], &nodes[1], &state_test, pkey_test);
-#endif	
+#endif
+
+    print_retain(&state_test);
 
 	//Sign and verify for all j-th authentication paths
 	errors = 0;

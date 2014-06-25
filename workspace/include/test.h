@@ -2,6 +2,7 @@
 #define __TEST
 
 #include "mss.h"
+#include "util.h"
 
 enum TEST {
 	TEST_MSS_SIGN,

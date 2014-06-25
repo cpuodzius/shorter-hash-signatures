@@ -56,3 +56,25 @@ short Comp(const unsigned char *u, short ud, const unsigned char *v, short vd) {
     return 0;
 }
 
+void display_value(const char *tag, const unsigned char *u, unsigned short n) {
+    unsigned short i;
+    printf("{");
+    for (i = 0; i < n; i++) {
+        printf("0x%02x", u[i]);
+        if(i < n-1)
+            printf(",");
+    }
+    printf("},\n");
+}
+
+void print_retain(const struct state_mt *state) {
+	short index;
+	printf("\nRetain\n");
+	for(index = 0; index < MSS_RETAIN_SIZE; index++) {
+        //printf("\tNode[%d, %d]", state->retain[index].height, state->retain[index].index);
+        //printf("0x%02x,", state->retain[index].height);
+        printf("0x%02x,", state->retain[index].index);
+        //display_value("", state->retain[index].value, NODE_VALUE_SIZE);
+	}
+}
+
