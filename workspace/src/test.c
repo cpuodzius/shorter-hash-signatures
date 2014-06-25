@@ -16,17 +16,21 @@ struct mss_node currentLeaf_test;
 struct mss_node authpath_test[MSS_HEIGHT];
 mmo_t hash_mmo;
 dm_t f_test;
+#if MSS_HEIGHT == 10 && !defined(MSS_CALC_RETAIN)
+unsigned char pkey_test[NODE_VALUE_SIZE] =        {0xA6,0xC5,0xE5,0xE5,0xBB,0xEA,0x7F,0x31,0x5D,0x11,0x33,0x87,0x7A,0x95,0x45,0x74};
+#else
 unsigned char pkey_test[NODE_VALUE_SIZE];
+#endif
 unsigned char seed_test[LEN_BYTES(MSS_SEC_LVL)];
-unsigned char h1[LEN_BYTES(WINTERNITZ_SEC_LVL)], h2[LEN_BYTES(WINTERNITZ_SEC_LVL)];
+unsigned char h1[LEN_BYTES(WINTERNITZ_N)], h2[LEN_BYTES(WINTERNITZ_N)];
 unsigned char sig_test[WINTERNITZ_L*LEN_BYTES(WINTERNITZ_SEC_LVL)];
 unsigned char aux[LEN_BYTES(WINTERNITZ_SEC_LVL)];
 
 int test_merkle_signature() {
-
+	
 	short errors, j;
 
-    char M[] = "Hello, world!";
+	char M[] = "Hello, world!";
 
 	// Set seed
 	for (j = 0; j < LEN_BYTES(MSS_SEC_LVL); j++) {
@@ -35,8 +39,10 @@ int test_merkle_signature() {
 	sinit(&hash_mmo, MSS_SEC_LVL);
 	DM_init(&f_test);
 
+#if MSS_HEIGHT != 10 || (MSS_HEIGHT == 10 && defined(MSS_CALC_RETAIN))
 	// Compute Merkle Public Key
 	mss_keygen(&f_test, &hash_mmo, seed_test, &nodes[0], &nodes[1], &state_test, pkey_test);
+#endif	
 
 	//Sign and verify for all j-th authentication paths
 	errors = 0;

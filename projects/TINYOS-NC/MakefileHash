@@ -1,4 +1,4 @@
-SRC=src/winternitz.c src/mss.c src/util.c src/benchmark.c src/test.c src/mmo.c src/sponge.c 
+SRC=src/winternitz.c src/benchmark.c src/mmo.c src/sponge.c src/test.c src/mss.c #src/util.c
 #SRC+= src/TI_aes.c #src/TI_aes_128_encr_only.c src/TI_aes.c
 ASRC=src/avr-asm-macros.S src/aes_sbox-asm.S src/aes_keyschedule-asm.S src/aes_enc-asm.S
 ASFLAGS=
@@ -8,9 +8,11 @@ INCLUDES= -I. -Iinclude
 LDFLAGS=-g
 .SUFFIXES: .c
 CC=avr-gcc
-CFLAGS=-std=c99 -O3 -Wall -pedantic -I include -mmcu=atmega128
-CFLAGS += -DPLATFORM_TELOSB 
+CFLAGS=-std=c99 -Os -Wall -pedantic -I include -mmcu=atmega128
+CFLAGS += -DMSS_HEIGHT=10 -DMSS_K=8 -DWINTERNITZ_W=2
+CFLAGS += -DPLATFORM_TELOSB
 CFLAGS += -DAES_ASM
+#CFLAGS += -DMSS_CALC_RETAIN
 AR=avr-ar
 ALL_ASFLAGS=-mmcu=atmega128 -I. -x assembler-with-cpp $(ASFLAGS)
 default: $(OUT)

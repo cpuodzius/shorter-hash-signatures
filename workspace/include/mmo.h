@@ -2,21 +2,18 @@
 #define __MMO_H
 
 #ifdef PLATFORM_TELOSB
-#ifdef AES_ASM
-#include "aes.h"
+	#ifdef AES_HW
+		#include "cc2420-aes.h"
+	#elif defined(AES_ASM)
+		#include "aes.h"
+	#else
+		#include "TI_aes.h"
+		//#include "TI_aes_128_encr_only.h"
+		//#include "aes_avr.c"
+	#endif
 #else
-//#include "cc2420-aes.h"
-//#include "cc2420-aes.c"
-//#include "aes.h"
-//#include "aes.c"
-#include "TI_aes.h"
-//#include "TI_aes_128_encr_only.h"
-//#include "aes_avr.c"
-#endif
-#else
-//#include "aes.h"
-#include "TI_aes.h"
-//#include "TI_aes_128_encr_only.h"
+	#include "TI_aes.h"
+	//#include "TI_aes_128_encr_only.h"
 #endif
 
 

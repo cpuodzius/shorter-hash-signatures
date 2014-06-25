@@ -25,16 +25,16 @@ void winternitz_keygen(const unsigned char s[/*m*/], const unsigned short m, mmo
     unsigned char i, j;
 
 #ifdef DEBUG
-#if WINTERNITZ_W == 2
-	assert(10 <= m && m <= 21); // lower bound: min sec level (80 bits), upper bound: max checksum count must fit one byte
-#elif WINTERNITZ_W == 4
-    // NB: for 9 <= m <= 136, the value of ceil(lg(15*2*m)/8) is simply 3 nybbles.
-    assert(10 <= m && m <= 127); // lower bound: min sec level (80 bits), upper bound: max nybble count 2*(m-1)+3 must fit one unsigned char
-#elif WINTERNITZ_W == 8
-    // NB: for 2 <= m <= 257, the value of ceil(lg(255*m)/8) is simply 2 unsigned chars.
-    //TODO: fazer assert
-#endif
-    assert((8 / WINTERNITZ_W)*(unsigned char)m + WINTERNITZ_CHECKSUM_SIZE == WINTERNITZ_L); // chunk count, including checksum
+	#if WINTERNITZ_W == 2
+		assert(10 <= m && m <= 21); // lower bound: min sec level (80 bits), upper bound: max checksum count must fit one byte
+	#elif WINTERNITZ_W == 4
+	    // NB: for 9 <= m <= 136, the value of ceil(lg(15*2*m)/8) is simply 3 nybbles.
+	    assert(10 <= m && m <= 127); // lower bound: min sec level (80 bits), upper bound: max nybble count 2*(m-1)+3 must fit one unsigned char
+	#elif WINTERNITZ_W == 8
+	    // NB: for 2 <= m <= 257, the value of ceil(lg(255*m)/8) is simply 2 unsigned chars.
+	    //TODO: do the assert
+	#endif
+	    assert((8 / WINTERNITZ_W)*(unsigned char)m + WINTERNITZ_CHECKSUM_SIZE == WINTERNITZ_L); // chunk count, including checksum
 #endif
 
     sinit(pubk, WINTERNITZ_SEC_LVL);
@@ -96,12 +96,14 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
     unsigned char i;
     unsigned short checksum = 0;
 
-    memset(h,2,16); //TODO: change this to a true hash
-
-    //sinit(hash, WINTERNITZ_SEC_LVL);
-    //absorb(hash, v, m); // public key used as random nonce!!!
-    //absorb(hash, M, len); // followed by the message in this implementation (actually followed by the treetop key, and then by the message, in the full scheme)
-    //squeeze(hash, h, m); // NB: hash length is m here, but was 2*m in the predecessor scheme
+    //*
+    memset(h,2,LEN_BYTES(WINTERNITZ_N)); //TODO: change this to a true hash
+	/*/
+    sinit(hash, WINTERNITZ_SEC_LVL);
+    absorb(hash, v, m); // public key used as random nonce!!!
+    absorb(hash, M, len); // followed by the message in this implementation (actually followed by the treetop key, and then by the message, in the full scheme)
+    squeeze(hash, h, m); // NB: hash length is m here, but was 2*m in the predecessor scheme
+    //*/ 
     //sq++;
 
 
@@ -110,7 +112,7 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
 #endif
 
     // data part:
-    for (i = 0; i < (unsigned char)m; i++) { // NB: hash length is m here, but was 2*m in the predecessor scheme
+    for (i = 0; i < LEN_BYTES(WINTERNITZ_N); i++) { // NB: hash length is m here, but was 2*m in the predecessor scheme
         // 0 part:
         memset(sig, 0, 16); sig[0] = (i << 2) + 0; // H(s, 4i + 0) // 0 chunk index
         AES_encrypt(sig, sig, (unsigned char *)s); //sig = s_i = AES_s(i) // sig holds the private block for i-th "0" chunk
@@ -208,7 +210,7 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
     }
 
     // checksum part:
-    for (i = 0; i < 4; i++) { // checksum
+    for (i = 0; i < WINTERNITZ_l2; i++) { // checksum
         memset(sig, 0, 16); sig[0] = (m << 2) + i; // H(s, 4m + i) // i-th chunk index
         AES_encrypt(sig, sig, (unsigned char *)s);  //sig = s_i = AES_s(i) // sig holds the private block for i-th checksum chunk
         //sq++;
@@ -436,18 +438,20 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
     assert(10 <= m && m <= 21); // lower bound: min sec level (80 bits), upper bound: max checksum count must fit one byte
 #endif
 
-    memset(h,2,16); //TODO: change this to a true hash
-    
-    //sinit(hash, WINTERNITZ_SEC_LVL);
-    //absorb(hash, v, m);   // random nonce!!!
-    //absorb(hash, M, len); // followed by the treetop key in the full scheme
-    //squeeze(hash, h, m);  // NB: digest length is m here, but was 2*m in the predecessor scheme
+    //*
+    memset(h,2,LEN_BYTES(WINTERNITZ_N)); //TODO: change this to a true hash
+    /*/
+    sinit(hash, WINTERNITZ_SEC_LVL);
+    absorb(hash, v, m);   // random nonce!!!
+    absorb(hash, M, len); // followed by the treetop key in the full scheme
+    squeeze(hash, h, m);  // NB: digest length is m here, but was 2*m in the predecessor scheme
+    //*/ 
     //sq++;
 
     // data part:
     sinit(hash, WINTERNITZ_SEC_LVL);
 
-    for (i = 0; i < (unsigned char)m; i++) { // NB: hash length is m here, but was 2*m in the predecessor scheme
+    for (i = 0; i < LEN_BYTES(WINTERNITZ_N); i++) { // NB: hash length is m here, but was 2*m in the predecessor scheme
         // 0 part:
         memcpy(x, sig, m); // x holds now the current signature block
         c = 3 - ((h[i] >> 0) & 3); // chunk
@@ -570,7 +574,7 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
 
     }
     // checksum part:
-    for (i = 0; i < 4; i++) { // checksum
+    for (i = 0; i < WINTERNITZ_l2; i++) { // checksum
         memcpy(x, sig, m); // x holds now the current signature block
         c = 3 - (checksum & 3); // chunk
         checksum >>= 2;

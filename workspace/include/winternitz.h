@@ -9,17 +9,23 @@
 #define WINTERNITZ_ERROR 0
 
 
-// sec level: 128
 #define WINTERNITZ_SEC_LVL	128
-#define WINTERNITZ_W		2
+#ifndef WINTERNITZ_W
+	#define WINTERNITZ_W		2
+#endif
+#define WINTERNITZ_N            1*WINTERNITZ_SEC_LVL
 
 #if WINTERNITZ_W > 8
 #error the maximum w value is 8 due to chosen data type in this implementation
 #endif
 
-#define WINTERNITZ_l1 ((WINTERNITZ_SEC_LVL + WINTERNITZ_W - 1) / WINTERNITZ_W)
+#define WINTERNITZ_l1 ((WINTERNITZ_N + WINTERNITZ_W - 1) / WINTERNITZ_W)
 #if (WINTERNITZ_W == 2)
-    #define WINTERNITZ_l2 (4) //l2=4 if l1 = 64 , l2=5 if l1 = 128 
+    #if WINTERNITZ_N == 128
+	#define WINTERNITZ_l2 (4)
+    #elif WINTERNITZ_N == 256
+    	#define WINTERNITZ_l2 (5)
+    #endif
 #elif (WINTERNITZ_W == 4)
     #define WINTERNITZ_l2 (3) //l2=3 if l1 \in {32,64}
 #elif (WINTERNITZ_W == 8)

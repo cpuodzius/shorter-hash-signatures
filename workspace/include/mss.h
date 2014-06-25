@@ -3,6 +3,10 @@
 
 #include "winternitz.h"
 
+#ifndef MSS_CALC_RETAIN
+	#include "retain.h"
+#endif
+
 // Improved Merkle Signature Scheme targeting 16-bit platforms
 // 16 is the Heighest tree for this implementation (since leaf index is of type short)
 
@@ -12,8 +16,12 @@
 #define odd(x)	((x) % 2)
 
 #define MSS_SEC_LVL                     WINTERNITZ_SEC_LVL
-#define MSS_HEIGHT			4
-#define MSS_K				2
+#ifndef MSS_HEIGHT
+	#define MSS_HEIGHT			10
+#endif
+#ifndef MSS_K
+	#define MSS_K				8
+#endif
 
 #if odd(MSS_HEIGHT - MSS_K)
 #error (H - K) must be even
@@ -22,7 +30,11 @@
 #define MSS_TREEHASH_SIZE		MSS_HEIGHT - MSS_K
 #define MSS_STACK_SIZE			MSS_HEIGHT - MSS_K - 2
 #define MSS_KEEP_SIZE			MSS_HEIGHT // Keep is used as stack during key generation
-#define MSS_RETAIN_SIZE			(1 << MSS_K) - MSS_K - 1
+#ifndef MSS_CALC_RETAIN
+	#define MSS_RETAIN_SIZE			0 // retain already precomputed, load from ROM	
+#else
+	#define MSS_RETAIN_SIZE			(1 << MSS_K) - MSS_K - 1	
+#endif
 
 #define NODE_VALUE_SIZE LEN_BYTES(MSS_SEC_LVL)         // each value element is a byte
 
@@ -53,5 +65,5 @@ void mss_sign(struct state_mt *state, unsigned char *seed, struct mss_node *leaf
 unsigned char mss_verify(struct mss_node authpath[MSS_HEIGHT], const unsigned char *v, const char *M, short len,
                          mmo_t *mmo, dm_t *f, unsigned char *h, short leaf_index, const unsigned char *sig,
                          unsigned char *x, struct mss_node *currentLeaf, unsigned char merklePubKey[NODE_VALUE_SIZE]);
-
+                         
 #endif // __MSS_H

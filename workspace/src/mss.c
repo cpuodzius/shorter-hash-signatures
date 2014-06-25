@@ -362,7 +362,14 @@ void _retain_pop(struct state_mt *state, struct mss_node *node, short h) {
 	assert(index >= 0);
 	assert(index < MSS_RETAIN_SIZE);
 #endif
-	*node = state->retain[index];
+
+#ifndef MSS_CALC_RETAIN
+	memcpy_P(&node->height,&retain_height[index],1);
+	memcpy_P(&node->index,&retain_pos[index],1);
+	memcpy_P(node->value,&retain_values[index],NODE_VALUE_SIZE);
+#else
+	*node = state->retain[index];	
+#endif	
 	state->retain_index[h - (MSS_HEIGHT - MSS_K)]++;
 
 #if defined(DEBUG)
