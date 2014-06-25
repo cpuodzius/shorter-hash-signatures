@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>MainWindow</class>
- <widget class="QMainWindow" name="MainWindow">
+ <class>Sembei</class>
+ <widget class="QMainWindow" name="Sembei">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -15,6 +15,40 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
+    <item row="11" column="2">
+     <widget class="QDoubleSpinBox" name="idle">
+      <property name="maximum">
+       <double>9999999.990000000223517</double>
+      </property>
+      <property name="singleStep">
+       <double>0.100000000000000</double>
+      </property>
+      <property name="value">
+       <double>1.200000000000000</double>
+      </property>
+     </widget>
+    </item>
+    <item row="10" column="1">
+     <widget class="QLabel" name="label_R">
+      <property name="text">
+       <string>R (Ohms)</string>
+      </property>
+     </widget>
+    </item>
+    <item row="12" column="1">
+     <widget class="QLabel" name="label_delta_t">
+      <property name="text">
+       <string>∆t (ms)</string>
+      </property>
+     </widget>
+    </item>
+    <item row="10" column="2">
+     <widget class="QLabel" name="label_idle">
+      <property name="text">
+       <string>idle (mV)</string>
+      </property>
+     </widget>
+    </item>
     <item row="3" column="3">
      <widget class="QPushButton" name="button_file">
       <property name="text">
@@ -32,7 +66,7 @@
     <item row="1" column="1" colspan="2">
      <widget class="QLabel" name="title">
       <property name="text">
-       <string>GUI do Bagaraio</string>
+       <string>Medição de Energia</string>
       </property>
      </widget>
     </item>
@@ -56,7 +90,7 @@
       </property>
      </spacer>
     </item>
-    <item row="13" column="2" colspan="2">
+    <item row="16" column="2" colspan="2">
      <widget class="QLabel" name="zangieff">
       <property name="text">
        <string>RO RO RO!</string>
@@ -76,28 +110,25 @@
       </property>
      </spacer>
     </item>
-    <item row="6" column="1" colspan="3">
-     <widget class="QLineEdit" name="input_pathdir"/>
+    <item row="4" column="1" colspan="3">
+     <widget class="QLineEdit" name="input_pathfile"/>
     </item>
-    <item row="11" column="2">
+    <item row="14" column="2">
      <widget class="QCommandLinkButton" name="button_start">
       <property name="text">
-       <string>Roda, macaco!</string>
+       <string>Dá o play, macaco!</string>
       </property>
      </widget>
     </item>
-    <item row="10" column="2">
-     <spacer name="verticalSpacer">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
+    <item row="6" column="1" colspan="3">
+     <widget class="QLineEdit" name="input_pathdir"/>
+    </item>
+    <item row="3" column="1">
+     <widget class="QLabel" name="label_file">
+      <property name="text">
+       <string>Arquivo de entrada</string>
       </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>20</width>
-        <height>40</height>
-       </size>
-      </property>
-     </spacer>
+     </widget>
     </item>
     <item row="1" column="4">
      <spacer name="horizontalSpacer_2">
@@ -112,16 +143,6 @@
       </property>
      </spacer>
     </item>
-    <item row="4" column="1" colspan="3">
-     <widget class="QLineEdit" name="input_pathfile"/>
-    </item>
-    <item row="3" column="1">
-     <widget class="QLabel" name="label_file">
-      <property name="text">
-       <string>Arquivo de entrada</string>
-      </property>
-     </widget>
-    </item>
     <item row="9" column="1">
      <widget class="QLabel" name="label_nome">
       <property name="text">
@@ -131,6 +152,43 @@
     </item>
     <item row="9" column="2">
      <widget class="QLineEdit" name="input_nome"/>
+    </item>
+    <item row="11" column="1">
+     <widget class="QSpinBox" name="resistencia">
+      <property name="maximum">
+       <number>999999</number>
+      </property>
+      <property name="value">
+       <number>100</number>
+      </property>
+     </widget>
+    </item>
+    <item row="12" column="2">
+     <widget class="QLabel" name="label_delta_v">
+      <property name="text">
+       <string>∆V idle (mV)</string>
+      </property>
+     </widget>
+    </item>
+    <item row="13" column="1">
+     <widget class="QDoubleSpinBox" name="delta_t">
+      <property name="maximum">
+       <double>999999.000000000000000</double>
+      </property>
+      <property name="value">
+       <double>5.000000000000000</double>
+      </property>
+     </widget>
+    </item>
+    <item row="13" column="2">
+     <widget class="QDoubleSpinBox" name="delta_v">
+      <property name="maximum">
+       <double>999999.000000000000000</double>
+      </property>
+      <property name="value">
+       <double>2.000000000000000</double>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>
