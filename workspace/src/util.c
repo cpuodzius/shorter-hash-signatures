@@ -67,6 +67,13 @@ void display_value(const char *tag, const unsigned char *u, unsigned short n) {
     printf("},\n");
 }
 
+void start_seed(unsigned char seed[], short len) {
+	short j;
+    for (j = 0; j < len; j++) {
+        seed[j] = 0xA0 ^ j; // sample seed, for debugging only
+    }
+}
+
 void print_retain(const struct state_mt *state) {
 	short index;
 	printf("\nRetain\n");

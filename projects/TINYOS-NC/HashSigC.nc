@@ -46,7 +46,8 @@ implementation {
 		printf("Starting benchs...\n");
 		  
 		printf("\n Parameters: SEC_LVL=%u, H=%u, K=%u, W=%u, l1=%u, l2=%u \n\n", MSS_SEC_LVL, MSS_HEIGHT, MSS_K, WINTERNITZ_W, WINTERNITZ_l1, WINTERNITZ_l2);
-		  
+		printfflush();
+		
 		t1 = call Timer.getNow();
 #endif
 		benchs = 1;
