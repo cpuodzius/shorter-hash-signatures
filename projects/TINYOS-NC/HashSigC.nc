@@ -11,6 +11,7 @@
 /*/
 #include "test.h"
 //*/
+#include "test.h"
 
 module HashSigC {
   uses {
@@ -29,17 +30,23 @@ implementation {
 
 	uint32_t benchs;
 
-	void run() {
+	void run_tests() {
 
-		/* Run Merkle Signature TESTS
+		// Run Merkle Signature TESTS
+		call Leds.set(7);
+
 		printf("Starting tests...\n");
 		ret = do_test(TEST_MSS_SIGN); 
 		printf("Errors after tests: %lu\n", ret);
 		printf("DONE \n");
-		printfflush();		
-
-		/*/ //Run the specified benchmark
+		printfflush();
 		
+		call Leds.set(1);
+	}
+
+	void run_benchs() {
+
+		// Run the uncommented benchmark		
 #ifndef READ_ENERGY
 		call Leds.set(7);
 
@@ -69,7 +76,7 @@ implementation {
 		do_benchmark(BENCHMARK_MSS_SIGN, benchs);
 		/*
 		do_benchmark(BENCHMARK_MSS_VERIFY,benchs);
-		/*/
+		//*/
 
 #ifndef READ_ENERGY
 		t2 = call Timer.getNow();
@@ -79,7 +86,6 @@ implementation {
 		printf("DONE \n");
 		printfflush();
 #endif
-		//*/
 	}
 
 	event void Boot.booted() {
@@ -96,7 +102,11 @@ implementation {
 	}
 
 	event void Timer.fired() {				
-		run();
+		/*
+		run_tests();
+		/*/
+		run_benchs();
+		//*/
 
 		/* Test: Retain from ROM
 		unsigned char buffer[16], b2[2];
