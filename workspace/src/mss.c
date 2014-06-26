@@ -582,7 +582,7 @@ void mss_sign(struct state_mt *state, unsigned char *seed, struct mss_node *leaf
 	//*/
     prg16(leaf_index, seed, sk); // sk := prg16(seed,leaf_index)
 
-	winternitz_sign(sk, leaf->value, LEN_BYTES(WINTERNITZ_SEC_LVL), (const char *)M, len, mmo, f, h, sig);
+	winternitz_sign(sk, leaf->value, LEN_BYTES(WINTERNITZ_N), (const char *)M, len, mmo, f, h, sig);
 
 	for(i = 0; i < MSS_HEIGHT; i++) {
 		authpath[i].height = state->auth[i].height;
@@ -604,7 +604,7 @@ unsigned char mss_verify(struct mss_node authpath[MSS_HEIGHT], const unsigned ch
                          mmo_t *hash, dm_t *f, unsigned char *h, short leaf_index, const unsigned char *sig, unsigned char *x, struct mss_node *currentLeaf, unsigned char merklePubKey[]) {
 
 
-	if (winternitz_verify(v, LEN_BYTES(WINTERNITZ_SEC_LVL), (const char *)M, len, hash, f, h, sig, x) == WINTERNITZ_ERROR) {
+	if (winternitz_verify(v, LEN_BYTES(WINTERNITZ_N), (const char *)M, len, hash, f, h, sig, x) == WINTERNITZ_ERROR) {
 		return MSS_ERROR;
 	}
 

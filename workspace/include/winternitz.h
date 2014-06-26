@@ -11,7 +11,7 @@
 
 #define WINTERNITZ_SEC_LVL	128
 #ifndef WINTERNITZ_W
-	#define WINTERNITZ_W		2
+	#define WINTERNITZ_W		4
 #endif
 #define WINTERNITZ_N            2*WINTERNITZ_SEC_LVL
 

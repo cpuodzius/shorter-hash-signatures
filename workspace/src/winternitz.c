@@ -65,8 +65,8 @@ void winternitz_keygen(const unsigned char s[/*m*/], const unsigned short m, mmo
         pubk->H[12] ^= v[12];
         pubk->H[13] ^= v[13];
         pubk->H[14] ^= v[14];
-        pubk->H[15] ^= v[15];	
- 
+        pubk->H[15] ^= v[15];
+
     }
     //squeeze(pubk, v, m); // v is finally the public key, v = H(y_0 || y_1 || ... || y_{L-1})
     memcpy(v, pubk->H,16);
@@ -97,13 +97,13 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
     unsigned short checksum = 0;
 
     //*
-    memset(h,2,LEN_BYTES(WINTERNITZ_N)); //TODO: change this to a true hash
+    memset(h,2,m); //TODO: change this to a true hash
 	/*/
     sinit(hash, WINTERNITZ_SEC_LVL);
     absorb(hash, v, m); // public key used as random nonce!!!
     absorb(hash, M, len); // followed by the message in this implementation (actually followed by the treetop key, and then by the message, in the full scheme)
     squeeze(hash, h, m); // NB: hash length is m here, but was 2*m in the predecessor scheme
-    //*/ 
+    //*/
     //sq++;
 
 
@@ -439,13 +439,13 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
 #endif
 
     //*
-    memset(h,2,LEN_BYTES(WINTERNITZ_N)); //TODO: change this to a true hash
+    memset(h,2,m); //TODO: change this to a true hash
     /*/
     sinit(hash, WINTERNITZ_SEC_LVL);
     absorb(hash, v, m);   // random nonce!!!
     absorb(hash, M, len); // followed by the treetop key in the full scheme
     squeeze(hash, h, m);  // NB: digest length is m here, but was 2*m in the predecessor scheme
-    //*/ 
+    //*/
     //sq++;
 
     // data part:
