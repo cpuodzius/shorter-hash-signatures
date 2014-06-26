@@ -26,7 +26,7 @@ struct state_mt state_bench;
 mmo_t hash_mmo;
 dm_t f_bench;
 char M_bench[] = "Hello, world!";
-unsigned char h1[LEN_BYTES(WINTERNITZ_N)];
+unsigned char h1[LEN_BYTES(WINTERNITZ_N)], h2[LEN_BYTES(WINTERNITZ_N)];
 short j_bench;
 unsigned char sig_bench[WINTERNITZ_L*LEN_BYTES(WINTERNITZ_SEC_LVL)];
 unsigned char aux[LEN_BYTES(WINTERNITZ_SEC_LVL)];
@@ -64,13 +64,14 @@ void do_benchmark(enum BENCHMARK phase, short benchs) {
 			sinit(&hash_mmo, MSS_SEC_LVL);
 			DM_init(&f_bench);
 
-			mss_keygen(&f_bench, &hash_mmo, seed_bench, &nodes[0], &nodes[1], &state_bench, pkey_bench);
+			//mss_keygen(&f_bench, &hash_mmo, seed_bench, &nodes[0], &nodes[1], &state_bench, pkey_bench);
+			init_state(&state_bench);
 
-			mss_sign(&state_bench, seed_bench, &currentLeaf_bench, M_bench, LEN_BYTES(WINTERNITZ_SEC_LVL), &hash_mmo, &f_bench, h1, 0, &nodes[0],
+			mss_sign(&state_bench, seed_bench, &currentLeaf_bench, M_bench, strlen(M_bench)+1, &hash_mmo, &f_bench, h1, 0, &nodes[0],
 				 &nodes[1], sig_bench, authpath_bench);
 		case BENCHMARK_MSS_VERIFY:
 		    for(j_bench = 0; j_bench < benchs; j_bench++) {
-		        mss_verify(authpath_bench, currentLeaf_bench.value, M_bench, LEN_BYTES(WINTERNITZ_SEC_LVL), &hash_mmo, &f_bench, h1, 0, sig_bench, aux,
+		        mss_verify(authpath_bench, currentLeaf_bench.value, M_bench, strlen(M_bench)+1, &hash_mmo, &f_bench, h2, 0, sig_bench, aux,
 				   &currentLeaf_bench, pkey_bench);
 		    }
 			break;

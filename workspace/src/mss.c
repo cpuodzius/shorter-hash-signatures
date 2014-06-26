@@ -341,12 +341,14 @@ void _treehash_update(dm_t *hash, sponge_t *pubk, struct state_mt *state, const 
 }
 
 void _retain_push(struct state_mt *state, struct mss_node *node) {
+#ifdef MSS_CALC_RETAIN
 	short index = (1 << (MSS_HEIGHT - node->height - 1)) - (MSS_HEIGHT - node->height - 1) - 1 + (node->index >> 1) - 1;
 #if defined(DEBUG)
 	assert(_node_valid(node));
 	assert(state->retain_index[node->height - (MSS_HEIGHT - MSS_K)] == 0);
 #endif
 	state->retain[index] = *node;
+#endif // MSS_CALC_RETAIN
 }
 
 void _retain_pop(struct state_mt *state, struct mss_node *node, short h) {
@@ -499,6 +501,7 @@ void get_auth_index(short s, short auth_index[MSS_HEIGHT]) {
 		if(s % 2 == 0)
 			auth_index[h] = s + 1;
 		else
+
 			auth_index[h] = s - 1;
 		s >>= 1;
 	}

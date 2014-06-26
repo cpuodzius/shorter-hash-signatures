@@ -6,11 +6,8 @@
 //#include "retain.h"
 //#include <avr/pgmspace.h>
 
-//*
+
 #include "benchmark.h"
-/*/
-#include "test.h"
-//*/
 #include "test.h"
 
 module HashSigC {
@@ -24,14 +21,13 @@ module HashSigC {
 
 implementation {
 
-#ifndef READ_ENERGY
-	uint32_t t1, t2, ret;
-#endif
-
 	uint32_t benchs;
 
-	void run_tests() {
+#ifndef READ_ENERGY
+	uint32_t t1, t2;
 
+	void run_tests() {
+		uint32_t ret;
 		// Run Merkle Signature TESTS
 		call Leds.set(7);
 
@@ -43,6 +39,7 @@ implementation {
 		
 		call Leds.set(1);
 	}
+#endif
 
 	void run_benchs() {
 
@@ -72,9 +69,9 @@ implementation {
 		do_benchmark(BENCHMARK_WINTERNITZ_VERIFY,benchs);
 		/*
 		do_benchmark(BENCHMARK_MSS_KEYGEN,benchs);
-		/*/
-		do_benchmark(BENCHMARK_MSS_SIGN, benchs);
 		/*
+		//do_benchmark(BENCHMARK_MSS_SIGN, benchs);
+		/*/
 		do_benchmark(BENCHMARK_MSS_VERIFY,benchs);
 		//*/
 
@@ -89,15 +86,17 @@ implementation {
 	}
 
 	event void Boot.booted() {
-		
+
+#ifndef READ_ENERGY
+		call Leds.set(3);
+#endif		
 		//do_benchmark(BENCHMARK_PREPARE, 1);
 		//do_benchmark(BENCHMARK_MSS_KEYGEN,1);
 		//do_benchmark(BENCHMARK_WINTERNITZ_SIGN,1);
-		//do_benchmark(BENCHMARK_MSS_PREPARE_VERIFY,1);
+		do_benchmark(BENCHMARK_MSS_PREPARE_VERIFY,1);
 		//do_benchmark(BENCHMARK_AES_CALC,1);
 
 
-		//call Leds.led2On();
 		call Timer.startOneShot(6000);
 	}
 
