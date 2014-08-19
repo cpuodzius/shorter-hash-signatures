@@ -13,7 +13,7 @@
 #ifndef WINTERNITZ_W
 	#define WINTERNITZ_W		2
 #endif
-#define WINTERNITZ_N            1*WINTERNITZ_SEC_LVL
+#define WINTERNITZ_N            2*WINTERNITZ_SEC_LVL
 
 #if WINTERNITZ_W > 8
 #error the maximum w value is 8 due to chosen data type in this implementation
