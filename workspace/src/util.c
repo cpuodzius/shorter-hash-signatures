@@ -80,7 +80,13 @@ void print_retain(const struct state_mt *state) {
 	for(index = 0; index < MSS_RETAIN_SIZE; index++) {
         //printf("\tNode[%d, %d]", state->retain[index].height, state->retain[index].index);
         //printf("0x%02x,", state->retain[index].height);
-        printf("0x%02x,", state->retain[index].index);
+	}
+
+	for(index = 0; index < MSS_RETAIN_SIZE; index++) {
+        printf("0x%04x,", state->retain[index].index);
+	}
+
+	for(index = 0; index < MSS_RETAIN_SIZE; index++) {
         //display_value("", state->retain[index].value, NODE_VALUE_SIZE);
 	}
 }

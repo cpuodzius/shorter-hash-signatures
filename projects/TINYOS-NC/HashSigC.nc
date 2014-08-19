@@ -43,8 +43,7 @@ implementation {
 #ifndef READ_ENERGY
 		call Leds.set(7);
 
-		printf("Starting benchs...\n");
-		  
+		printf("Starting benchs...\n");		  
 		printf("\n Parameters: SEC_LVL=%u, H=%u, K=%u, W=%u, l1=%u, l2=%u \n\n", MSS_SEC_LVL, MSS_HEIGHT, MSS_K, WINTERNITZ_W, WINTERNITZ_l1, WINTERNITZ_l2);
 		printfflush();
 		
@@ -69,7 +68,7 @@ implementation {
 		do_benchmark(BENCHMARK_MSS_SIGN, benchs);
 		/*
 		do_benchmark(BENCHMARK_MSS_VERIFY,benchs);
-		/*/
+		//*/
 
 #ifndef READ_ENERGY
 		t2 = call Timer.getNow();
