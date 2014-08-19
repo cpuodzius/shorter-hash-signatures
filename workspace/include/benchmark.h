@@ -16,6 +16,6 @@ enum BENCHMARK {
 	BENCHMARK_AES_CALC
 };
 
-void do_benchmark(enum BENCHMARK phase, short benchs);
+void do_benchmark(enum BENCHMARK phase, unsigned short benchs);
 
 #endif // __BENCHMARK

@@ -17,10 +17,10 @@
 
 #define MSS_SEC_LVL                     WINTERNITZ_SEC_LVL
 #ifndef MSS_HEIGHT
-	#define MSS_HEIGHT			12
+	#define MSS_HEIGHT			13
 #endif
 #ifndef MSS_K
-	#define MSS_K				10
+	#define MSS_K				11
 #endif
 
 #if odd(MSS_HEIGHT - MSS_K)
@@ -40,14 +40,14 @@
 
 struct mss_node {
         unsigned char height;
-        short index;
+        unsigned short index;
         unsigned char value[NODE_VALUE_SIZE];           // node's value for auth path
 };
 
 //treehash_seed: index of the seed for the treehash of height h
 struct state_mt {
 	unsigned char treehash_state[MSS_TREEHASH_SIZE];
-	short stack_index, retain_index[MSS_K-1], treehash_seed[MSS_TREEHASH_SIZE];
+	unsigned short stack_index, retain_index[MSS_K-1], treehash_seed[MSS_TREEHASH_SIZE];
         struct mss_node treehash[MSS_TREEHASH_SIZE];
         struct mss_node stack[MSS_STACK_SIZE];
         struct mss_node retain[MSS_RETAIN_SIZE];
@@ -58,12 +58,12 @@ struct state_mt {
 
 void mss_keygen(dm_t *hash, mmo_t *mmo, unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], struct mss_node *node1, struct mss_node *node2, struct state_mt *state, unsigned char pkey[NODE_VALUE_SIZE]);
 
-void mss_sign(struct state_mt *state, unsigned char *seed, struct mss_node *leaf, const char *M, short len,
-              mmo_t *mmo, dm_t *f, unsigned char *h, short leaf_index, struct mss_node *node1, struct mss_node *node2,
+void mss_sign(struct state_mt *state, unsigned char *seed, struct mss_node *leaf, const char *M, unsigned short len,
+              mmo_t *mmo, dm_t *f, unsigned char *h, unsigned short leaf_index, struct mss_node *node1, struct mss_node *node2,
               unsigned char *sig, struct mss_node authpath[MSS_HEIGHT]);
 
-unsigned char mss_verify(struct mss_node authpath[MSS_HEIGHT], const unsigned char *v, const char *M, short len,
-                         mmo_t *mmo, dm_t *f, unsigned char *h, short leaf_index, const unsigned char *sig,
+unsigned char mss_verify(struct mss_node authpath[MSS_HEIGHT], const unsigned char *v, const char *M, unsigned short len,
+                         mmo_t *mmo, dm_t *f, unsigned char *h, unsigned short leaf_index, const unsigned char *sig,
                          unsigned char *x, struct mss_node *currentLeaf, unsigned char merklePubKey[NODE_VALUE_SIZE]);
 
 #endif // __MSS_H

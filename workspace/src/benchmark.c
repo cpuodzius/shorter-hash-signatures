@@ -1,6 +1,6 @@
 //#include <stdio.h>
 //#include <stdint.h>
-//#include <string.h>
+#include <string.h>
 #include "benchmark.h"
 
 #ifdef PLATFORM_TELOSB
@@ -21,6 +21,14 @@ unsigned char seed_bench[LEN_BYTES(MSS_SEC_LVL)] = {0xA0,0xA1,0xA2,0xA3,0xA4,0xA
 unsigned char pkey_bench[NODE_VALUE_SIZE] =        {0xA6,0xC5,0xE5,0xE5,0xBB,0xEA,0x7F,0x31,0x5D,0x11,0x33,0x87,0x7A,0x95,0x45,0x74};
 #elif MSS_HEIGHT == 11
 unsigned char pkey_bench[NODE_VALUE_SIZE] =        {0xe9,0xfc,0x31,0xfc,0xc6,0x77,0xcb,0x64,0x23,0x28,0x70,0xa7,0x4c,0x64,0xc0,0x76};
+#elif MSS_HEIGHT == 12
+unsigned char pkey_bench[NODE_VALUE_SIZE] =        {0xd9,0xea,0x1a,0x5f,0x49,0xd5,0xb0,0x11,0x91,0x40,0x1b,0x4c,0xc3,0x18,0xed,0x62};
+#elif MSS_HEIGHT == 13
+unsigned char pkey_bench[NODE_VALUE_SIZE] =        {0x49,0x69,0xed,0x13,0xe8,0x25,0x03,0x49,0x8c,0x27,0x9a,0x09,0x05,0xec,0xbe,0xe2};
+#elif MSS_HEIGHT == 14
+unsigned char pkey_bench[NODE_VALUE_SIZE] =        {0x1e,0xd6,0xe7,0x7b,0x28,0x88,0xfa,0x2d,0x76,0xa9,0xa4,0x89,0x56,0xe8,0x94,0x8e};
+#elif MSS_HEIGHT == 15
+unsigned char pkey_bench[NODE_VALUE_SIZE] =        {0x4f,0xa0,0x09,0x7f,0x4e,0xca,0xf4,0xa2,0x69,0x90,0x5f,0xe0,0x30,0xc5,0x01,0xb0};
 #else
 unsigned char pkey_bench[NODE_VALUE_SIZE];
 #endif
@@ -59,14 +67,8 @@ unsigned char key_bench[16] =  {0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
 
 #endif
 
-void _start_seed(unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
-    short j;
-    for (j = 0; j < LEN_BYTES(MSS_SEC_LVL); j++) {
-        seed[j] = 0xA0 ^ j; // sample private key, for debugging only
-    }
-}
-void do_benchmark(enum BENCHMARK phase, short benchs) {
-	short j;
+void do_benchmark(enum BENCHMARK phase, unsigned short benchs) {
+	unsigned short j;
 
 	switch(phase) {
 
@@ -76,7 +78,7 @@ void do_benchmark(enum BENCHMARK phase, short benchs) {
 
 			DM_init(&f_bench);
 
-			mss_keygen(&f_bench, &hash_mmo, seed_bench, &nodes[0], &nodes[1], &state_bench, pkey_bench);			
+			mss_keygen(&f_bench, &hash_mmo, seed_bench, &nodes[0], &nodes[1], &state_bench, pkey_bench);
 
 			break;
 
@@ -104,7 +106,7 @@ void do_benchmark(enum BENCHMARK phase, short benchs) {
 
 			//mss_keygen(&f_bench, &hash_mmo, seed_bench, &nodes[0], &nodes[1], &state_bench, pkey_bench);
 
-			mss_sign(&state_bench, seed_bench, &currentLeaf_bench, M_bench, strlen(M_bench)+1, &hash_mmo, &f_bench, h1, 0, &nodes[0], 
+			mss_sign(&state_bench, seed_bench, &currentLeaf_bench, M_bench, strlen(M_bench)+1, &hash_mmo, &f_bench, h1, 0, &nodes[0],
 				 &nodes[1], sig_bench, authpath_bench);
 
 		case BENCHMARK_MSS_VERIFY:
@@ -146,7 +148,7 @@ void do_benchmark(enum BENCHMARK phase, short benchs) {
 
 				squeeze(&hash_mmo, seed_bench, LEN_BYTES(WINTERNITZ_SEC_LVL));
 
-				//*/			
+				//*/
 
 				//hash16(&f_bench,seed_bench,seed_bench);
 
@@ -166,7 +168,7 @@ void do_benchmark(enum BENCHMARK phase, short benchs) {
 
 			//res[12] = 0x19; res[13] = 0x6a; res[14] = 0x0b; res[15] = 0x32;
 
-			
+
 
 			//memcpy(local_key,key_bench,16);
 
@@ -194,7 +196,7 @@ void do_benchmark(enum BENCHMARK phase, short benchs) {
 
 			//printfflush();
 
-			
+
 
 			break;
 
