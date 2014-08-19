@@ -77,15 +77,19 @@ void start_seed(unsigned char seed[], short len) {
 void print_retain(const struct state_mt *state) {
 	short index;
 	printf("\nRetain\n");
+	
+	//printf("height:\n");
 	for(index = 0; index < MSS_RETAIN_SIZE; index++) {
         //printf("\tNode[%d, %d]", state->retain[index].height, state->retain[index].index);
         //printf("0x%02x,", state->retain[index].height);
 	}
 
+	printf("index:\n");
 	for(index = 0; index < MSS_RETAIN_SIZE; index++) {
         printf("0x%04x,", state->retain[index].index);
 	}
 
+	//printf("value:\n");
 	for(index = 0; index < MSS_RETAIN_SIZE; index++) {
         //display_value("", state->retain[index].value, NODE_VALUE_SIZE);
 	}

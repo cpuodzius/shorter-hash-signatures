@@ -21,7 +21,7 @@ unsigned char pkey_test[NODE_VALUE_SIZE] =        {0xA6,0xC5,0xE5,0xE5,0xBB,0xEA
 #else
 unsigned char pkey_test[NODE_VALUE_SIZE];
 #endif
-unsigned char seed_test[LEN_BYTES(MSS_SEC_LVL)];
+unsigned char seed_test[LEN_BYTES(MSS_SEC_LVL)] = {0xA0,0xA1,0xA2,0xA3,0xA4,0xA5,0xA6,0xA7,0xA8,0xA9,0xAA,0xAB,0xAC,0xAD,0xAE,0xAF};
 unsigned char h1[LEN_BYTES(WINTERNITZ_N)], h2[LEN_BYTES(WINTERNITZ_N)];
 unsigned char sig_test[WINTERNITZ_L*LEN_BYTES(WINTERNITZ_SEC_LVL)];
 unsigned char aux[LEN_BYTES(WINTERNITZ_SEC_LVL)];
@@ -32,10 +32,6 @@ int test_merkle_signature() {
 
 	char M[] = "Hello, world!";
 
-	// Set seed
-	for (j = 0; j < LEN_BYTES(MSS_SEC_LVL); j++) {
-		seed_test[j] = 0xA0 ^ j; // sample private key, for debugging only
-	}
 	sinit(&hash_mmo, MSS_SEC_LVL);
 	DM_init(&f_test);
 

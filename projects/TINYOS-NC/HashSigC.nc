@@ -6,11 +6,9 @@
 //#include "retain.h"
 //#include <avr/pgmspace.h>
 
-//*
+
 #include "benchmark.h"
-/*/
 #include "test.h"
-//*/
 
 module HashSigC {
   uses {
@@ -23,23 +21,29 @@ module HashSigC {
 
 implementation {
 
-#ifndef READ_ENERGY
-	uint32_t t1, t2, ret;
-#endif
-
 	uint32_t benchs;
 
-	void run() {
+#ifndef READ_ENERGY
+	uint32_t t1, t2;
 
-		/* Run Merkle Signature TESTS
+	void run_tests() {
+		uint32_t ret;
+		// Run Merkle Signature TESTS
+		call Leds.set(7);
+
 		printf("Starting tests...\n");
 		ret = do_test(TEST_MSS_SIGN); 
 		printf("Errors after tests: %lu\n", ret);
 		printf("DONE \n");
-		printfflush();		
-
-		/*/ //Run the specified benchmark
+		printfflush();
 		
+		call Leds.set(1);
+	}
+#endif
+
+	void run_benchs() {
+
+		// Run the uncommented benchmark		
 #ifndef READ_ENERGY
 		call Leds.set(7);
 
@@ -78,11 +82,13 @@ implementation {
 		printf("DONE \n");
 		printfflush();
 #endif
-		//*/
 	}
 
 	event void Boot.booted() {
-		
+
+#ifndef READ_ENERGY
+		call Leds.set(3);
+#endif		
 		//do_benchmark(BENCHMARK_PREPARE, 1);
 		//do_benchmark(BENCHMARK_MSS_KEYGEN,1);
 		//do_benchmark(BENCHMARK_WINTERNITZ_SIGN,1);
@@ -90,12 +96,15 @@ implementation {
 		//do_benchmark(BENCHMARK_AES_CALC,1);
 
 
-		//call Leds.led2On();
 		call Timer.startOneShot(6000);
 	}
 
 	event void Timer.fired() {				
-		run();
+		/*
+		run_tests();
+		/*/
+		run_benchs();
+		//*/
 
 		/* Test: Retain from ROM
 		unsigned char buffer[16], b2[2];

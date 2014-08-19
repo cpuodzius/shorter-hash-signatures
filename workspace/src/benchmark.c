@@ -102,22 +102,14 @@ void do_benchmark(enum BENCHMARK phase, short benchs) {
 
 			DM_init(&f_bench);
 
-
 			//mss_keygen(&f_bench, &hash_mmo, seed_bench, &nodes[0], &nodes[1], &state_bench, pkey_bench);
 
-
-			mss_sign(&state_bench, seed_bench, &currentLeaf_bench, M_bench, LEN_BYTES(WINTERNITZ_SEC_LVL), &hash_mmo, &f_bench, h1, 0, &nodes[0],
-
+			mss_sign(&state_bench, seed_bench, &currentLeaf_bench, M_bench, strlen(M_bench)+1, &hash_mmo, &f_bench, h1, 0, &nodes[0], 
 				 &nodes[1], sig_bench, authpath_bench);
 
 		case BENCHMARK_MSS_VERIFY:
-
 		    for(j = 0; j < benchs; j++) {
-
-		        mss_verify(authpath_bench, currentLeaf_bench.value, M_bench, LEN_BYTES(WINTERNITZ_SEC_LVL), &hash_mmo, &f_bench, h2, 0, sig_bench, aux,
-
-				   &currentLeaf_bench, pkey_bench);
-
+		        mss_verify(authpath_bench, currentLeaf_bench.value, M_bench, LEN_BYTES(WINTERNITZ_SEC_LVL), &hash_mmo, &f_bench, h2, 0, sig_bench, aux, &currentLeaf_bench, pkey_bench);
 		    }
 
 			break;

@@ -341,12 +341,14 @@ void _treehash_update(dm_t *hash, sponge_t *pubk, struct state_mt *state, const 
 }
 
 void _retain_push(struct state_mt *state, struct mss_node *node) {
+#ifdef MSS_CALC_RETAIN
 	short index = (1 << (MSS_HEIGHT - node->height - 1)) - (MSS_HEIGHT - node->height - 1) - 1 + (node->index >> 1) - 1;
 #if defined(DEBUG)
 	assert(_node_valid(node));
 	assert(state->retain_index[node->height - (MSS_HEIGHT - MSS_K)] == 0);
 #endif
 	state->retain[index] = *node;
+#endif // MSS_CALC_RETAIN
 }
 
 void _retain_pop(struct state_mt *state, struct mss_node *node, short h) {
@@ -499,6 +501,7 @@ void get_auth_index(short s, short auth_index[MSS_HEIGHT]) {
 		if(s % 2 == 0)
 			auth_index[h] = s + 1;
 		else
+
 			auth_index[h] = s - 1;
 		s >>= 1;
 	}
@@ -582,7 +585,7 @@ void mss_sign(struct state_mt *state, unsigned char *seed, struct mss_node *leaf
 	//*/
     prg16(leaf_index, seed, sk); // sk := prg16(seed,leaf_index)
 
-	winternitz_sign(sk, leaf->value, LEN_BYTES(WINTERNITZ_SEC_LVL), (const char *)M, len, mmo, f, h, sig);
+	winternitz_sign(sk, leaf->value, LEN_BYTES(WINTERNITZ_N), (const char *)M, len, mmo, f, h, sig);
 
 	for(i = 0; i < MSS_HEIGHT; i++) {
 		authpath[i].height = state->auth[i].height;
@@ -604,7 +607,7 @@ unsigned char mss_verify(struct mss_node authpath[MSS_HEIGHT], const unsigned ch
                          mmo_t *hash, dm_t *f, unsigned char *h, short leaf_index, const unsigned char *sig, unsigned char *x, struct mss_node *currentLeaf, unsigned char merklePubKey[]) {
 
 
-	if (winternitz_verify(v, LEN_BYTES(WINTERNITZ_SEC_LVL), (const char *)M, len, hash, f, h, sig, x) == WINTERNITZ_ERROR) {
+	if (winternitz_verify(v, LEN_BYTES(WINTERNITZ_N), (const char *)M, len, hash, f, h, sig, x) == WINTERNITZ_ERROR) {
 		return MSS_ERROR;
 	}
 
