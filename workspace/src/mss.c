@@ -443,7 +443,7 @@ void mss_keygen(dm_t *hash, sponge_t *pubk, unsigned char seed[LEN_BYTES(MSS_SEC
 }
 
 void _nextAuth(struct state_mt *state, struct mss_node *current_leaf, unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], dm_t *hash, sponge_t *pubk, struct mss_node *node1, struct mss_node *node2, const unsigned short s) {
-	unsigned short tau = MSS_HEIGHT - 1, min, h, i, j, k;
+	short tau = MSS_HEIGHT - 1, min, h, i, j, k;
 
 	while((s + 1) % (1 << tau) != 0)
 		tau--;

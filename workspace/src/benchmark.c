@@ -94,6 +94,10 @@ void do_benchmark(enum BENCHMARK phase, unsigned short benchs) {
 
 		case BENCHMARK_MSS_SIGN:
 			for(j = 0; j < (1 << MSS_HEIGHT); j++) {
+			//for(j = 0; j < (1 << (MSS_HEIGHT-2)); j++) { //pt1 0..2^11-1
+			//for(j = (1 << (MSS_HEIGHT-2)); j < (1 << (MSS_HEIGHT-1)); j++) { //pt2 2^11...2^12-1
+			//for(j = (1 << (MSS_HEIGHT-1)); j < (1 << (MSS_HEIGHT-1)) + 2048; j++) { //pt3 2^12...2^12+2048-1
+			//for(j = (1 << (MSS_HEIGHT-1)) + 2048; j < (1 << MSS_HEIGHT); j++) { //pt4 2^12+2048...2^13-1
 			    mss_sign(&state_bench, seed_bench, &currentLeaf_bench, M_bench, LEN_BYTES(WINTERNITZ_SEC_LVL), &hash_mmo, &f_bench, h1, j, &nodes[0], &nodes[1], sig_bench, authpath_bench);
 			}
 			break;
