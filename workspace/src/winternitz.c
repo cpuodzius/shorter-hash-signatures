@@ -135,7 +135,7 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
             ;
             // FALLTHROUGH
         }
-        sig += m; // signature block for next chunk
+        sig += 16; // signature block for next chunk
 
         // 1 part:
         memset(sig, 0, 16); sig[0] = (i << 2) + 1; // H(s, 4i + 1) // 1 chunk index
@@ -159,7 +159,7 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
             ;
             // FALLTHROUGH
         }
-        sig += m; // signature block for next chunk
+        sig += 16; // signature block for next chunk
 
         // 2 part:
         memset(sig, 0, 16); sig[0] = (i << 2) + 2; // H(s, 4i + 2) // 2 chunk index
@@ -182,7 +182,7 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
             ;
             // FALLTHROUGH
         }
-        sig += m; // signature block for next chunk
+        sig += 16; // signature block for next chunk
 
         // 3 part:
         memset(sig, 0, 16); sig[0] = (i << 2) + 3; // H(s, 4i + 3) // 3 chunk index
@@ -206,7 +206,7 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
             ;
             // FALLTHROUGH
         }
-        sig += m; // signature block for next chunk
+        sig += 16; // signature block for next chunk
     }
 
     // checksum part:
@@ -232,7 +232,7 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
             // FALLTHROUGH
         }
         checksum >>= 2;
-        sig += m; // signature block for next nybble
+        sig += 16; // signature block for next nybble
     }
     //printf("sig squeeze count: %d\n", sq);
     cleanup(hash);
@@ -288,7 +288,7 @@ void winternitz_4_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
             hash16(f, sig, sig);
             //sq++;
         }
-        sig += m; // signature block for next nybble
+        sig += 16; // signature block for next nybble
 
         // hi part:
         memset(sig, 0, 16); sig[0] = (i << 1) + 1; // H(s, 2i + 1) // hi nybble tag
@@ -304,7 +304,7 @@ void winternitz_4_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
             hash16(f, sig, sig);
             //sq++;
         }
-        sig += m; // signature block for next nybble
+        sig += 16; // signature block for next nybble
     }
     // checksum part:
     for (i = 0; i < 3; i++) { // checksum
@@ -321,7 +321,7 @@ void winternitz_4_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
             hash16(f, sig, sig);
             //sq++;
         }
-        sig += m; // signature block for next nybble
+        sig += 16; // signature block for next nybble
     }
     //printf("sig squeeze count: %d\n", sq);
     cleanup(hash);
@@ -376,7 +376,7 @@ void winternitz_8_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
             hash16(f, sig, sig);  // sig holds the hash of its previous value
             //sq++;
         }
-        sig += m; // signature block for next nybble
+        sig += 16; // signature block for next nybble
     }
     // checksum part:
     for (i = 0; i < WINTERNITZ_CHECKSUM_SIZE; i++) {
@@ -394,7 +394,7 @@ void winternitz_8_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
             hash16(f, sig, sig);  // sig holds the hash of its previous value
             //sq++;
         }
-        sig += m; // signature block for next unsigned char
+        sig += 16; // signature block for next unsigned char
     }
     //printf("sig squeeze count: %d\n", sq);
     cleanup(hash);
@@ -480,7 +480,7 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
         hash->H[14] ^= x[14];
         hash->H[15] ^= x[15];
 
-        sig += m; // next signature block
+        sig += 16; // next signature block
 
         // 1 part:
         memcpy(x, sig, m); // x holds now the current signature block
@@ -510,7 +510,7 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
         hash->H[14] ^= x[14];
         hash->H[15] ^= x[15];
 
-        sig += m; // next signature block
+        sig += 16; // next signature block
 
         // 2 part:
         memcpy(x, sig, m); // x holds now the current signature block
@@ -540,7 +540,7 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
         hash->H[14] ^= x[14];
         hash->H[15] ^= x[15];
 
-        sig += m; // next signature block
+        sig += 16; // next signature block
 
         // 3 part:
         memcpy(x, sig, m); // x holds now the current signature block
@@ -570,7 +570,7 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
         hash->H[14] ^= x[14];
         hash->H[15] ^= x[15];
 
-        sig += m; // next signature block
+        sig += 16; // next signature block
 
     }
     // checksum part:
@@ -602,7 +602,7 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
         hash->H[14] ^= x[14];
         hash->H[15] ^= x[15];
 
-        sig += m; // next signature block
+        sig += 16; // next signature block
     }
     //squeeze(hash, x, m); // x should be the public key v
     memcpy(x, hash->H, 16);
@@ -680,7 +680,7 @@ unsigned char winternitz_4_verify(const unsigned char v[/*m*/], const unsigned s
         hash->H[13] ^= x[13];
         hash->H[14] ^= x[14];
         hash->H[15] ^= x[15];
-        sig += m; // next signature block
+        sig += 16; // next signature block
 
         // hi part:
         memcpy(x, sig, m); // x is now the i-th signature block
@@ -713,7 +713,7 @@ unsigned char winternitz_4_verify(const unsigned char v[/*m*/], const unsigned s
         hash->H[13] ^= x[13];
         hash->H[14] ^= x[14];
         hash->H[15] ^= x[15];
-        sig += m; // next signature block
+        sig += 16; // next signature block
     }
     // checksum part:
     for (i = 0; i < 3; i++) { // checksum
@@ -747,7 +747,7 @@ unsigned char winternitz_4_verify(const unsigned char v[/*m*/], const unsigned s
         hash->H[13] ^= x[13];
         hash->H[14] ^= x[14];
         hash->H[15] ^= x[15];
-        sig += m; // next signature block
+        sig += 16; // next signature block
     }
     //squeeze(hash, x, m); // x should be the public key v
     memcpy(x, hash->H, 16);
@@ -824,7 +824,7 @@ unsigned char winternitz_8_verify(const unsigned char v[/*m*/], const unsigned s
         hash->H[13] ^= x[13];
         hash->H[14] ^= x[14];
         hash->H[15] ^= x[15];
-        sig += m; // next signature block
+        sig += 16; // next signature block
     }
     // checksum part:
     for (i = 0; i < WINTERNITZ_CHECKSUM_SIZE; i++) {
@@ -858,7 +858,7 @@ unsigned char winternitz_8_verify(const unsigned char v[/*m*/], const unsigned s
         hash->H[13] ^= x[13];
         hash->H[14] ^= x[14];
         hash->H[15] ^= x[15];
-        sig += m; // next signature block
+        sig += 16; // next signature block
     }
     //squeeze(pubk, x, m); // x should be the public key v
     memcpy(x, hash->H, 16);

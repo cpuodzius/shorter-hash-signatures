@@ -27,7 +27,7 @@ unsigned char pkey_bench[NODE_VALUE_SIZE] =        {0xd9,0xea,0x1a,0x5f,0x49,0xd
 unsigned char pkey_bench[NODE_VALUE_SIZE] =        {0x49,0x69,0xed,0x13,0xe8,0x25,0x03,0x49,0x8c,0x27,0x9a,0x09,0x05,0xec,0xbe,0xe2};
 #elif MSS_HEIGHT == 14
 unsigned char pkey_bench[NODE_VALUE_SIZE] =        {0x1e,0xd6,0xe7,0x7b,0x28,0x88,0xfa,0x2d,0x76,0xa9,0xa4,0x89,0x56,0xe8,0x94,0x8e};
-#elif MSS_HEIGHT == 15
+#elif MSS_HEIGHT == 15                             
 unsigned char pkey_bench[NODE_VALUE_SIZE] =        {0x4f,0xa0,0x09,0x7f,0x4e,0xca,0xf4,0xa2,0x69,0x90,0x5f,0xe0,0x30,0xc5,0x01,0xb0};
 #else
 unsigned char pkey_bench[NODE_VALUE_SIZE];
@@ -94,6 +94,8 @@ void do_benchmark(enum BENCHMARK phase, unsigned short benchs) {
 
 		case BENCHMARK_MSS_SIGN:
 			for(j = 0; j < (1 << MSS_HEIGHT); j++) {
+			//for(j = 0; j < (1 << 10); j++) { //pt1 0..2^10-1
+			//for(j = (1 << 10); j < (1 << 11); j++) { //pt2 2^10..2^11-1
 			//for(j = 0; j < (1 << (MSS_HEIGHT-2)); j++) { //pt1 0..2^11-1
 			//for(j = (1 << (MSS_HEIGHT-2)); j < (1 << (MSS_HEIGHT-1)); j++) { //pt2 2^11...2^12-1
 			//for(j = (1 << (MSS_HEIGHT-1)); j < (1 << (MSS_HEIGHT-1)) + 2048; j++) { //pt3 2^12...2^12+2048-1
