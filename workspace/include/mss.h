@@ -17,10 +17,10 @@
 
 #define MSS_SEC_LVL                     WINTERNITZ_SEC_LVL
 #ifndef MSS_HEIGHT
-	#define MSS_HEIGHT			13
+	#define MSS_HEIGHT			14
 #endif
 #ifndef MSS_K
-	#define MSS_K				11
+	#define MSS_K				10
 #endif
 
 #if odd(MSS_HEIGHT - MSS_K)
