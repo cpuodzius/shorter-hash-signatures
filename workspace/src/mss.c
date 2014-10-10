@@ -9,7 +9,7 @@ enum TREEHASH_STATE {
 	TREEHASH_FINISHED	= 0x80
 };
 
-#define TREEHASH_MASK			0x1F
+#define TREEHASH_MASK			    0x1F
 #define TREEHASH_HEIGHT_INFINITY	0x7F
 
 #if defined(DEBUG)
@@ -84,6 +84,7 @@ void print_treehash(const struct state_mt *state) {
 	}
 }
 
+/*
 void print_retain(const struct state_mt *state) {
 	unsigned short j;
 	unsigned char h;
@@ -97,7 +98,7 @@ void print_retain(const struct state_mt *state) {
 			Display("", state->retain[index].value, NODE_VALUE_SIZE);
 		}
 	}
-}
+} //*/
 
 #endif
 
@@ -144,12 +145,13 @@ void _stack_push(struct mss_node stack[MSS_KEEP_SIZE], unsigned short *index, st
 	printf("Stack before push:");
 	if(*index == 0)
 		printf(" empty\n");
-	else
+	else {
 		printf("\n");
-	for(i = *index - 1; i >= 0; i--) {
-		printf("\nStack node: %d\n", i);
-		printf("h=%d, pos=%d\n", stack[i].height, stack[i].index);
-		Display("Node", stack[i].value, NODE_VALUE_SIZE);
+        for(i = 0; i < *index; i++) {
+            printf("\nStack node: %d\n", i);
+            printf("h=%d, pos=%d\n", stack[i].height, stack[i].index);
+            Display("Node", stack[i].value, NODE_VALUE_SIZE);
+        }
 	}
 	printf("\nNode to push\n");
 	printf("h=%d, pos=%d\n", node->height, node->index);
@@ -162,12 +164,13 @@ void _stack_push(struct mss_node stack[MSS_KEEP_SIZE], unsigned short *index, st
 	printf("\nStack after push:");
 	if(*index == 0)
 		printf(" empty\n");
-	else
+	else {
 		printf("\n");
-	for(i = *index - 1; i >= 0; i--) {
-		printf("\nStack node: %d\n", i);
-		printf("h=%d, pos=%d\n", stack[i].height, stack[i].index);
-		Display("Node", stack[i].value, NODE_VALUE_SIZE);
+        for(i = 0; i < *index; i++) {
+            printf("\nStack node: %d\n", i);
+            printf("h=%d, pos=%d\n", stack[i].height, stack[i].index);
+            Display("Node", stack[i].value, NODE_VALUE_SIZE);
+        }
 	}
 	assert(*index == prior_index + 1);
 	printf("-----------------------\n");
@@ -341,14 +344,14 @@ void _treehash_update(dm_t *hash, sponge_t *pubk, struct state_mt *state, const 
 }
 
 void _retain_push(struct state_mt *state, struct mss_node *node) {
-#ifdef MSS_CALC_RETAIN
+//#ifdef MSS_CALC_RETAIN
 	unsigned short index = (1 << (MSS_HEIGHT - node->height - 1)) - (MSS_HEIGHT - node->height - 1) - 1 + (node->index >> 1) - 1;
 #if defined(DEBUG)
 	assert(_node_valid(node));
 	assert(state->retain_index[node->height - (MSS_HEIGHT - MSS_K)] == 0);
 #endif
 	state->retain[index] = *node;
-#endif // MSS_CALC_RETAIN
+//#endif // MSS_CALC_RETAIN
 }
 
 void _retain_pop(struct state_mt *state, struct mss_node *node, unsigned short h) {
@@ -365,7 +368,7 @@ void _retain_pop(struct state_mt *state, struct mss_node *node, unsigned short h
 	assert(index < MSS_RETAIN_SIZE);
 #endif
 
-#ifndef MSS_CALC_RETAIN
+#if !defined(MSS_CALC_RETAIN) && defined(PLATFORM_TELOSB)
 	memcpy_P(&node->height,&retain_height[index],1);
 	memcpy_P(&node->index,&retain_pos[index],1);
 	memcpy_P(node->value,&retain_values[index],NODE_VALUE_SIZE);
@@ -635,7 +638,7 @@ unsigned char mss_verify(struct mss_node authpath[MSS_HEIGHT], const unsigned ch
 #include "test.h"
 
 int main(int argc, char *argv[]) {
-    printf("\n Parameters:  sec lvlH=%u, H=%u, K=%u, W=%u \n\n", MSS_SEC_LVL, MSS_HEIGHT, MSS_K, WINTERNITZ_W);
+    printf("\nParameters:  n=%u, Height=%u, K=%u, W=%u \n\n", MSS_SEC_LVL, MSS_HEIGHT, MSS_K, WINTERNITZ_W);
 
     do_test(TEST_MSS_SIGN);
 

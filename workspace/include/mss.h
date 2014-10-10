@@ -14,8 +14,8 @@
 #define MSS_ERROR 0
 
 #define MSS_SEC_LVL                     WINTERNITZ_SEC_LVL
-#define MSS_HEIGHT			11
-#define MSS_K				9
+#define MSS_HEIGHT			10
+#define MSS_K				8
 
 #define odd(x)	((x) % 2)
 #if odd(MSS_HEIGHT - MSS_K)
@@ -25,8 +25,8 @@
 #define MSS_TREEHASH_SIZE		MSS_HEIGHT - MSS_K
 #define MSS_STACK_SIZE			MSS_HEIGHT - MSS_K - 2
 #define MSS_KEEP_SIZE			MSS_HEIGHT // Keep is used as stack during key generation
-#ifdef MSS_ROM_RETAIN
-	#define MSS_RETAIN_SIZE			0 // retain already precomputed, load from ROM
+#ifdef PLATFORM_SENSOR && MSS_ROM_RETAIN
+    #define MSS_RETAIN_SIZE			0 // retain already precomputed, load from ROM
 #else
 	#define MSS_RETAIN_SIZE			(1 << MSS_K) - MSS_K - 1
 #endif
