@@ -45,13 +45,12 @@ int test_merkle_signature() {
 	sinit(&hash_mmo, MSS_SEC_LVL);
 	DM_init(&f_test);
 
-#if MSS_HEIGHT != 10 || (MSS_HEIGHT == 10 && defined(MSS_CALC_RETAIN))
+#if defined(MSS_CALC_RETAIN) && defined(PLATFORM_TELOSB) || !defined(PLATFORM_TELOSB)
 	// Compute Merkle Public Key and TreeHash state
 	mss_keygen(&f_test, &hash_mmo, seed_test, &nodes[0], &nodes[1], &state_test, pkey_test);
     //display_value("", pkey_test, NODE_VALUE_SIZE);
-#endif
-
     print_retain(&state_test);
+#endif
 
 	//Sign and verify for all j-th authentication paths
 	errors = 0;

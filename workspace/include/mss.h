@@ -17,10 +17,10 @@
 
 #define MSS_SEC_LVL                     WINTERNITZ_SEC_LVL
 #ifndef MSS_HEIGHT
-	#define MSS_HEIGHT			11
+	#define MSS_HEIGHT			10
 #endif
 #ifndef MSS_K
-	#define MSS_K				9
+	#define MSS_K				2
 #endif
 
 #if odd(MSS_HEIGHT - MSS_K)
@@ -30,8 +30,8 @@
 #define MSS_TREEHASH_SIZE		MSS_HEIGHT - MSS_K
 #define MSS_STACK_SIZE			MSS_HEIGHT - MSS_K - 2
 #define MSS_KEEP_SIZE			MSS_HEIGHT // Keep is used as stack during key generation
-#ifndef MSS_CALC_RETAIN
-	#define MSS_RETAIN_SIZE			0 // retain already precomputed, load from ROM
+#if !defined(MSS_CALC_RETAIN) && defined(PLATFORM_TELOSB)
+    #define MSS_RETAIN_SIZE			0 // retain already precomputed, load from ROM
 #else
 	#define MSS_RETAIN_SIZE			(1 << MSS_K) - MSS_K - 1
 #endif
