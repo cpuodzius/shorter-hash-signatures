@@ -17,10 +17,10 @@
 
 #define MSS_SEC_LVL                     WINTERNITZ_SEC_LVL
 #ifndef MSS_HEIGHT
-	#define MSS_HEIGHT			14
+	#define MSS_HEIGHT			11
 #endif
 #ifndef MSS_K
-	#define MSS_K				10
+	#define MSS_K				9
 #endif
 
 #if odd(MSS_HEIGHT - MSS_K)
@@ -53,7 +53,7 @@ struct state_mt {
         struct mss_node retain[MSS_RETAIN_SIZE];
         struct mss_node keep[MSS_KEEP_SIZE];
         struct mss_node auth[MSS_HEIGHT];
-		struct mss_node store[MSS_TREEHASH_SIZE-1];
+	struct mss_node store[MSS_TREEHASH_SIZE-1];
 };
 
 void mss_keygen(dm_t *hash, mmo_t *mmo, unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], struct mss_node *node1, struct mss_node *node2, struct state_mt *state, unsigned char pkey[NODE_VALUE_SIZE]);

@@ -9,7 +9,7 @@ enum TREEHASH_STATE {
 	TREEHASH_FINISHED	= 0x80
 };
 
-#define TREEHASH_MASK				0x1F
+#define TREEHASH_MASK			0x1F
 #define TREEHASH_HEIGHT_INFINITY	0x7F
 
 #if defined(DEBUG)
