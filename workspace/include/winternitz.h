@@ -10,13 +10,11 @@
 
 
 #define WINTERNITZ_SEC_LVL	128
-#ifndef WINTERNITZ_W
-	#define WINTERNITZ_W		2
-#endif
-#define WINTERNITZ_N            1*WINTERNITZ_SEC_LVL
+#define WINTERNITZ_W		2
+#define WINTERNITZ_N 		WINTERNITZ_SEC_LVL
 
 #if WINTERNITZ_W > 8
-#error the maximum w value is 8 due to chosen data type in this implementation
+#error maximum value for w is 8 due to chosen data type in this implementation
 #endif
 
 #define WINTERNITZ_l1 ((WINTERNITZ_N + WINTERNITZ_W - 1) / WINTERNITZ_W)
