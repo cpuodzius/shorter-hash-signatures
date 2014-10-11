@@ -3,7 +3,7 @@
 
 #include "winternitz.h"
 
-#ifndef MSS_CALC_RETAIN
+#ifdef MSS_ROM_RETAIN
 	#include "retain.h"
 #endif
 
@@ -13,16 +13,11 @@
 #define MSS_OK 1
 #define MSS_ERROR 0
 
-#define odd(x)	((x) % 2)
-
 #define MSS_SEC_LVL                     WINTERNITZ_SEC_LVL
-#ifndef MSS_HEIGHT
-	#define MSS_HEIGHT			11
-#endif
-#ifndef MSS_K
-	#define MSS_K				9
-#endif
+#define MSS_HEIGHT			11
+#define MSS_K				9
 
+#define odd(x)	((x) % 2)
 #if odd(MSS_HEIGHT - MSS_K)
 #error (H - K) must be even
 #endif
@@ -30,7 +25,7 @@
 #define MSS_TREEHASH_SIZE		MSS_HEIGHT - MSS_K
 #define MSS_STACK_SIZE			MSS_HEIGHT - MSS_K - 2
 #define MSS_KEEP_SIZE			MSS_HEIGHT // Keep is used as stack during key generation
-#ifndef MSS_CALC_RETAIN
+#ifdef MSS_ROM_RETAIN
 	#define MSS_RETAIN_SIZE			0 // retain already precomputed, load from ROM
 #else
 	#define MSS_RETAIN_SIZE			(1 << MSS_K) - MSS_K - 1
@@ -56,14 +51,24 @@ struct state_mt {
 	struct mss_node store[MSS_TREEHASH_SIZE-1];
 };
 
-void mss_keygen(dm_t *hash, mmo_t *mmo, unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], struct mss_node *node1, struct mss_node *node2, struct state_mt *state, unsigned char pkey[NODE_VALUE_SIZE]);
+#ifndef PLATFORM_SENSOR
 
-void mss_sign(struct state_mt *state, unsigned char *seed, struct mss_node *leaf, const char *M, unsigned short len,
-              mmo_t *mmo, dm_t *f, unsigned char *h, unsigned short leaf_index, struct mss_node *node1, struct mss_node *node2,
-              unsigned char *sig, struct mss_node authpath[MSS_HEIGHT]);
+#define MSS_NODE_SIZE	3 + LEN_BYTES(MSS_SEC_LVL)
+#define MSS_STATE_SIZE	(MSS_TREEHASH_SIZE + 2 * (MSS_K + MSS_TREEHASH_SIZE) + MSS_NODE_SENSOR * (MSS_TREEHASH_SIZE + MSS_STACK_SIZE + MSS_RETAIN_SIZE + MSS_RETAIN_SIZE + MSS_KEEP_SIZE + MSS_HEIGHT + MSS_TREEHASH_SIZE - 1))
+#define MSS_KEY_SIZE	(MSS_STATE_SIZE + LEN_BYTES(MSS_SEC_LVL))
 
-unsigned char mss_verify(struct mss_node authpath[MSS_HEIGHT], const unsigned char *v, const char *M, unsigned short len,
-                         mmo_t *mmo, dm_t *f, unsigned char *h, unsigned short leaf_index, const unsigned char *sig,
-                         unsigned char *x, struct mss_node *currentLeaf, unsigned char merklePubKey[NODE_VALUE_SIZE]);
+unsigned char *mss_keygen(unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]);
+unsigned char *mss_sign(unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], unsigned char skey[MSS_KEY_SIZE], char *msg);
+unsigned char *mss_verify(unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], unsigned char pkey[MSS_KEY_SIZE], char *msg);
+
+#else
+
+void mss_keygen_core(dm_t *hash, mmo_t *mmo, unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], struct mss_node *node1, struct mss_node *node2, struct state_mt *state, unsigned char pkey[NODE_VALUE_SIZE]);
+void mss_sign_core(struct state_mt *state, unsigned char *seed, struct mss_node *leaf, const char *msg, unsigned short len, mmo_t *mmo, dm_t *f, unsigned char *h, unsigned short leaf_index, struct mss_node *node1, struct mss_node *node2, unsigned char *ots, struct mss_node authpath[MSS_HEIGHT]);
+unsigned char mss_verify_core(struct mss_node authpath[MSS_HEIGHT], const unsigned char *v, const char *msg, unsigned short len, mmo_t *mmo, dm_t *f, unsigned char *h, unsigned short leaf_index, const unsigned char *ots, unsigned char *x, struct mss_node *current_leaf, unsigned char pkey[NODE_VALUE_SIZE]);
+
+#endif
+
+
 
 #endif // __MSS_H
