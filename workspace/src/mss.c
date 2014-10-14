@@ -48,13 +48,15 @@ void _create_leaf(dm_t *f, sponge_t *pubk, struct mss_node *node, const unsigned
 	unsigned char sk[LEN_BYTES(MSS_SEC_LVL)];
 
 #if defined(DEBUG) || defined(MSS_SELFTEST)
+	unsigned char i;
 	// seed must always be the same
 	if(!dbg_seed_initialized) {
 		dbg_seed_initialized = 1;
 		memmove(dbg_seed, seed, LEN_BYTES(MSS_SEC_LVL));
 	}
-	else
+	else {
 		assert(memcmp(dbg_seed, seed, LEN_BYTES(MSS_SEC_LVL)) == 0);
+	}
 	// leaf_index must be a valid
 	assert(_node_valid_index(0, leaf_index));
 
@@ -585,7 +587,7 @@ unsigned char *mss_keygen(unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
 
 #ifdef MSS_SELFTEST
 	// Arrange
-	assert(sizeof(seed) == LEN_BYTES(MSS_SEC_LVL));
+	assert(strlen(seed) == LEN_BYTES(MSS_SEC_LVL));
 	// TODO: test node, state, hash_mmo and hadh_dm
 #endif
 	// Act
@@ -1014,29 +1016,30 @@ int main(int argc, char *argv[]) {
 
 	// Test variables
 	clock_t elapsed;
-	unsigned short i, ntest = 1;
+	unsigned short i, ntest = (1 << MSS_HEIGHT);
 	elapsed = -clock();
 
-    printf("\nParameters:  n=%u, Height=%u, K=%u, W=%u \n\n", MSS_SEC_LVL, MSS_HEIGHT, MSS_K, WINTERNITZ_W);
+	printf("\nParameters:  n=%u, Height=%u, K=%u, W=%u \n\n", MSS_SEC_LVL, MSS_HEIGHT, MSS_K, WINTERNITZ_W);
 
-    do_test(TEST_MSS_SIGN);
-
+	do_test(TEST_MSS_SIGN);
+/*
 	// Execution variables
-	unsigned char seed[LEN_BYTES(MSS_SEC_LVL)];
+	unsigned char seed[LEN_BYTES(MSS_SEC_LVL)] = {0xA0,0xA1,0xA2,0xA3,0xA4,0xA5,0xA6,0xA7,0xA8,0xA9,0xAA,0xAB,0xAC,0xAD,0xAE,0xAF};
 	unsigned char skey[MSS_KEY_SIZE], pkey[LEN_BYTES(MSS_SEC_LVL)], signature[MSS_SIGNATURE_SIZE];
 	char msg[] = "Hello, world!";
 
 	unsigned short j;
 	srand(time(NULL));
+
 	for (j = 0; j < LEN_BYTES(MSS_SEC_LVL); j++) {
-		seed[j] = rand() ^ j; // sample private key, for debugging only
+		seed[j] = rand() ^ j; // sample private key, this is not a secure, only for tests!
 	}
+
 	Display("seed for keygen: ", seed, LEN_BYTES(MSS_SEC_LVL));
 
 	printf("Key generation... ");
 	memcpy(skey, mss_keygen(seed), MSS_KEY_SIZE);
 	printf("Done!\n");
-
 
 	printf("Signing %d messages... ", ntest);
 	for(i = 0; i < ntest; i++)
@@ -1046,7 +1049,7 @@ int main(int argc, char *argv[]) {
 	printf("Signature verification... ");
 	assert(mss_verify(signature, pkey, msg));
 	printf("Done!\n");
-
+//*/
 	elapsed += clock();
 	printf("Elapsed time: %.1f ms\n", 1000*(float)elapsed/CLOCKS_PER_SEC/ntest);
 
