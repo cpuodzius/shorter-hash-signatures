@@ -41,7 +41,7 @@ void winternitz_keygen(const unsigned char s[/*m*/], const unsigned short m, mmo
 
     for (i = 0; i < WINTERNITZ_L; i++) { // chunk count, including checksum
         memset(v, 0, 16); v[0] = i; // H(s, i) // i = byte tag
-        AES_encrypt(v, v, (unsigned char*)s); // v = s_i = private block for i-th byte
+        aes_encrypt(v, v, (unsigned char*)s); // v = s_i = private block for i-th byte
         //sq++;
         for (j = 0; j < (1 << WINTERNITZ_W) - 1; j++) {
             hash16(f, v, v); // v is the hash of its previous value = y_i = H^{2^w-1}(s_i)
@@ -49,7 +49,7 @@ void winternitz_keygen(const unsigned char s[/*m*/], const unsigned short m, mmo
         }
         //absorb(pubk, v, m);  // y_0 || ... || y_i ...
 	//memcpy(local_key,pubk->H,16);
-        AES_encrypt(pubk->H, v, pubk->H);
+        aes_encrypt(pubk->H, v, pubk->H);
         pubk->H[ 0] ^= v[ 0];
         pubk->H[ 1] ^= v[ 1];
         pubk->H[ 2] ^= v[ 2];
@@ -115,7 +115,7 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
     for (i = 0; i < LEN_BYTES(WINTERNITZ_N); i++) { // NB: hash length is m here, but was 2*m in the predecessor scheme
         // 0 part:
         memset(sig, 0, 16); sig[0] = (i << 2) + 0; // H(s, 4i + 0) // 0 chunk index
-        AES_encrypt(sig, sig, (unsigned char *)s); //sig = s_i = AES_s(i) // sig holds the private block for i-th "0" chunk
+        aes_encrypt(sig, sig, (unsigned char *)s); //sig = s_i = AES_s(i) // sig holds the private block for i-th "0" chunk
         //sq++;
         checksum += 3;
         switch ((h[i]     ) & 3) { // 0 chunk
@@ -139,7 +139,7 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
 
         // 1 part:
         memset(sig, 0, 16); sig[0] = (i << 2) + 1; // H(s, 4i + 1) // 1 chunk index
-        AES_encrypt(sig, sig, (unsigned char *)s); //sig = s_i = AES_s(i) // sig holds the private block for i-th "1" chunk
+        aes_encrypt(sig, sig, (unsigned char *)s); //sig = s_i = AES_s(i) // sig holds the private block for i-th "1" chunk
         //sq++;
         checksum += 3;
         switch ((h[i] >> 2) & 3) { // 1 chunk
@@ -163,7 +163,7 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
 
         // 2 part:
         memset(sig, 0, 16); sig[0] = (i << 2) + 2; // H(s, 4i + 2) // 2 chunk index
-        AES_encrypt(sig, sig, (unsigned char *)s); //sig = s_i = AES_s(i) // sig holds the private block for i-th "2" chunk
+        aes_encrypt(sig, sig, (unsigned char *)s); //sig = s_i = AES_s(i) // sig holds the private block for i-th "2" chunk
         //sq++;
         checksum += 3;
         switch ((h[i] >> 4) & 3) { // 2 chunk
@@ -186,7 +186,7 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
 
         // 3 part:
         memset(sig, 0, 16); sig[0] = (i << 2) + 3; // H(s, 4i + 3) // 3 chunk index
-        AES_encrypt(sig, sig, (unsigned char *)s); //sig = s_i = AES_s(i) // sig holds the private block for i-th "3" chunk
+        aes_encrypt(sig, sig, (unsigned char *)s); //sig = s_i = AES_s(i) // sig holds the private block for i-th "3" chunk
         //sq++;
         checksum += 3;
         switch ((h[i] >> 6) & 3) { // 3 chunk
@@ -212,7 +212,7 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
     // checksum part:
     for (i = 0; i < WINTERNITZ_l2; i++) { // checksum
         memset(sig, 0, 16); sig[0] = (m << 2) + i; // H(s, 4m + i) // i-th chunk index
-        AES_encrypt(sig, sig, (unsigned char *)s);  //sig = s_i = AES_s(i) // sig holds the private block for i-th checksum chunk
+        aes_encrypt(sig, sig, (unsigned char *)s);  //sig = s_i = AES_s(i) // sig holds the private block for i-th checksum chunk
         //sq++;
         switch (checksum & 3) { // 3 chunk
         case 3:
@@ -275,7 +275,7 @@ void winternitz_4_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
     for (i = 0; i < (unsigned char)m; i++) { // NB: hash length is m here, but was 2*m in the predecessor scheme
         // lo part:
         memset(sig, 0, 16); sig[0] = (i << 1) + 0; // H(s, 2i + 0) // lo nybble tag
-        AES_encrypt(sig, sig, (unsigned char *)s); // sig holds the private block s_{2i} for i-th "lo" nybble
+        aes_encrypt(sig, sig, (unsigned char *)s); // sig holds the private block s_{2i} for i-th "lo" nybble
         //sq++;
         c = h[i] & 15; // lo nybble
         checksum += 15 - (unsigned short)c;
@@ -292,7 +292,7 @@ void winternitz_4_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
 
         // hi part:
         memset(sig, 0, 16); sig[0] = (i << 1) + 1; // H(s, 2i + 1) // hi nybble tag
-        AES_encrypt(sig, sig, (unsigned char *)s); // sig holds the private block for i-th "hi" nybble
+        aes_encrypt(sig, sig, (unsigned char *)s); // sig holds the private block for i-th "hi" nybble
         //sq++;
         c = h[i] >>  4; // hi nybble
         checksum += 15 - (unsigned short)c;
@@ -309,7 +309,7 @@ void winternitz_4_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
     // checksum part:
     for (i = 0; i < 3; i++) { // checksum
         memset(sig, 0, 16); sig[0] = (m << 1) + i; // H(s, 2m + i) // lo nybble tag
-        AES_encrypt(sig, sig, (unsigned char *)s); // sig holds the private block for i-th checksum nybble
+        aes_encrypt(sig, sig, (unsigned char *)s); // sig holds the private block for i-th checksum nybble
         //sq++;
         c = checksum & 15; // least significant nybble
         checksum >>= 4;
@@ -364,7 +364,7 @@ void winternitz_8_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
     for (i = 0; i < (unsigned char)m; i++) { // NB: hash length is m here, but was 2*m in the predecessor scheme
         // process 8-bit chunk
         memset(sig, 0, 16); sig[0] = i; // H(s, i) // byte tag
-        AES_encrypt(sig, sig, (unsigned char *)s); // sig holds the private block i-th byte
+        aes_encrypt(sig, sig, (unsigned char *)s); // sig holds the private block i-th byte
         //sq++;
         checksum += 255 - (unsigned char)h[i];
 
@@ -381,7 +381,7 @@ void winternitz_8_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
     // checksum part:
     for (i = 0; i < WINTERNITZ_CHECKSUM_SIZE; i++) {
         memset(sig, 0, 16); sig[0] = m + i; // H(s, m + i) // byte tag
-        AES_encrypt(sig, sig, (unsigned char *)s); // sig holds the private block for i-th checksum unsigned char
+        aes_encrypt(sig, sig, (unsigned char *)s); // sig holds the private block for i-th checksum unsigned char
         //sq++;
         c = checksum & 255; // least significant unsigned char
         checksum >>= 8;
@@ -462,7 +462,7 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
         }
         //absorb(hash, x, m);
         //memcpy(local_key,hash->H,16);
-        AES_encrypt(hash->H, x, hash->H);
+        aes_encrypt(hash->H, x, hash->H);
         hash->H[ 0] ^= x[ 0];
         hash->H[ 1] ^= x[ 1];
         hash->H[ 2] ^= x[ 2];
@@ -492,7 +492,7 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
         }
         //absorb(hash, x, m);
         //memcpy(local_key,hash->H,16);
-        AES_encrypt(hash->H, x, hash->H);
+        aes_encrypt(hash->H, x, hash->H);
         hash->H[ 0] ^= x[ 0];
         hash->H[ 1] ^= x[ 1];
         hash->H[ 2] ^= x[ 2];
@@ -522,7 +522,7 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
         }
         //absorb(hash, x, m);]
         //memcpy(local_key,hash->H,16);
-        AES_encrypt(hash->H, x, hash->H);
+        aes_encrypt(hash->H, x, hash->H);
         hash->H[ 0] ^= x[ 0];
         hash->H[ 1] ^= x[ 1];
         hash->H[ 2] ^= x[ 2];
@@ -552,7 +552,7 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
         }
         //absorb(hash, x, m);
         //memcpy(local_key,hash->H,16);
-        AES_encrypt(hash->H, x, hash->H);
+        aes_encrypt(hash->H, x, hash->H);
         hash->H[ 0] ^= x[ 0];
         hash->H[ 1] ^= x[ 1];
         hash->H[ 2] ^= x[ 2];
@@ -571,7 +571,6 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
         hash->H[15] ^= x[15];
 
         sig += 16; // next signature block
-
     }
     // checksum part:
     for (i = 0; i < WINTERNITZ_l2; i++) { // checksum
@@ -584,7 +583,7 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
         }
         //absorb(hash, x, m);
         //memcpy(local_key,hash->H,16);
-        AES_encrypt(hash->H, x, hash->H);
+        aes_encrypt(hash->H, x, hash->H);
         hash->H[ 0] ^= x[ 0];
         hash->H[ 1] ^= x[ 1];
         hash->H[ 2] ^= x[ 2];
@@ -663,7 +662,7 @@ unsigned char winternitz_4_verify(const unsigned char v[/*m*/], const unsigned s
             //sq++;
         }
         //absorb(pubk, x, m);
-        AES_encrypt(hash->H, x, hash->H);
+        aes_encrypt(hash->H, x, hash->H);
         hash->H[ 0] ^= x[ 0];
         hash->H[ 1] ^= x[ 1];
         hash->H[ 2] ^= x[ 2];
@@ -696,7 +695,7 @@ unsigned char winternitz_4_verify(const unsigned char v[/*m*/], const unsigned s
             //sq++;
         }
         //absorb(hash, x, m);
-        AES_encrypt(hash->H, x, hash->H);
+        aes_encrypt(hash->H, x, hash->H);
         hash->H[ 0] ^= x[ 0];
         hash->H[ 1] ^= x[ 1];
         hash->H[ 2] ^= x[ 2];
@@ -730,7 +729,7 @@ unsigned char winternitz_4_verify(const unsigned char v[/*m*/], const unsigned s
             //sq++;
         }
         //absorb(hash, x, m);
-        AES_encrypt(hash->H, x, hash->H);
+        aes_encrypt(hash->H, x, hash->H);
         hash->H[ 0] ^= x[ 0];
         hash->H[ 1] ^= x[ 1];
         hash->H[ 2] ^= x[ 2];
@@ -807,7 +806,7 @@ unsigned char winternitz_8_verify(const unsigned char v[/*m*/], const unsigned s
             //sq++;
         }
         //absorb(pubk, x, m);
-        AES_encrypt(hash->H, x, hash->H);
+        aes_encrypt(hash->H, x, hash->H);
         hash->H[ 0] ^= x[ 0];
         hash->H[ 1] ^= x[ 1];
         hash->H[ 2] ^= x[ 2];
@@ -841,7 +840,7 @@ unsigned char winternitz_8_verify(const unsigned char v[/*m*/], const unsigned s
             //sq++;
         }
         //absorb(pubk, x, m);
-        AES_encrypt(hash->H, x, hash->H);
+        aes_encrypt(hash->H, x, hash->H);
         hash->H[ 0] ^= x[ 0];
         hash->H[ 1] ^= x[ 1];
         hash->H[ 2] ^= x[ 2];

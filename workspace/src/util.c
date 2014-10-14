@@ -139,7 +139,7 @@ int base64decode (char *in, int in_len, unsigned char *out, int *out_len) {
 #undef INVALID
 
 /***************************************************************************************************/
-/* Debugging																					   */
+/* Debugging											   */
 /***************************************************************************************************/
 
 void Display(const char *tag, const unsigned char *u, unsigned short n) {

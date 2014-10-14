@@ -54,7 +54,7 @@ void _create_leaf(dm_t *f, sponge_t *pubk, struct mss_node *node, const unsigned
 		memmove(dbg_seed, seed, LEN_BYTES(MSS_SEC_LVL));
 	}
 	else
-		assert(memcmp(dbg_seed, seed, LEN_BYTES(MSS_SEC_LVL)) == 0);
+		memcmp(dbg_seed, seed, LEN_BYTES(MSS_SEC_LVL));
 	// leaf_index must be a valid
 	assert(_node_valid_index(0, leaf_index));
 
@@ -556,7 +556,7 @@ unsigned char mss_verify_core(struct mss_node authpath[MSS_HEIGHT], const unsign
 		return MSS_ERROR;
 	}
 
-	currentLeaf->height = 0;
+/*	currentLeaf->height = 0;
 	currentLeaf->index = leaf_index;
 	memcpy(currentLeaf->value, v, NODE_VALUE_SIZE);
 
@@ -585,7 +585,7 @@ unsigned char *mss_keygen(unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
 
 #ifdef MSS_SELFTEST
 	// Arrange
-	assert(sizeof(seed) == LEN_BYTES(MSS_SEC_LVL));
+	assert(sizeof(seed) >= LEN_BYTES(MSS_SEC_LVL) * sizeof(unsigned char));
 	// TODO: test node, state, hash_mmo and hadh_dm
 #endif
 	// Act
