@@ -50,24 +50,24 @@ int test_merkle_signature() {
 	mss_keygen_core(&f_test, &hash_mmo, seed_test, &nodes[0], &nodes[1], &state_test, pkey_test);
     //display_value("", pkey_test, NODE_VALUE_SIZE);
 #ifdef DEBUG
-    print_retain(&state_test);
+    //print_retain(&state_test);
 #endif
 #endif
 
 	//Sign and verify for all j-th authentication paths
 	errors = 0;
 	for (j = 0; j < (1 << MSS_HEIGHT); j++) {
-#ifdef DEBUG
+#if defined(DEBUG) || defined(MSS_SELFTEST)
 	    printf("Testing merkle signature for leaf %d ...", j);
 #endif
 	    mss_sign_core(&state_test, seed_test, &currentLeaf_test, (const char *)M, strlen(M)+1, &hash_mmo, &f_test, h1, j, &nodes[0], &nodes[1], sig_test, authpath_test);
         if(mss_verify_core(authpath_test, currentLeaf_test.value, (const char *)M, strlen(M)+1, &hash_mmo, &f_test, h2, j, sig_test, aux, &currentLeaf_test, pkey_test) == MSS_OK) {
-#ifdef DEBUG
+#if defined(DEBUG) || defined(MSS_SELFTEST)
             printf(" [OK]\n");
 #endif
 	    } else {
             errors++;
-#ifdef DEBUG
+#if defined(DEBUG) || defined(MSS_SELFTEST)
             printf(" [ERROR]\n");
 #endif
 	    }
@@ -82,7 +82,7 @@ int do_test(enum TEST operation) {
 	switch(operation) {
 		case TEST_MSS_SIGN:
 			ret = test_merkle_signature();
-#ifdef MSS_SELFTEST
+#if defined(DEBUG) || defined(MSS_SELFTEST)
             printf("Errors: %d \n", ret);
 #endif
 			break;
