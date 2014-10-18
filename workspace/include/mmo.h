@@ -31,7 +31,7 @@ typedef struct {
 /**
  * Encrypt a single AES block under a 128-bit key.
  */
-void AES_encrypt(unsigned char ciphertext[16], const unsigned char plaintext[16], unsigned char key[16]);
+void aes_encrypt(unsigned char ciphertext[16], const unsigned char plaintext[16], unsigned char key[16]);
 
 void DM_init(dm_t *dm);
 

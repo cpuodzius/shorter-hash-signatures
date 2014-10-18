@@ -9,7 +9,7 @@ enum TREEHASH_STATE {
 	TREEHASH_FINISHED	= 0x80
 };
 
-#define TREEHASH_MASK			    0x1F
+#define TREEHASH_MASK			0x1F
 #define TREEHASH_HEIGHT_INFINITY	0x7F
 
 #if defined(DEBUG) || defined(MSS_SELFTEST)
@@ -48,7 +48,6 @@ void _create_leaf(dm_t *f, sponge_t *pubk, struct mss_node *node, const unsigned
 	unsigned char sk[LEN_BYTES(MSS_SEC_LVL)];
 
 #if defined(DEBUG) || defined(MSS_SELFTEST)
-	unsigned char i;
 	// seed must always be the same
 	if(!dbg_seed_initialized) {
 		dbg_seed_initialized = 1;
@@ -151,7 +150,7 @@ void _get_parent(dm_t *hash, const struct mss_node *left_child, const struct mss
 	#endif
 #endif
 /********* Act *********/
-    hash32(hash, left_child->value, right_child->value, parent->value);
+	hash32(hash, left_child->value, right_child->value, parent->value);
 
 	parent->height = left_child->height + 1;
 	parent->index = (left_child->index >> 1);
@@ -279,9 +278,9 @@ void _treehash_update(dm_t *hash, sponge_t *pubk, struct mss_state *state, const
 	_treehash_set_tailheight(state, h, 0);
 
 	while(state->stack_index > 0 && _treehash_get_tailheight(state, h) == state->stack[state->stack_index - 1].height && (_treehash_get_tailheight(state, h) + 1) < h) {
-        _stack_pop(state->stack, &state->stack_index, node2);
-        _get_parent(hash, node2, node1, node1);
-        _treehash_set_tailheight(state, h, _treehash_get_tailheight(state, h) + 1);
+		_stack_pop(state->stack, &state->stack_index, node2);
+		_get_parent(hash, node2, node1, node1);
+		_treehash_set_tailheight(state, h, _treehash_get_tailheight(state, h) + 1);
 	}
 
 	if(_treehash_get_tailheight(state, h) + 1 < h) {
@@ -390,7 +389,7 @@ void mss_keygen_core(dm_t *hash, sponge_t *pubk, unsigned char seed[LEN_BYTES(MS
 	init_state(state);
 
 	for(pos = 0; pos < (1 << MSS_HEIGHT); pos++) {
-        _create_leaf(hash, pubk, node1, pos, seed);
+		_create_leaf(hash, pubk, node1, pos, seed);
 #if defined(DEBUG)
 		mss_node_print(*node1);
 #endif
@@ -505,8 +504,8 @@ void _get_pkey(dm_t *hash, const struct mss_node auth[MSS_HEIGHT], struct mss_no
 }
 
 /**
- * s     The pos-th winternitz private key
- * v     The pos-th winternitz public key used as a nonce for the hash H(v,M)
+ * s	 The pos-th winternitz private key
+ * v	 The pos-th winternitz public key used as a nonce for the hash H(v,M)
  *
  */
 
@@ -518,19 +517,19 @@ void mss_sign_core(struct mss_state *state, unsigned char *seed, struct mss_node
 	assert((leaf_index >= 0) && (leaf_index < (1 << MSS_HEIGHT)));
 #endif
 /********* Act *********/
-    if(leaf_index % 2 == 0) {
+	if(leaf_index % 2 == 0) {
 #ifdef DEBUG
 		printf("Calc leaf in sign: %d \n",leaf_index);
 #endif
-        _create_leaf(f, mmo, leaf, leaf_index, seed);
-    }
-    else {
-        leaf->height = 0;
-        leaf->index = leaf_index;
-        memcpy(leaf->value, authpath[0].value, NODE_VALUE_SIZE);
-    }
+		_create_leaf(f, mmo, leaf, leaf_index, seed);
+	}
+	else {
+		leaf->height = 0;
+		leaf->index = leaf_index;
+		memcpy(leaf->value, authpath[0].value, NODE_VALUE_SIZE);
+	}
 
-    prg16(leaf_index, seed, sk); // sk := prg16(seed,leaf_index)
+	prg16(leaf_index, seed, sk); // sk := prg16(seed,leaf_index)
 
 	winternitz_sign(sk, leaf->value, LEN_BYTES(WINTERNITZ_N), (const char *)M, len, mmo, f, h, sig);
 
@@ -546,8 +545,8 @@ void mss_sign_core(struct mss_state *state, unsigned char *seed, struct mss_node
 }
 
 /**
- * s     The leaf_index-th Winternitz private key
- * v     The leaf_index-th Winternitz public key used as a nonce for the hash H(v,M)
+ * s	 The leaf_index-th Winternitz private key
+ * v	 The leaf_index-th Winternitz public key used as a nonce for the hash H(v,M)
  *
  */
 
@@ -576,10 +575,11 @@ unsigned char mss_verify_core(struct mss_node authpath[MSS_HEIGHT], const unsign
 }
 
 #ifndef PLATFORM_SENSOR
-unsigned char *mss_keygen(unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
+unsigned char *mss_keygen(const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
 
-	unsigned char *skey = malloc(MSS_KEY_SIZE);
-	unsigned char pkey[NODE_VALUE_SIZE];
+	unsigned short i, index = 0;
+	unsigned char *keys = malloc(MSS_SKEY_SIZE + MSS_PKEY_SIZE);
+	unsigned char pkey[MSS_PKEY_SIZE];
 	struct mss_node node[2];
 	struct mss_state state;
 	mmo_t hash_mmo;
@@ -599,23 +599,26 @@ unsigned char *mss_keygen(unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
 	sinit(&hash_mmo, MSS_SEC_LVL);
 
 	mss_keygen_core(&hash_dm, &hash_mmo, seed, &node[0], &node[1], &state, pkey);
-	serialize_skey(state, 0, seed, skey);
+	serialize_mss_skey(state, 0, seed, keys);
+
+	for(i = 0; i < MSS_PKEY_SIZE; i++)
+		keys[MSS_SKEY_SIZE + i] = pkey[i];
 
 #ifdef MSS_SELFTEST
 	// Assert
 	// TODO
 #endif
 
-	return skey;
+	return keys;
 }
 
-unsigned char *mss_sign(unsigned char skey[MSS_KEY_SIZE], char *msg) {
+unsigned char *mss_sign(unsigned char skey[MSS_SKEY_SIZE], const char *message) {
 	// Arrange
 	/* Auxiliary varibles */
 	unsigned short index;
 	struct mss_node node[3];
 	unsigned char hash[LEN_BYTES(WINTERNITZ_N)];
-	unsigned char ots[WINTERNITZ_L*LEN_BYTES(WINTERNITZ_SEC_LVL)];
+	unsigned char ots[MSS_OTS_SIZE];
 
 	mmo_t hash_mmo;
 	dm_t hash_dm;
@@ -626,7 +629,7 @@ unsigned char *mss_sign(unsigned char skey[MSS_KEY_SIZE], char *msg) {
 
 	unsigned char seed[LEN_BYTES(MSS_SEC_LVL)];
 
-	unsigned char *sig = malloc(MSS_SIGNATURE_SIZE);
+	unsigned char *signature = malloc(MSS_SIGNATURE_SIZE);
 
 	// Act
 
@@ -636,25 +639,28 @@ unsigned char *mss_sign(unsigned char skey[MSS_KEY_SIZE], char *msg) {
 	/* Initialization of Winternitz-MMO OTS */
 	sinit(&hash_mmo, MSS_SEC_LVL);
 
-	deserialize_skey(&state, &index, seed, skey);
+	deserialize_mss_skey(&state, &index, seed, skey);
 
-	mss_sign_core(&state, seed, &node[0], msg, strlen(msg) + 1, &hash_mmo, &hash_dm, hash, index, &node[1], &node[2], ots, authpath);
+	mss_sign_core(&state, seed, &node[0], message, strlen(message) + 1, &hash_mmo, &hash_dm, hash, index, &node[1], &node[2], ots, authpath);
 	index++;
 
-	serialize_skey(state, index, seed, skey);
-
-	serialize_signature(ots, node[0], authpath, sig);
+	serialize_mss_skey(state, index, seed, skey);
+	//printf(">>>>>>>>>>skey\n%d\n", MSS_SKEY_SIZE);
+	//unsigned int i;
+	//for(i=0; i < MSS_SKEY_SIZE; i++)
+	//		printf("%02X", skey[i]);
+	serialize_mss_signature(ots, node[0], authpath, signature);
 	//Assert
-	return sig;
+	return signature;
 }
 
-unsigned char mss_verify(unsigned char signature[MSS_SIGNATURE_SIZE], unsigned char pkey[LEN_BYTES(MSS_SEC_LVL)], char *msg) {
+unsigned char mss_verify(const unsigned char signature[MSS_SIGNATURE_SIZE], const unsigned char pkey[MSS_PKEY_SIZE], const char *message) {
 	// Arrange
 
 	unsigned char verification = MSS_ERROR;
 
 	/* Auxiliary varibles */
-	struct mss_node node[3];
+	struct mss_node v;
 	unsigned char hash[LEN_BYTES(WINTERNITZ_N)];
 	unsigned char ots[WINTERNITZ_L*LEN_BYTES(WINTERNITZ_SEC_LVL)];
 	unsigned char aux[LEN_BYTES(WINTERNITZ_SEC_LVL)];
@@ -673,178 +679,193 @@ unsigned char mss_verify(unsigned char signature[MSS_SIGNATURE_SIZE], unsigned c
 	/* Initialization of Winternitz-MMO OTS */
 	sinit(&hash_mmo, MSS_SEC_LVL);
 
-	deserialze_signature(ots, &node[0], authpath, signature);
-	verification = mss_verify_core(authpath, node[0].value, msg, strlen(msg) + 1, &hash_mmo, &hash_dm, hash, node[0].index, ots, aux, &node[0], pkey);
+	deserialize_mss_signature(ots, &v, authpath, signature);
+
+	verification = mss_verify_core(authpath, v.value, message, strlen(message) + 1, &hash_mmo, &hash_dm, hash, v.index, ots, aux, &v, pkey);
 
 	//Assert
 	return verification;
 }
+
+#endif
 
 /***************************************************************************************************/
 /* Serialization/Deserialization																   */
 /***************************************************************************************************/
 
 void serialize_mss_node(const struct mss_node node, unsigned char buffer[MSS_NODE_SIZE]) {
-    unsigned int i, offset = 0;
+	unsigned int i, offset = 0;
 
-    buffer[offset++] = node.height;
-    buffer[offset++] = node.index & 0xFF;
-    buffer[offset++] = (node.index >> 8) & 0xFF;
+	buffer[offset++] = node.height;
+	buffer[offset++] = node.index & 0xFF;
+	buffer[offset++] = (node.index >> 8) & 0xFF;
 
-    for (i = 0; i < LEN_BYTES(MSS_SEC_LVL); i++)
-        buffer[offset++] = node.value[i];
+	for (i = 0; i < LEN_BYTES(MSS_SEC_LVL); i++)
+		buffer[offset++] = node.value[i];
 }
 
 void deserialize_mss_node(struct mss_node *node, const unsigned char buffer[]) {
   unsigned int i, offset = 0;
 
   node->height = buffer[offset++];
-  node->index = (((buffer[offset++] << 8) & 0xFF) | (buffer[offset++] & 0xFF));
-  
+  node->index = ((buffer[offset++] & 0xFF) | (buffer[offset++] << 8));
+
   for(i = 0; i < LEN_BYTES(MSS_SEC_LVL); i++)
-    node->value[i++] = buffer[offset++];
+	node->value[i] = buffer[offset++];
 }
 
 void serialize_mss_state(const struct mss_state state, const unsigned short index, unsigned char buffer[MSS_STATE_SIZE]) {
-    unsigned int i, offset = 0;
+	unsigned int i, offset = 0;
 
-    buffer[offset++] = index & 0xFF;
-    buffer[offset++] = (index >> 8) & 0xFF;
+	buffer[offset++] = index & 0xFF;
+	buffer[offset++] = (index >> 8) & 0xFF;
 
-    for(i = 0; i < MSS_TREEHASH_SIZE; i++)
-        buffer[offset++] = state.treehash_state[i];
+	for(i = 0; i < MSS_TREEHASH_SIZE; i++)
+		buffer[offset++] = state.treehash_state[i];
 
-    buffer[offset++] = state.stack_index & 0xFF;
-    buffer[offset++] = (state.stack_index >> 8) & 0xFF;
+	buffer[offset++] = state.stack_index & 0xFF;
+	buffer[offset++] = (state.stack_index >> 8) & 0xFF;
 
-    for(i = 0; i < MSS_K - 1; i++) {
-        buffer[offset++] = state.retain_index[i] & 0xFF;
-        buffer[offset++] = (state.retain_index[i] >> 8) & 0xFF;
-    }
+	for(i = 0; i < MSS_K - 1; i++) {
+		buffer[offset++] = state.retain_index[i] & 0xFF;
+		buffer[offset++] = (state.retain_index[i] >> 8) & 0xFF;
+	}
 
-    for(i = 0; i < MSS_TREEHASH_SIZE; i++) {
-        buffer[offset++] = state.treehash_seed[i] & 0xFF;
-        buffer[offset++] = (state.treehash_seed[i] >> 8) & 0xFF;
-    }
+	for(i = 0; i < MSS_TREEHASH_SIZE; i++) {
+		buffer[offset++] = state.treehash_seed[i] & 0xFF;
+		buffer[offset++] = (state.treehash_seed[i] >> 8) & 0xFF;
+	}
 
-    for(i = 0; i < MSS_TREEHASH_SIZE; i++) 
-        serialize_mss_node(state.treehash[i], buffer + offset);
-    offset += MSS_NODE_SIZE;
+	for(i = 0; i < MSS_TREEHASH_SIZE; i++) {
+		serialize_mss_node(state.treehash[i], buffer + offset);
+		offset += MSS_NODE_SIZE;
+	}
 
-    for(i = 0; i < MSS_STACK_SIZE; i++)
-        serialize_mss_node(state.stack[i], buffer + offset);
-    offset += MSS_NODE_SIZE;
-    
-    for(i = 0; i < MSS_RETAIN_SIZE; i++)
-        serialize_mss_node(state.retain[i], buffer + offset);
-    offset += MSS_NODE_SIZE;
-    
-    for(i = 0; i < MSS_KEEP_SIZE; i++)
-        serialize_mss_node(state.keep[i], buffer + offset);
-    offset += MSS_NODE_SIZE;
-    
-    for(i = 0; i < MSS_HEIGHT; i++)
-        serialize_mss_node(state.auth[i], buffer + offset);
-    offset += MSS_NODE_SIZE;
-    
-    for(i = 0; i < MSS_TREEHASH_SIZE - 1; i++)
-        serialize_mss_node(state.store[i], buffer + offset);
-    offset += MSS_NODE_SIZE;
+	for(i = 0; i < MSS_STACK_SIZE; i++) {
+		serialize_mss_node(state.stack[i], buffer + offset);
+		offset += MSS_NODE_SIZE;
+	}
+	
+	for(i = 0; i < MSS_RETAIN_SIZE; i++) {
+		serialize_mss_node(state.retain[i], buffer + offset);
+		offset += MSS_NODE_SIZE;
+	}
+	
+	for(i = 0; i < MSS_KEEP_SIZE; i++) {
+		serialize_mss_node(state.keep[i], buffer + offset);
+		offset += MSS_NODE_SIZE;
+	}
+
+	for(i = 0; i < MSS_HEIGHT; i++) {
+		serialize_mss_node(state.auth[i], buffer + offset);
+		offset += MSS_NODE_SIZE;
+	}
+
+	for(i = 0; i < MSS_TREEHASH_SIZE - 1; i++) {
+		serialize_mss_node(state.store[i], buffer + offset);
+		offset += MSS_NODE_SIZE;
+	}
 }
 
 void deserialize_mss_state(struct mss_state *state, unsigned short *index, const unsigned char buffer[]) {
-    int i, offset = 0;
+	int i, offset = 0;
 
-    *index = (((buffer[offset++] << 8) & 0xFF) | (buffer[offset++] & 0xFF));
+	*index = ((buffer[offset++] & 0xFF) | (buffer[offset++] << 8));
 
-    for(i = 0; i < MSS_TREEHASH_SIZE; i++)
-        state->treehash_state[i] = buffer[offset++];
+	for(i = 0; i < MSS_TREEHASH_SIZE; i++)
+		state->treehash_state[i] = buffer[offset++];
 
-    state->stack_index = (((buffer[offset++] << 8) & 0xFF) | (buffer[offset++] & 0xFF));
+	state->stack_index = ((buffer[offset++] & 0xFF) | (buffer[offset++] << 8));
 
-    for(i = 0; i < MSS_K - 1; i++)
-        state->retain_index[i] = (((buffer[offset++] << 8) & 0xFF) | (buffer[offset++] & 0xFF));
 
-    for(i = 0; i < MSS_TREEHASH_SIZE; i++)
-        state->treehash_seed[i] = (((buffer[offset++] << 8) & 0xFF) | (buffer[offset++] & 0xFF));
-    
-    for(i = 0; i < MSS_TREEHASH_SIZE; i++)
-        deserialize_mss_node(&state->treehash[i], buffer + offset);
-    offset += MSS_NODE_SIZE;
-    
-    for(i = 0; i < MSS_STACK_SIZE; i++)
-        deserialize_mss_node(&state->stack[i], buffer + offset);
-    offset += MSS_NODE_SIZE;
-    
-    for(i = 0; i < MSS_RETAIN_SIZE; i++)
-        deserialize_mss_node(&state->retain[i], buffer + offset);
-    offset += MSS_NODE_SIZE;
-    
-    for(i = 0; i < MSS_KEEP_SIZE; i++)
-        deserialize_mss_node(&state->keep[i], buffer + offset);
-    offset += MSS_NODE_SIZE;
-    
-    for(i = 0; i < MSS_HEIGHT; i++)
-        deserialize_mss_node(&state->auth[i], buffer + offset);
-    offset += MSS_NODE_SIZE;
-    
-    for(i = 0; i < MSS_TREEHASH_SIZE - 1; i++)
-        deserialize_mss_node(&state->store[i], buffer + offset);
-    offset += MSS_NODE_SIZE;
-    
+	for(i = 0; i < MSS_K - 1; i++)
+		state->retain_index[i] = ((buffer[offset++] & 0xFF) | (buffer[offset++] << 8));
+
+	for(i = 0; i < MSS_TREEHASH_SIZE; i++)
+		state->treehash_seed[i] = ((buffer[offset++] & 0xFF) | (buffer[offset++] << 8));
+	
+	for(i = 0; i < MSS_TREEHASH_SIZE; i++) {
+		deserialize_mss_node(&state->treehash[i], buffer + offset);
+		offset += MSS_NODE_SIZE;
+	}
+
+	for(i = 0; i < MSS_STACK_SIZE; i++) {
+		deserialize_mss_node(&state->stack[i], buffer + offset);
+		offset += MSS_NODE_SIZE;
+	}
+
+	for(i = 0; i < MSS_RETAIN_SIZE; i++) {
+		deserialize_mss_node(&state->retain[i], buffer + offset);
+		offset += MSS_NODE_SIZE;
+	}
+
+	for(i = 0; i < MSS_KEEP_SIZE; i++) {
+		deserialize_mss_node(&state->keep[i], buffer + offset);
+		offset += MSS_NODE_SIZE;
+	}
+
+	for(i = 0; i < MSS_HEIGHT; i++) {
+		deserialize_mss_node(&state->auth[i], buffer + offset);
+		offset += MSS_NODE_SIZE;
+	}
+
+	for(i = 0; i < MSS_TREEHASH_SIZE - 1; i++) {
+		deserialize_mss_node(&state->store[i], buffer + offset);
+		offset += MSS_NODE_SIZE;
+	}
 }
 
-void serialize_skey(const struct mss_state state, const unsigned short index, const unsigned char skey[LEN_BYTES(MSS_SEC_LVL)], unsigned char buffer[MSS_KEY_SIZE]) {
-    serialize_mss_state(state, index, buffer);
+void serialize_mss_skey(const struct mss_state state, const unsigned short index, const unsigned char skey[LEN_BYTES(MSS_SEC_LVL)], unsigned char buffer[MSS_SKEY_SIZE]) {
+	serialize_mss_state(state, index, buffer);
 
-    unsigned int offset = MSS_STATE_SIZE, i;
+	unsigned int offset = MSS_STATE_SIZE, i;
 
-    for(i = 0; i < LEN_BYTES(MSS_SEC_LVL); i++)
-        buffer[offset++] = skey[i];
+	for(i = 0; i < LEN_BYTES(MSS_SEC_LVL); i++)
+		buffer[offset++] = skey[i];
 }
 
-void deserialize_skey(struct mss_state *state, unsigned short *index, unsigned char skey[LEN_BYTES(MSS_SEC_LVL)], const unsigned char buffer[]) {
-    deserialize_mss_state(state, index, buffer);
+void deserialize_mss_skey(struct mss_state *state, unsigned short *index, unsigned char skey[LEN_BYTES(MSS_SEC_LVL)], const unsigned char buffer[]) {
+	deserialize_mss_state(state, index, buffer);
 
-    unsigned int offset = MSS_STATE_SIZE, i;
+	unsigned int offset = MSS_STATE_SIZE, i;
 
-    for(i = 0; i < LEN_BYTES(MSS_SEC_LVL); i++)
-        skey[i] = buffer[offset++];
+	for(i = 0; i < LEN_BYTES(MSS_SEC_LVL); i++)
+		skey[i] = buffer[offset++];
 }
 
-void serialize_signature(const unsigned char ots[MSS_OTS_SIZE], const struct mss_node v, const const struct mss_node authpath[MSS_HEIGHT], unsigned char *buffer) {
-    /*
-     * Serialization: v || authpath || ots
-     *
-    */
-    unsigned int i, offset = 0;
+void serialize_mss_signature(const unsigned char ots[MSS_OTS_SIZE], const struct mss_node v, const const struct mss_node authpath[MSS_HEIGHT], unsigned char *buffer) {
+	/*
+	 * Serialization: v || authpath || ots
+	 *
+	*/
+	unsigned int i, offset = 0;
 
-    serialize_mss_node(v, buffer);
-    offset += MSS_NODE_SIZE;
+	serialize_mss_node(v, buffer);
+	offset += MSS_NODE_SIZE;
 
-    for(i = 0; i < MSS_HEIGHT; i++) {
-        serialize_mss_node(authpath[i], buffer + offset);
-        offset += MSS_NODE_SIZE;
-    }
+	for(i = 0; i < MSS_HEIGHT; i++) {
+		serialize_mss_node(authpath[i], buffer + offset);
+		offset += MSS_NODE_SIZE;
+	}
 
-    for(i = 0; i < MSS_OTS_SIZE; i++)
-        buffer[offset++] = ots[i];
+	for(i = 0; i < MSS_OTS_SIZE; i++)
+		buffer[offset++] = ots[i];
 }
 
-void deserialze_signature(unsigned char ots[MSS_OTS_SIZE], struct mss_node *v, struct mss_node authpath[MSS_HEIGHT], const unsigned char *signature) {
-  int i, offset = 0;
+void deserialize_mss_signature(unsigned char ots[MSS_OTS_SIZE], struct mss_node *v, struct mss_node authpath[MSS_HEIGHT], const unsigned char *signature) {
+	int i, offset = 0;
 
-  deserialize_mss_node(v, signature);
-  offset += MSS_NODE_SIZE;
+	deserialize_mss_node(v, signature);
+	offset += MSS_NODE_SIZE;
 
-  for(i = 0; i < MSS_HEIGHT; i++)
-    deserialize_mss_node(&authpath[i], signature + offset);
+	for(i = 0; i < MSS_HEIGHT; i++) {
+		deserialize_mss_node(&authpath[i], signature + offset);
+		offset += MSS_NODE_SIZE;
+	}
 
-  for(i = 0; i < MSS_OTS_SIZE; i++)
-    ots[i] = signature[offset++];
+	for(i = 0; i < MSS_OTS_SIZE; i++)
+		ots[i] = signature[offset++];
 }
-
-#endif
 
 #if defined(DEBUG) || defined(MSS_SELFTEST)
 
@@ -909,10 +930,10 @@ void print_stack(const struct mss_node stack[MSS_KEEP_SIZE], const unsigned shor
 		printf(" empty\n");
 	else {
 		printf("\n");
-        for(i = 0; i < top; i++) {
-            printf("\nStack node: %d\n", i);
-            mss_node_print(stack[i]);
-        }
+		for(i = 0; i < top; i++) {
+			printf("\nStack node: %d\n", i);
+			mss_node_print(stack[i]);
+		}
 	}
 }
 
@@ -1022,6 +1043,7 @@ int main(int argc, char *argv[]) {
 	printf("\nParameters:  n=%u, Height=%u, K=%u, W=%u \n\n", MSS_SEC_LVL, MSS_HEIGHT, MSS_K, WINTERNITZ_W);
 
 	do_test(TEST_MSS_SIGN);
+	do_test(TEST_MSS_SERIALIZATION);
 /*
 	// Execution variables
 	unsigned char seed[LEN_BYTES(MSS_SEC_LVL)] = {0xA0,0xA1,0xA2,0xA3,0xA4,0xA5,0xA6,0xA7,0xA8,0xA9,0xAA,0xAB,0xAC,0xAD,0xAE,0xAF};

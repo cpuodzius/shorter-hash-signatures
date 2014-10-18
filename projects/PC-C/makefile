@@ -29,7 +29,7 @@ mss:		src/mss.c
 test:		src/winternitz.c src/util.c src/test.c
 		make winternitz
 		make util
-		$(CC) src/$@.c -c -o bin/$@.o $(CFLAGS)
+		$(CC) src/$@.c -c -o bin/$@.o -DMSS_SELFTEST $(CFLAGS)
 		$(CC) src/mss.c -o bin/mss -DMSS_SELFTEST $(MSS_OBJS) $(CFLAGS)
 		$(CC) src/mss.c -o bin/mss.dbg -DDEBUG $(MSS_OBJS) $(CFLAGS)
 
