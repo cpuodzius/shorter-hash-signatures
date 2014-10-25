@@ -1,76 +1,16 @@
-#include "mmo.h"
+#include "hash.h"
+#include "aes_128.h"
 #include <string.h>
 
 #ifdef DEBUG
 	#include <assert.h>
 #endif
 
-/**
- * Encrypt a single AES block under a 128-bit key.
- */
-/*
-extern void aes_encrypt(unsigned char ct[16], const unsigned char pt[16], const unsigned char key[16]);
-/*/
-void aes_encrypt(unsigned char ciphertext[16], const unsigned char plaintext[16], unsigned char key[16]) {
-
-#ifdef PLATFORM_TELOSB
-	#ifdef AES_HW
-		unsigned short i;
-		cc2420_aes_set_key(key, 0);
-		//printf("AES key:");
-		//for (i = 0; i < 16; i++) printf(" %02X", key[i]);
-		//printf("AES plain:");
-		//for (i = 0; i < 16; i++) printf(" %02X", plaintext[i]);
-		memcpy(ciphertext, plaintext, 16); // ct saves the plaintext
-		//for (i = 0; i < 16; i++) {
-		//	ciphertext[i] = plaintext[i];
-		//}
-		cc2420_aes_cipher(ciphertext, 16, 0); // ct will be overwritten with the computed ciphertext
-		//for (i = 0; i < 16; i++) printf(" %02X", plaintext[i]);
-		//printf("\n");
-
-	#elif defined(AES_ASM)
-			aes128_ctx_t ctx_mmo; // the context where the round keys are stored
-			aes128_init(key, &ctx_mmo); // generating the round keys from the 128 bit key
-			memcpy(ciphertext, plaintext, 16);
-			aes128_enc(ciphertext, &ctx_mmo); // encrypting the data block
-	#else
-			unsigned char local_key[16];
-			memcpy(local_key,key,16);
-			memcpy(ciphertext, plaintext, 16); // ciphertext keeps the plaintext
-			ti_aes_encrypt(ciphertext, local_key);      // ciphertext is overwritten with its final value
-
-			//unsigned char local_key[16];
-			//memcpy(local_key,key,16);
-			//memcpy(ciphertext, plaintext, 16);
-			//ti_aes_encrypt_only(ciphertext, local_key);
-
-			//unsigned char local_key[16];
-			//memcpy(local_key, key, 16);
-			//cipherCryptB(key, plaintext, ciphertext);
-	#endif
-
-#else
-	//cipherCryptB((u8*) key, (u8*) plaintext, ciphertext);
-
-	unsigned char local_key[16];
-	memcpy(local_key,key,16);
-	memcpy(ciphertext, plaintext, 16); // ciphertext saves the plaintext
-	ti_aes_encrypt(ciphertext, local_key); // ciphertext is overwritten with its final value
-#endif
-
-}
-//*/
-
 void MMO_init(mmo_t *mmo) {
     mmo->t = 16; // one AES block
     mmo->n = 0;
 
     memset(mmo->H, 0, 16);
-}
-
-void DM_init(dm_t *dm) {
-    memset(dm->AES_KEY, 0, 16);
 }
 
 void MMO_update(mmo_t *mmo, const unsigned char *M, unsigned int m) {
@@ -100,7 +40,7 @@ void MMO_update(mmo_t *mmo, const unsigned char *M, unsigned int m) {
             break; // postpone incomplete message block
         }
 	//memcpy(local_key,mmo->H,16);
-        aes_encrypt(mmo->H, mmo->M, mmo->H);
+        aes_128_encrypt(mmo->H, mmo->M, mmo->H);
 
         mmo->H[ 0] ^= mmo->M[ 0];
         mmo->H[ 1] ^= mmo->M[ 1];
@@ -151,7 +91,7 @@ void MMO_final(mmo_t *mmo, unsigned char tag[16]) {
             mmo->t--;
         }
 	//memcpy(local_key,mmo->H,16);
-        aes_encrypt(mmo->H, mmo->M, mmo->H);
+        aes_128_encrypt(mmo->H, mmo->M, mmo->H);
 
         mmo->H[ 0] ^= mmo->M[ 0];
         mmo->H[ 1] ^= mmo->M[ 1];
@@ -190,7 +130,7 @@ void MMO_final(mmo_t *mmo, unsigned char tag[16]) {
         mmo->n >>= 8; // this is overkill if mmo->n is too short, but it is correct and general
     }
 	//memcpy(local_key,mmo->H,16);
-	aes_encrypt(mmo->H, mmo->M, mmo->H);
+	aes_128_encrypt(mmo->H, mmo->M, mmo->H);
 
     mmo->H[ 0] ^= mmo->M[ 0];
     mmo->H[ 1] ^= mmo->M[ 1];
@@ -222,7 +162,7 @@ void MMO_hash16(mmo_t *mmo, const unsigned char M[16], unsigned char tag[16]) {
     memset(H, 0, 16);
     memset(&H[0], 1, 1);
     //memcpy(local_key,H,16);
-    aes_encrypt(H, M, H);
+    aes_128_encrypt(H, M, H);
 
     H[ 0] ^= M[ 0];
     H[ 1] ^= M[ 1];
@@ -247,7 +187,7 @@ void MMO_hash16(mmo_t *mmo, const unsigned char M[16], unsigned char tag[16]) {
     ZZ[ 0] = 0x80; // padding toggle
     ZZ[15] = 0x80; // 128-bit length
 
-    aes_encrypt(H, ZZ, H);
+    aes_128_encrypt(H, ZZ, H);
 
     //
     H[ 0] ^= ZZ[ 0];
@@ -278,7 +218,7 @@ void MMO_hash32(mmo_t *mmo, const unsigned char M[32], unsigned char tag[16]) {
     memset(H, 0, 16);
     memset(&H[0], 2, 1);
     //memcpy(local_key,H,16);
-    aes_encrypt(H, M, H);
+    aes_128_encrypt(H, M, H);
 
     H[ 0] ^= M[ 0];
     H[ 1] ^= M[ 1];
@@ -299,7 +239,7 @@ void MMO_hash32(mmo_t *mmo, const unsigned char M[32], unsigned char tag[16]) {
 
     M += 16;
     //memcpy(local_key,H,16);
-    aes_encrypt(H, M, H);
+    aes_128_encrypt(H, M, H);
 
     H[ 0] ^= M[ 0];
     H[ 1] ^= M[ 1];
@@ -324,7 +264,7 @@ void MMO_hash32(mmo_t *mmo, const unsigned char M[32], unsigned char tag[16]) {
     ZZ[ 0] = 0x80; // padding toggle
     ZZ[14] = 0x01; // 256-bit length
 
-    //aes_encrypt(H, ZZ, H);
+    //aes_128_encrypt(H, ZZ, H);
 	cc2420_aes_set_key(H, 0);
 	memcpy(H, ZZ, 16); // H saves the plaintext which will be overwritten in aes_cipher
 	cc2420_aes_cipher(H, 16, 0); // H will be overwritten with the ciphertext
@@ -351,22 +291,26 @@ void MMO_hash32(mmo_t *mmo, const unsigned char M[32], unsigned char tag[16]) {
     memcpy(tag, H, 16);
 }
 
-void davies_meyer_hash16(dm_t *dm, const unsigned char M[16], unsigned char tag[16]) {
-    aes_encrypt(tag, M, dm->AES_KEY);
+void DM_init(dm_t *dm) {
+    memset(dm->AES_KEY, 0, 16);
 }
 
-void davies_meyer_hash32(dm_t *dm, const unsigned char M0[16], const unsigned char M1[16], unsigned char tag[16]) {
+void DM_hash16(dm_t *dm, const unsigned char M[], unsigned char tag[16]) {
+    aes_128_encrypt(tag, M, dm->AES_KEY);
+}
+
+void DM_hash32(dm_t *dm, const unsigned char M0[16], const unsigned char M1[16], unsigned char tag[16]) {
 
     unsigned char tmp[16];
 
     memcpy(tmp, M1, 16); // this was need because M1 and tag are the same memory address from merkle's algorithm
 
     dm->AES_KEY[0] = 1;
-    aes_encrypt(tag, M0, dm->AES_KEY);
+    aes_128_encrypt(tag, M0, dm->AES_KEY);
     tag[0] ^= 0x01;
     dm->AES_KEY[0] = 0;
 
-    aes_encrypt(tmp, tmp, tag);
+    aes_128_encrypt(tmp, tmp, tag);
 
     tag[ 0] ^= tmp[ 0];
     tag[ 1] ^= tmp[ 1];
@@ -392,10 +336,10 @@ void davies_meyer_hash32(dm_t *dm, const unsigned char M0[16], const unsigned ch
 void fsprg(unsigned char seed[16], unsigned char out1[16], unsigned char out2[16]) {
     memset(out2, 0, 16); // out2 is used as a 16-byte vector input of AES-encrypt holding the value of counter
     memcpy(out2, &fsprg_counter, sizeof(short));
-    aes_encrypt(out1, out2, seed);
+    aes_128_encrypt(out1, out2, seed);
     fsprg_counter++;
     memcpy(out2, &fsprg_counter, sizeof(short));
-    aes_encrypt(out2, out2, seed);
+    aes_128_encrypt(out2, out2, seed);
     fsprg_counter++;
 }
 
@@ -407,11 +351,14 @@ void fsprg_restart() {
 void prg16(short input, unsigned char seed[16], unsigned char output[16]) {
         memset(output, 0, 16);
         memcpy(output, &input, sizeof(short));
-        aes_encrypt(output, output, seed);
+        aes_128_encrypt(output, output, seed);
 }
 
 
 #ifdef MMO_SELFTEST
+
+#include <stdio.h>
+
 int main(int argc, char *argv[]) {
     unsigned int i;
     mmo_t mmo;
@@ -420,7 +367,7 @@ int main(int argc, char *argv[]) {
     unsigned char tag[16];
 
     MMO_init(&mmo);
-    MMO_update(&mmo, (unsigned char *)msg, 16);
+    MMO_update(&mmo, (unsigned char *)msg16, 16);
     MMO_final(&mmo, tag);
     for (i = 0; i < 16; i++) {
         printf("%02X", tag[i]);

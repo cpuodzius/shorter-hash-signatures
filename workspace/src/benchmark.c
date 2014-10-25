@@ -5,8 +5,8 @@
 
 #ifdef PLATFORM_TELOSB
 
-#include "sponge.h"
-#include "sponge.c"
+#include "hash.h"
+#include "hash.c"
 #include "winternitz.c"
 #include "mss.c"
 #include "mmo.c"
@@ -214,60 +214,33 @@ void do_benchmark(enum BENCHMARK phase, unsigned short benchs) {
 
 #ifdef BENCH_SELFTEST
 
-
-
     #include <time.h>
-
     #include "util.h"
 
-
-
     int main(int argc, char *argv[]) {
-
         int mark = 1000;
-
         clock_t elapsed;
-
-
 
         printf("\n Parameters:  SEC_LVL=%u, H=%u, K=%u, W=%u \n\n", MSS_SEC_LVL, MSS_HEIGHT, MSS_K, WINTERNITZ_W);
 
-
-
         do_benchmark(BENCHMARK_PREPARE);
-
-
 
         elapsed = -clock();
 
         for(int i = 0; i < mark; i++) {
-
             //do_benchmark(BENCHMARK_MSS_KEYGEN, mark);
-
             do_benchmark(BENCHMARK_MSS_SIGN, mark);
-
             //do_benchmark(BENCHMARK_MSS_PREPARE_VERIFY, mark);
-
             //do_benchmark(BENCHMARK_MSS_VERIFY, mark);
-
             //do_benchmark(BENCHMARK_WINTERNITZ_KEYGEN, mark);
-
             //do_benchmark(BENCHMARK_WINTERNITZ_SIGN, mark);
-
             //do_benchmark(BENCHMARK_WINTERNITZ_VERIFY, mark);
-
             //do_benchmark(BENCHMARK_HASH_CALC, mark);
 
         }
 
-
-
         elapsed += clock();
 
         printf("Elapsed time: %.1f ms\n", 1000*(float)elapsed/CLOCKS_PER_SEC/mark);
-
     }
-
 #endif
-
-

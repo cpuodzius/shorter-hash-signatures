@@ -1,5 +1,5 @@
-#ifndef TI_AES
-#define TI_AES
+#ifndef TI_AES_128
+#define TI_AES_128
 
 /*
 #ifdef PLATFORM_TELOSB

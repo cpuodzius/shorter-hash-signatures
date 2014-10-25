@@ -37,14 +37,14 @@ void winternitz_keygen(const unsigned char s[/*m*/], const unsigned short m, mmo
 	    assert((8 / WINTERNITZ_W)*(unsigned char)m + WINTERNITZ_CHECKSUM_SIZE == WINTERNITZ_L); // chunk count, including checksum
 #endif
 
-    sinit(pubk, WINTERNITZ_SEC_LVL);
+    //sinit(pubk, WINTERNITZ_SEC_LVL);
 
     for (i = 0; i < WINTERNITZ_L; i++) { // chunk count, including checksum
         memset(v, 0, 16); v[0] = i; // H(s, i) // i = byte tag
         aes_encrypt(v, v, (unsigned char*)s); // v = s_i = private block for i-th byte
         //sq++;
         for (j = 0; j < (1 << WINTERNITZ_W) - 1; j++) {
-            hash16(f, v, v); // v is the hash of its previous value = y_i = H^{2^w-1}(s_i)
+            DM_hash16(f, v, v); // v is the hash of its previous value = y_i = H^{2^w-1}(s_i)
             //sq++;
         }
         //absorb(pubk, v, m);  // y_0 || ... || y_i ...
@@ -72,7 +72,7 @@ void winternitz_keygen(const unsigned char s[/*m*/], const unsigned short m, mmo
     memcpy(v, pubk->H,16);
     //sq++;
     //printf("gen squeeze count: %d\n", sq);
-    cleanup(pubk);
+    //cleanup(pubk);
 }
 
 #if WINTERNITZ_W == 2
@@ -120,15 +120,15 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
         checksum += 3;
         switch ((h[i]     ) & 3) { // 0 chunk
         case 3:
-              hash16(f,sig,sig); // sig holds the hash of its previous value
+              DM_hash16(f,sig,sig); // sig holds the hash of its previous value
             //sq++;
             checksum--; // FALLTHROUGH
         case 2:
-              hash16(f,sig,sig); // sig holds the hash of its previous value
+              DM_hash16(f,sig,sig); // sig holds the hash of its previous value
               //sq++;
             checksum--; // FALLTHROUGH
         case 1:
-              hash16(f,sig,sig); // sig holds the hash of its previous value
+              DM_hash16(f,sig,sig); // sig holds the hash of its previous value
             //sq++;
             checksum--; // FALLTHROUGH
         case 0:
@@ -144,15 +144,15 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
         checksum += 3;
         switch ((h[i] >> 2) & 3) { // 1 chunk
         case 3:
-              hash16(f,sig,sig); // sig holds the hash of its previous value
+              DM_hash16(f,sig,sig); // sig holds the hash of its previous value
             //sq++;
             checksum--; // FALLTHROUGH
         case 2:
-              hash16(f,sig,sig); // sig holds the hash of its previous value
+              DM_hash16(f,sig,sig); // sig holds the hash of its previous value
             //sq++;
             checksum--; // FALLTHROUGH
         case 1:
-              hash16(f,sig,sig); // sig holds the hash of its previous value
+              DM_hash16(f,sig,sig); // sig holds the hash of its previous value
             //sq++;
             checksum--; // FALLTHROUGH
         case 0:
@@ -171,11 +171,11 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
             //sq++;
             checksum--; // FALLTHROUGH
         case 2:
-              hash16(f,sig,sig); // sig holds the hash of its previous value
+              DM_hash16(f,sig,sig); // sig holds the hash of its previous value
             //sq++;
             checksum--; // FALLTHROUGH
         case 1:
-              hash16(f,sig,sig); // sig holds the hash of its previous value
+              DM_hash16(f,sig,sig); // sig holds the hash of its previous value
             //sq++;
             checksum--; // FALLTHROUGH
         case 0:
@@ -191,15 +191,15 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
         checksum += 3;
         switch ((h[i] >> 6) & 3) { // 3 chunk
         case 3:
-              hash16(f,sig,sig); // sig holds the hash of its previous value
+              DM_hash16(f,sig,sig); // sig holds the hash of its previous value
             //sq++;
             checksum--; // FALLTHROUGH
         case 2:
-              hash16(f,sig,sig); // sig holds the hash of its previous value
+              DM_hash16(f,sig,sig); // sig holds the hash of its previous value
             //sq++;
             checksum--; // FALLTHROUGH
         case 1:
-              hash16(f,sig,sig);  // sig holds the hash of its previous value
+              DM_hash16(f,sig,sig);  // sig holds the hash of its previous value
             //sq++;
             checksum--; // FALLTHROUGH
         case 0:
@@ -216,15 +216,15 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
         //sq++;
         switch (checksum & 3) { // 3 chunk
         case 3:
-              hash16(f,sig,sig); // sig holds the hash of its previous value
+              DM_hash16(f,sig,sig); // sig holds the hash of its previous value
             //sq++;
             // FALLTHROUGH
         case 2:
-              hash16(f,sig,sig); // sig holds the hash of its previous value
+              DM_hash16(f,sig,sig); // sig holds the hash of its previous value
             //sq++;
             // FALLTHROUGH
         case 1:
-              hash16(f,sig,sig);  // sig holds the hash of its previous value
+              DM_hash16(f,sig,sig);  // sig holds the hash of its previous value
             //sq++;
             // FALLTHROUGH
         case 0:
@@ -235,7 +235,7 @@ void winternitz_2_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
         sig += 16; // signature block for next nybble
     }
     //printf("sig squeeze count: %d\n", sq);
-    cleanup(hash);
+    //cleanup(hash);
 }
 #endif // WINTERNITZ_W == 2
 
@@ -261,10 +261,10 @@ void winternitz_4_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
     unsigned char i, j, c;
     unsigned short checksum = 0;
 
-    sinit(hash, WINTERNITZ_SEC_LVL);
-    absorb(hash, v, m); // public key used as random nonce!!!
-    absorb(hash, M, len); // followed by the message in this implementation (actually followed by the treetop key, and then by the message, in the full scheme)
-    squeeze(hash, h, m); // NB: hash length is m here, but was 2*m in the predecessor scheme
+    //sinit(hash, WINTERNITZ_SEC_LVL);
+    //absorb(hash, v, m); // public key used as random nonce!!!
+    //absorb(hash, M, len); // followed by the message in this implementation (actually followed by the treetop key, and then by the message, in the full scheme)
+    //squeeze(hash, h, m); // NB: hash length is m here, but was 2*m in the predecessor scheme
     //sq++;
 
 #ifdef DEBUG
@@ -285,7 +285,7 @@ void winternitz_4_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
 #endif
 
         for (j = 0; j < c; j++) {
-            hash16(f, sig, sig);
+            DM_hash16(f, sig, sig);
             //sq++;
         }
         sig += 16; // signature block for next nybble
@@ -301,7 +301,7 @@ void winternitz_4_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
         assert(c < 16);
 #endif
         for (j = 0; j < c; j++) {
-            hash16(f, sig, sig);
+            DM_hash16(f, sig, sig);
             //sq++;
         }
         sig += 16; // signature block for next nybble
@@ -318,7 +318,7 @@ void winternitz_4_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
         assert(c < 16);
 #endif
         for (j = 0; j < c; j++) {
-            hash16(f, sig, sig);
+            DM_hash16(f, sig, sig);
             //sq++;
         }
         sig += 16; // signature block for next nybble
@@ -349,10 +349,10 @@ void winternitz_8_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
     //int sq = 0;
     unsigned char i, j;
     unsigned short c, checksum = 0;
-    sinit(hash, WINTERNITZ_SEC_LVL);
-    absorb(hash, v, m); // public key used as random nonce!!!
-    absorb(hash, M, len); // followed by the message in this implementation (actually followed by the treetop key, and then by the message, in the full scheme)
-    squeeze(hash, h, m); // NB: hash length is m here, but was 2*m in the predecessor scheme
+    //sinit(hash, WINTERNITZ_SEC_LVL);
+    //absorb(hash, v, m); // public key used as random nonce!!!
+    //absorb(hash, M, len); // followed by the message in this implementation (actually followed by the treetop key, and then by the message, in the full scheme)
+    //squeeze(hash, h, m); // NB: hash length is m here, but was 2*m in the predecessor scheme
     //sq++;
 
 #ifdef DEBUG
@@ -373,7 +373,7 @@ void winternitz_8_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
 #endif
 
         for (j = 0; j < (unsigned char)h[i]; j++) {
-            hash16(f, sig, sig);  // sig holds the hash of its previous value
+            DM_hash16(f, sig, sig);  // sig holds the hash of its previous value
             //sq++;
         }
         sig += 16; // signature block for next nybble
@@ -391,7 +391,7 @@ void winternitz_8_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
 #endif
 
         for (j = 0; j < (unsigned char)c; j++) {
-            hash16(f, sig, sig);  // sig holds the hash of its previous value
+            DM_hash16(f, sig, sig);  // sig holds the hash of its previous value
             //sq++;
         }
         sig += 16; // signature block for next unsigned char
@@ -449,7 +449,7 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
     //sq++;
 
     // data part:
-    sinit(hash, WINTERNITZ_SEC_LVL);
+    //sinit(hash, WINTERNITZ_SEC_LVL);
 
     for (i = 0; i < LEN_BYTES(WINTERNITZ_N); i++) { // NB: hash length is m here, but was 2*m in the predecessor scheme
         // 0 part:
@@ -457,7 +457,7 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
         c = 3 - ((h[i] >> 0) & 3); // chunk
         checksum += (unsigned short)c;
         for (j = 0; j < c; j++) {
-              hash16(f, x, x); // x holds the hash of its previous value
+              DM_hash16(f, x, x); // x holds the hash of its previous value
             //sq++;
         }
         //absorb(hash, x, m);
@@ -487,7 +487,7 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
         c = 3 - ((h[i] >> 2) & 3); // chunk
         checksum += (unsigned short)c;
         for (j = 0; j < c; j++) {
-              hash16(f, x, x); // x holds the hash of its previous value
+              DM_hash16(f, x, x); // x holds the hash of its previous value
             //sq++;
         }
         //absorb(hash, x, m);
@@ -517,7 +517,7 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
         c = 3 - ((h[i] >> 4) & 3); // chunk
         checksum += (unsigned short)c;
         for (j = 0; j < c; j++) {
-              hash16(f, x, x); // x holds the hash of its previous value
+              DM_hash16(f, x, x); // x holds the hash of its previous value
             //sq++;
         }
         //absorb(hash, x, m);]
@@ -547,7 +547,7 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
         c = 3 - ((h[i] >> 6) & 3); // chunk
         checksum += (unsigned short)c;
         for (j = 0; j < c; j++) {
-            hash16(f, x, x); // x holds the hash of its previous value
+            DM_hash16(f, x, x); // x holds the hash of its previous value
             //sq++;
         }
         //absorb(hash, x, m);
@@ -578,7 +578,7 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
         c = 3 - (checksum & 3); // chunk
         checksum >>= 2;
         for (j = 0; j < c; j++) {
-            hash16(f, x, x); // x holds the hash of its previous value
+            DM_hash16(f, x, x); // x holds the hash of its previous value
             //sq++;
         }
         //absorb(hash, x, m);
@@ -608,7 +608,7 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
 
     //sq++;
     //printf("ver squeeze count: %d\n", sq);
-    cleanup(hash);
+    //cleanup(hash);
     return (memcmp(x, v, m) == 0 ? WINTERNITZ_OK : WINTERNITZ_ERROR);
 }
 #endif // WINTERNITZ_W == 2
@@ -634,10 +634,10 @@ unsigned char winternitz_4_verify(const unsigned char v[/*m*/], const unsigned s
     unsigned char i, j, c;
     unsigned short checksum = 0;
 
-    sinit(hash, WINTERNITZ_SEC_LVL);
-    absorb(hash, v, m); // random nonce!!!
-    absorb(hash, M, len); // followed by the treetop key in the full scheme
-    squeeze(hash, h, m); // NB: hash length is m here, but was 2*m in the predecessor scheme
+    //sinit(hash, WINTERNITZ_SEC_LVL);
+    //absorb(hash, v, m); // random nonce!!!
+    //absorb(hash, M, len); // followed by the treetop key in the full scheme
+    //squeeze(hash, h, m); // NB: hash length is m here, but was 2*m in the predecessor scheme
     //sq++;
 
 #ifdef DEBUG
@@ -645,7 +645,7 @@ unsigned char winternitz_4_verify(const unsigned char v[/*m*/], const unsigned s
 #endif
 
     // data part:
-    sinit(hash, WINTERNITZ_SEC_LVL);
+    //sinit(hash, WINTERNITZ_SEC_LVL);
 
     for (i = 0; i < (unsigned char)m; i++) { // NB: hash length is m here, but was 2*m in the predecessor scheme
         // lo part:
@@ -658,7 +658,7 @@ unsigned char winternitz_4_verify(const unsigned char v[/*m*/], const unsigned s
 #endif
 
         for (j = 0; j < c; j++) {
-            hash16(f, x, x);  // x holds the hash of its previous value
+            DM_hash16(f, x, x);  // x holds the hash of its previous value
             //sq++;
         }
         //absorb(pubk, x, m);
@@ -691,7 +691,7 @@ unsigned char winternitz_4_verify(const unsigned char v[/*m*/], const unsigned s
 #endif
 
         for (j = 0; j < c; j++) {
-            hash16(f, x, x); // x is the hash of its previous value
+            DM_hash16(f, x, x); // x is the hash of its previous value
             //sq++;
         }
         //absorb(hash, x, m);
@@ -725,7 +725,7 @@ unsigned char winternitz_4_verify(const unsigned char v[/*m*/], const unsigned s
 #endif
 
         for (j = 0; j < c; j++) {
-            hash16(f, x, x);  // x holds the hash of its previous value
+            DM_hash16(f, x, x);  // x holds the hash of its previous value
             //sq++;
         }
         //absorb(hash, x, m);
@@ -752,7 +752,7 @@ unsigned char winternitz_4_verify(const unsigned char v[/*m*/], const unsigned s
     memcpy(x, hash->H, 16);
     //sq++;
     //printf("ver squeeze count: %d\n", sq);
-    cleanup(hash);
+    //cleanup(hash);
     return (memcmp(x, v, m) == 0 ? WINTERNITZ_OK : WINTERNITZ_ERROR);
 }
 #endif /* WINTERNITZ_W = 4*/
@@ -778,10 +778,10 @@ unsigned char winternitz_8_verify(const unsigned char v[/*m*/], const unsigned s
     unsigned char i, j;
     unsigned short c, checksum = 0;
 
-    sinit(hash, WINTERNITZ_SEC_LVL);
-    absorb(hash, v, m); // random nonce!!!
-    absorb(hash, M, len); // followed by the treetop key in the full scheme
-    squeeze(hash, h, m); // NB: hash length is m here, but was 2*m in the predecessor scheme
+    //sinit(hash, WINTERNITZ_SEC_LVL);
+    //absorb(hash, v, m); // random nonce!!!
+    //absorb(hash, M, len); // followed by the treetop key in the full scheme
+    //squeeze(hash, h, m); // NB: hash length is m here, but was 2*m in the predecessor scheme
     //sq++;
 
 #ifdef DEBUG
@@ -789,7 +789,7 @@ unsigned char winternitz_8_verify(const unsigned char v[/*m*/], const unsigned s
 #endif
 
     // data part:
-    sinit(hash, WINTERNITZ_SEC_LVL);
+    //sinit(hash, WINTERNITZ_SEC_LVL);
 
     for (i = 0; i < (unsigned char)m; i++) { // NB: hash length is m here, but was 2*m in the predecessor scheme
         // process unsigned char
@@ -863,7 +863,7 @@ unsigned char winternitz_8_verify(const unsigned char v[/*m*/], const unsigned s
     memcpy(x, hash->H, 16);
     //sq++;
     //printf("ver squeeze count: %d\n", sq);
-    cleanup(hash);
+    //cleanup(hash);
     return (memcmp(x, v, m) == 0 ? WINTERNITZ_OK : WINTERNITZ_ERROR);
 }
 #endif /*WINTERNITZ_W = 8*/
@@ -909,7 +909,7 @@ taking the missing nodes from the authentication path $Q^{(j)}$. Accept iff $q_1
 int main(int argc, char *argv[]) {
 
     unsigned char m = LEN_BYTES(WINTERNITZ_SEC_LVL);
-    sponge_t hash;
+    mmo_t hash;
     unsigned char s[m]; // the m-unsigned char private signing key.
     unsigned char v[m]; // the corresponding m-unsigned char verification key.
     char M[] = "Hello, world!";
@@ -923,8 +923,8 @@ int main(int argc, char *argv[]) {
 
     printf("\n Winternitz(w = %d, sec = %d) \n\n", WINTERNITZ_W, WINTERNITZ_SEC_LVL);
     printf("l1 = %d, checksum = %d, L = %d \n\n", WINTERNITZ_l1, WINTERNITZ_CHECKSUM_SIZE, WINTERNITZ_L);
-    printf("mem occupation: %d unsigned chars.\n",
-        sizeof(priv) + sizeof(hash) + sizeof(pubk) + sizeof(s) + sizeof(v) + sizeof(M) + sizeof(h) + sizeof(sig) + sizeof(x));
+    //printf("mem occupation: %d unsigned chars.\n",
+    //    sizeof(priv) + sizeof(hash) + sizeof(pubk) + sizeof(s) + sizeof(v) + sizeof(M) + sizeof(h) + sizeof(sig) + sizeof(x));
     printf("sig size: %d unsigned chars.\n\n", sizeof(sig));
 
     for (i = 0; i < m; i++) {

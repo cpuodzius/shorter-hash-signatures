@@ -1,7 +1,7 @@
 #ifndef __WINTERNITZ_H
 #define __WINTERNITZ_H
 
-#include "sponge.h"
+#include "hash.h"
 
 // Winternitz interface:
 

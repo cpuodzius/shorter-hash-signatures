@@ -43,7 +43,7 @@ void print_retain(const struct mss_state *state);
 
 #endif
 
-void _create_leaf(dm_t *f, sponge_t *pubk, struct mss_node *node, const unsigned short leaf_index, unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
+void _create_leaf(dm_t *f, mmo_t *pubk, struct mss_node *node, const unsigned short leaf_index, unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
 /********* Arrange *********/
 	unsigned char sk[LEN_BYTES(MSS_SEC_LVL)];
 
@@ -150,7 +150,7 @@ void _get_parent(dm_t *hash, const struct mss_node *left_child, const struct mss
 	#endif
 #endif
 /********* Act *********/
-	hash32(hash, left_child->value, right_child->value, parent->value);
+	DM_hash32(hash, left_child->value, right_child->value, parent->value);
 
 	parent->height = left_child->height + 1;
 	parent->index = (left_child->index >> 1);
@@ -247,7 +247,7 @@ unsigned char _treehash_height(struct mss_state *state, unsigned char h) {
 	return height;
 }
 
-void _treehash_update(dm_t *hash, sponge_t *pubk, struct mss_state *state, const unsigned char h, struct mss_node *node1, struct mss_node *node2, unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
+void _treehash_update(dm_t *hash, mmo_t *pubk, struct mss_state *state, const unsigned char h, struct mss_node *node1, struct mss_node *node2, unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
 /********* Arrange *********/	
 /********* Act *********/
 	if(h < MSS_TREEHASH_SIZE-1 && (state->treehash_seed[h] >= 11*(1<<h)) && (((state->treehash_seed[h] - 11*(1<<h)) % (1<<(2+h))) == 0) ) {
@@ -382,7 +382,7 @@ void _init_state(struct mss_state *state, struct mss_node *node) {
 /********* Assert *********/
 }
 
-void mss_keygen_core(dm_t *hash, sponge_t *pubk, unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], struct mss_node *node1, struct mss_node *node2, struct mss_state *state, unsigned char pkey[NODE_VALUE_SIZE]) {
+void mss_keygen_core(dm_t *hash, mmo_t *pubk, unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], struct mss_node *node1, struct mss_node *node2, struct mss_state *state, unsigned char pkey[NODE_VALUE_SIZE]) {
 /********* Arrange *********/
 	unsigned short i, pos, index = 0;
 /********* Act *********/
@@ -414,7 +414,7 @@ void mss_keygen_core(dm_t *hash, sponge_t *pubk, unsigned char seed[LEN_BYTES(MS
 /********* Assert *********/
 }
 
-void _nextAuth(struct mss_state *state, struct mss_node *current_leaf, unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], dm_t *hash, sponge_t *pubk, struct mss_node *node1, struct mss_node *node2, const unsigned short s) {
+void _nextAuth(struct mss_state *state, struct mss_node *current_leaf, unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], dm_t *hash, mmo_t *pubk, struct mss_node *node1, struct mss_node *node2, const unsigned short s) {
 /********* Arrange *********/
 	short tau = MSS_HEIGHT - 1, min, h, i, j, k;
 /********* Act *********/
@@ -596,7 +596,7 @@ unsigned char *mss_keygen(const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
 	DM_init(&hash_dm);
 	
 	/* Initialization of Winternitz-MMO OTS */
-	sinit(&hash_mmo, MSS_SEC_LVL);
+	//sinit(&hash_mmo, MSS_SEC_LVL);
 
 	mss_keygen_core(&hash_dm, &hash_mmo, seed, &node[0], &node[1], &state, pkey);
 	serialize_mss_skey(state, 0, seed, keys);
@@ -637,7 +637,7 @@ unsigned char *mss_sign(unsigned char skey[MSS_SKEY_SIZE], const char *message) 
 	DM_init(&hash_dm);
 	
 	/* Initialization of Winternitz-MMO OTS */
-	sinit(&hash_mmo, MSS_SEC_LVL);
+	//sinit(&hash_mmo, MSS_SEC_LVL);
 
 	deserialize_mss_skey(&state, &index, seed, skey);
 
@@ -677,7 +677,7 @@ unsigned char mss_verify(const unsigned char signature[MSS_SIGNATURE_SIZE], cons
 	DM_init(&hash_dm);
 	
 	/* Initialization of Winternitz-MMO OTS */
-	sinit(&hash_mmo, MSS_SEC_LVL);
+	//sinit(&hash_mmo, MSS_SEC_LVL);
 
 	deserialize_mss_signature(ots, &v, authpath, signature);
 
@@ -1031,7 +1031,8 @@ void print_retain(const struct mss_state *state) {
 #endif
 
 #include <time.h>
-#include "test.h"
+#include "util.h"
+//#include "test.h"
 
 int main(int argc, char *argv[]) {
 
@@ -1042,12 +1043,12 @@ int main(int argc, char *argv[]) {
 
 	printf("\nParameters:  n=%u, Height=%u, K=%u, W=%u \n\n", MSS_SEC_LVL, MSS_HEIGHT, MSS_K, WINTERNITZ_W);
 
-	do_test(TEST_MSS_SIGN);
-	do_test(TEST_MSS_SERIALIZATION);
-/*
+	//do_test(TEST_MSS_SIGN);
+	//do_test(TEST_MSS_SERIALIZATION);
+
 	// Execution variables
 	unsigned char seed[LEN_BYTES(MSS_SEC_LVL)] = {0xA0,0xA1,0xA2,0xA3,0xA4,0xA5,0xA6,0xA7,0xA8,0xA9,0xAA,0xAB,0xAC,0xAD,0xAE,0xAF};
-	unsigned char skey[MSS_KEY_SIZE], pkey[LEN_BYTES(MSS_SEC_LVL)], signature[MSS_SIGNATURE_SIZE];
+	unsigned char skey[MSS_SKEY_SIZE], pkey[MSS_PKEY_SIZE], *key_pair, signature[MSS_SIGNATURE_SIZE];
 	char msg[] = "Hello, world!";
 
 	unsigned short j;
@@ -1060,18 +1061,20 @@ int main(int argc, char *argv[]) {
 	Display("seed for keygen: ", seed, LEN_BYTES(MSS_SEC_LVL));
 
 	printf("Key generation... ");
-	memcpy(skey, mss_keygen(seed), MSS_KEY_SIZE);
+	key_pair = mss_keygen(seed);
+	memcpy(skey, key_pair, MSS_SKEY_SIZE);
+	memcpy(pkey, key_pair + MSS_SKEY_SIZE, MSS_PKEY_SIZE);
 	printf("Done!\n");
 
 	printf("Signing %d messages... ", ntest);
 	for(i = 0; i < ntest; i++)
-		memcpy(signature, mss_sign(skey, msg), MSS_KEY_SIZE);
+		memcpy(signature, mss_sign(skey, msg), MSS_SIGNATURE_SIZE);
 	printf("Done!\n");
 
 	printf("Signature verification... ");
 	assert(mss_verify(signature, pkey, msg));
 	printf("Done!\n");
-//*/
+
 	elapsed += clock();
 	printf("Elapsed time: %.1f ms\n", 1000*(float)elapsed/CLOCKS_PER_SEC/ntest);
 

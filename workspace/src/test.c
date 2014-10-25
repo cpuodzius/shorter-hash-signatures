@@ -3,8 +3,8 @@
 #include "test.h"
 
 #ifdef PLATFORM_SENSOR
-#include "sponge.h"
-#include "sponge.c"
+#include "mmo.h"
+#include "mmo.c"
 #include "winternitz.c"
 #include "mss.c"
 #include "mmo.c"
