@@ -363,7 +363,6 @@ int main(int argc, char *argv[]) {
     unsigned int i;
     mmo_t mmo;
     char *msg16 = "0123456789ABCDEF";
-    char *msg32 = "0123456789ABCDEF0123456789ABCDEF";
     unsigned char tag[16];
 
     MMO_init(&mmo);

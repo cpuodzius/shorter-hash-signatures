@@ -19,18 +19,21 @@ aes:		src/TI_aes_128.c  src/TI_aes_128_encr_only.c src/aes_128.c
 		$(CC) src/aes_128.c -o bin/aes -DAES_ENC_DEC -DAES_CBC_MODE -DAES_SELFTEST $(AES_SELFTEST_OBJS) $(CFLAGS)
 
 hash:		src/hash.c
+		################ MSS_HASH #############
 		make aes
 		$(CC) src/$@.c -c -o bin/$@.o $(CFLAGS)
 		################ HASH Unity Test #############
 		$(CC) src/$@.c -o bin/$@ -DMMO_SELFTEST $(MSS_AES_OBJS) $(CFLAGS)
 
 winternitz:	src/winternitz.c
+		################ MSS_WINTERNITZ #############
 		make hash
 		$(CC) src/$@.c -c -o bin/$@.o $(CFLAGS)
 		################ Winternitz Unity Test #############
-		#$(CC) src/$@.c -o bin/$@.o -DWINTERNITZ_SELFTEST $(MSS_HASH_OBJS) $(CFLAGS)
+		$(CC) src/$@.c -o bin/$@ -DWINTERNITZ_SELFTEST $(MSS_HASH_OBJS) $(CFLAGS)
 
 mss:		src/mss.c
+		################ MSS #############
 		make winternitz
 		make util
 		$(CC) src/$@.c -c -o bin/$@.o $(CFLAGS)
@@ -38,20 +41,24 @@ mss:		src/mss.c
 		$(CC) src/$@.c -o bin/$@ -DMSS_SELFTEST $(MSS_WINTERNITZ_OBJS) bin/util.o $(CFLAGS)
 
 test:		src/winternitz.c src/util.c src/test.c
+		################ MSS_TEST #############
 		make winternitz
 		make util
 		$(CC) src/$@.c -c -o bin/$@.o -DMSS_SELFTEST $(CFLAGS)
 
 util:		src/util.c
+		################ MSS_UTIL #############
 		$(CC) src/$@.c -c -o bin/$@.o $(CFLAGS)
 
 
 example:	src/example.c
+		################ MSS_EXAMPLE #############
 		make mss
 		make util
 		$(CC) src/$@.c -o bin/$@ bin/*.o $(CFLAGS)
 
 libs:
+		################ MSS - RAILS - LIBS #############
 		gcc -c -fPIC -o bin/dyn_aes.o src/ti_aes.c
 		gcc -c -fPIC -o bin/dyn_mmo.o src/mmo.c $(CFLAGS)
 		gcc -c -fPIC -o bin/dyn_sponge.o src/sponge.c $(CFLAGS)
