@@ -917,7 +917,7 @@ int main(int argc, char *argv[]) {
 	unsigned char ok;
 	unsigned char i;
 	clock_t elapsed;
-	int test, tests = 10;
+	int test, tests = 1;
 
 	printf("\n Winternitz(w = %d, sec = %d) \n\n", WINTERNITZ_W, WINTERNITZ_SEC_LVL);
 	printf("l1 = %d, checksum = %d, L = %d \n\n", WINTERNITZ_l1, WINTERNITZ_CHECKSUM_SIZE, WINTERNITZ_L);
@@ -929,6 +929,7 @@ int main(int argc, char *argv[]) {
 		s[i] = 0xA0 ^ i; // sample private key, for debugging only
 	}
 
+	MMO_init(&hash);
 	DM_init(&f);
 
 	printf("======== GEN ========\n");
@@ -949,6 +950,9 @@ int main(int argc, char *argv[]) {
 	elapsed += clock();
 	printf("Elapsed time: %.1f us\n", 1000000*(float)elapsed/CLOCKS_PER_SEC/tests);
 	//display("wsig", sig, 2*m*m);
+
+	MMO_init(&hash);
+	DM_init(&f);
 
 	printf("======== VER ========\n");
 	elapsed = -clock();
