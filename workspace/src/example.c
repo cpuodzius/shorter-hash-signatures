@@ -41,10 +41,10 @@ int main() {
 	printf("...variables declared\nInitializing hashes and merkle tree state...");
 
 	/* Initialization of Merkle–Damgård hash */
-	DM_init(&hash_dm);
+	//DM_init(&hash_dm);
 	
 	/* Initialization of Winternitz-MMO OTS */
-	sinit(&hash_mmo, MSS_SEC_LVL);
+	//DM_init(&hash_mmo, MSS_SEC_LVL);
 
 	printf(" done!\nGenerating key...");
 

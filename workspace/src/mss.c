@@ -43,7 +43,7 @@ void print_retain(const struct mss_state *state);
 
 #endif
 
-void _create_leaf(dm_t *f, mmo_t *pubk, struct mss_node *node, const unsigned short leaf_index, unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
+void _create_leaf(dm_t *f, mmo_t *pubk, struct mss_node *node, const unsigned short leaf_index, const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
 /********* Arrange *********/
 	unsigned char sk[LEN_BYTES(MSS_SEC_LVL)];
 
@@ -382,7 +382,7 @@ void _init_state(struct mss_state *state, struct mss_node *node) {
 /********* Assert *********/
 }
 
-void mss_keygen_core(dm_t *hash, mmo_t *pubk, unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], struct mss_node *node1, struct mss_node *node2, struct mss_state *state, unsigned char pkey[NODE_VALUE_SIZE]) {
+void mss_keygen_core(dm_t *hash, mmo_t *pubk, const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], struct mss_node *node1, struct mss_node *node2, struct mss_state *state, unsigned char pkey[NODE_VALUE_SIZE]) {
 /********* Arrange *********/
 	unsigned short i, pos, index = 0;
 /********* Act *********/
@@ -550,7 +550,7 @@ void mss_sign_core(struct mss_state *state, unsigned char *seed, struct mss_node
  *
  */
 
-unsigned char mss_verify_core(struct mss_node authpath[MSS_HEIGHT], const unsigned char *v, const char *M, unsigned short len, mmo_t *hash, dm_t *f, unsigned char *h, unsigned short leaf_index, const unsigned char *sig, unsigned char *x, struct mss_node *currentLeaf, unsigned char merklePubKey[]) {
+unsigned char mss_verify_core(struct mss_node authpath[MSS_HEIGHT], const unsigned char *v, const char *M, unsigned short len, mmo_t *hash, dm_t *f, unsigned char *h, unsigned short leaf_index, const unsigned char *sig, unsigned char *x, struct mss_node *currentLeaf, const unsigned char merklePubKey[]) {
 /********* Arrange *********/
 /********* Act *********/
 	if (winternitz_verify(v, LEN_BYTES(WINTERNITZ_N), (const char *)M, len, hash, f, h, sig, x) == WINTERNITZ_ERROR) {
@@ -577,7 +577,7 @@ unsigned char mss_verify_core(struct mss_node authpath[MSS_HEIGHT], const unsign
 #ifndef PLATFORM_SENSOR
 unsigned char *mss_keygen(const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
 
-	unsigned short i, index = 0;
+	unsigned short i;
 	unsigned char *keys = malloc(MSS_SKEY_SIZE + MSS_PKEY_SIZE);
 	unsigned char pkey[MSS_PKEY_SIZE];
 	struct mss_node node[2];
@@ -593,10 +593,10 @@ unsigned char *mss_keygen(const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
 	// Act
 
 	/* Initialization of Merkle–Damgård hash */
-	DM_init(&hash_dm);
+	//DM_init(&hash_dm);
 	
 	/* Initialization of Winternitz-MMO OTS */
-	//sinit(&hash_mmo, MSS_SEC_LVL);
+	//MMO_init(&hash_mmo);
 
 	mss_keygen_core(&hash_dm, &hash_mmo, seed, &node[0], &node[1], &state, pkey);
 	serialize_mss_skey(state, 0, seed, keys);
@@ -634,10 +634,10 @@ unsigned char *mss_sign(unsigned char skey[MSS_SKEY_SIZE], const char *message) 
 	// Act
 
 	/* Initialization of Merkle–Damgård hash */
-	DM_init(&hash_dm);
+	//DM_init(&hash_dm);
 	
 	/* Initialization of Winternitz-MMO OTS */
-	//sinit(&hash_mmo, MSS_SEC_LVL);
+	//MMO_init(&hash_mmo);
 
 	deserialize_mss_skey(&state, &index, seed, skey);
 
@@ -674,10 +674,10 @@ unsigned char mss_verify(const unsigned char signature[MSS_SIGNATURE_SIZE], cons
 	// Act
 
 	/* Initialization of Merkle–Damgård hash */
-	DM_init(&hash_dm);
+	//DM_init(&hash_dm);
 	
 	/* Initialization of Winternitz-MMO OTS */
-	//sinit(&hash_mmo, MSS_SEC_LVL);
+	//MMO_init(&hash_mmo);
 
 	deserialize_mss_signature(ots, &v, authpath, signature);
 
@@ -1038,7 +1038,7 @@ int main(int argc, char *argv[]) {
 
 	// Test variables
 	clock_t elapsed;
-	unsigned short i, ntest = (1 << MSS_HEIGHT);
+	unsigned short i, ntest = 2;//(1 << MSS_HEIGHT);
 	elapsed = -clock();
 
 	printf("\nParameters:  n=%u, Height=%u, K=%u, W=%u \n\n", MSS_SEC_LVL, MSS_HEIGHT, MSS_K, WINTERNITZ_W);

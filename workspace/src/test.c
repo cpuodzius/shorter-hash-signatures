@@ -42,7 +42,7 @@ int test_mss_signature() {
 
 	char M[] = "Hello, world!";
 
-	sinit(&hash_mmo, MSS_SEC_LVL);
+	MMO_init(&hash_mmo);
 	DM_init(&f_test);
 
 	// Compute Merkle Public Key and TreeHash state
@@ -153,3 +153,13 @@ int do_test(enum TEST operation) {
 	return ret;
 }
 
+#ifdef LIB_TEST
+
+int main() {
+	unsigned int test;
+	for(test = 0; test < TEST_NTEST; test++)
+		do_test(test);
+	return 0;
+}
+
+#endif

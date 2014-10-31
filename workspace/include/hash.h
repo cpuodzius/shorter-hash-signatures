@@ -29,6 +29,6 @@ void MMO_hash32(mmo_t *mmo, const unsigned char M[AES_128_BLOCK_SIZE], unsigned 
 //void fsprg(unsigned char seed[16], unsigned char out1[16], unsigned char out2[32]);
 //void fsprg_restart();
 
-void prg16(short input, unsigned char seed[16], unsigned char output[16]);
+void prg16(short input, const unsigned char seed[16], unsigned char output[16]);
 
 #endif // __MMO_H

@@ -1,12 +1,14 @@
 CC?=gcc
 CFLAGS=-std=c99 -Wall -pedantic -I include
+LFLAGS=-c -fPIC
 AES_SELFTEST_OBJS=bin/ti_aes_128.o
 MSS_AES_OBJS=bin/mss_aes.o bin/ti_aes_128_enc.o
 MSS_HASH_OBJS=bin/hash.o $(MSS_AES_OBJS)
 MSS_WINTERNITZ_OBJS=bin/winternitz.o $(MSS_HASH_OBJS)
-MSS_OBJS=bin/mss.o $(MSS_WINTERNITZ_OBJS)
+MSS_OBJS=bin/mss.o bin/util.o $(MSS_WINTERNITZ_OBJS)
+LIB_OBJS=bin/dyn_ti_aes_128.o bin/dyn_aes_128.o bin/dyn_hash.o bin/dyn_winternitz.o bin/dyn_mss.o bin/dyn_util.o
 
-all:		test mmo aes sponge winternitz mss example libs
+all:		mss test example libs
 
 aes:		src/TI_aes_128.c  src/TI_aes_128_encr_only.c src/aes_128.c
 		################ MSS_AES #############
@@ -39,12 +41,12 @@ mss:		src/mss.c
 		$(CC) src/$@.c -c -o bin/$@.o $(CFLAGS)
 		################ MSS Unity Test #############
 		$(CC) src/$@.c -o bin/$@ -DMSS_SELFTEST $(MSS_WINTERNITZ_OBJS) bin/util.o $(CFLAGS)
+		$(CC) src/$@.c -g -o bin/$@.dbg -DDEBUG -DMSS_SELFTEST $(MSS_WINTERNITZ_OBJS) bin/util.o $(CFLAGS)
 
-test:		src/winternitz.c src/util.c src/test.c
+test:		src/test.c
 		################ MSS_TEST #############
-		make winternitz
-		make util
-		$(CC) src/$@.c -c -o bin/$@.o -DMSS_SELFTEST $(CFLAGS)
+		make mss
+		$(CC) src/$@.c -o bin/lib$@ -DLIB_TEST $(MSS_OBJS) $(CFLAGS)
 
 util:		src/util.c
 		################ MSS_UTIL #############
@@ -54,18 +56,19 @@ util:		src/util.c
 example:	src/example.c
 		################ MSS_EXAMPLE #############
 		make mss
-		make util
-		$(CC) src/$@.c -o bin/$@ bin/*.o $(CFLAGS)
+		$(CC) src/$@.c -o bin/$@ $(MSS_OBJS) $(CFLAGS)
 
 libs:
 		################ MSS - RAILS - LIBS #############
-		gcc -c -fPIC -o bin/dyn_aes.o src/ti_aes.c
-		gcc -c -fPIC -o bin/dyn_mmo.o src/mmo.c $(CFLAGS)
-		gcc -c -fPIC -o bin/dyn_sponge.o src/sponge.c $(CFLAGS)
-		gcc -c -fPIC -o bin/dyn_winternitz.o src/winternitz.c $(CFLAGS)
-		gcc -c -fPIC -o bin/dyn_mss.o src/mss.c $(CFLAGS)
-		gcc -c -fPIC -o bin/dyn_util.o src/util.c $(CFLAGS)
-		gcc -shared -fPIC -Wl,-soname,libcrypto.so -o bin/libcrypto.so bin/dyn_*.o -lc
-		ar rcs bin/libcrypto.a bin/aes.o bin/mmo.o bin/sponge.o bin/winternitz.o bin/mss.o bin/util.o
+		$(CC) $(LFLAGS) -o bin/dyn_ti_aes_128.o src/TI_aes_128.c $(CFLAGS)
+		$(CC) $(LFLAGS) -o bin/dyn_aes_128.o src/aes_128.c -DAES_ENC_DEC -DAES_CBC_MODE $(CFLAGS)
+		$(CC) $(LFLAGS) -o bin/dyn_hash.o src/hash.c $(CFLAGS)
+		$(CC) $(LFLAGS) -o bin/dyn_winternitz.o src/winternitz.c $(CFLAGS)
+		$(CC) $(LFLAGS) -o bin/dyn_mss.o src/mss.c $(CFLAGS)
+		$(CC) $(LFLAGS) -o bin/dyn_util.o src/util.c $(CFLAGS)
+		$(CC) -shared -fPIC -Wl,-soname,libcrypto.so -o bin/libcrypto.so $(LIB_OBJS) -lc
+		ar rcs bin/libcrypto.a $(LIB_OBJS)
+		rm $(LIB_OBJS)
+
 clean:		
 		rm -rf *.o bin/* lib/*

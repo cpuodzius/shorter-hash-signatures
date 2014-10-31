@@ -7,6 +7,7 @@
 enum TEST {
 	TEST_MSS_SIGN,
 	TEST_MSS_SERIALIZATION,
+	TEST_NTEST,
 };
 
 #define TEST_OK 1

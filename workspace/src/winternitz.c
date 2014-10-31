@@ -24,6 +24,9 @@ void winternitz_keygen(const unsigned char s[LEN_BYTES(WINTERNITZ_SEC_LVL)], con
 	//int sq = 0;
 	unsigned char i, j;
 
+	MMO_init(pubk);
+	DM_init(f);
+
 #ifdef DEBUG
 #if WINTERNITZ_W == 2
 	assert(10 <= m && m <= 21); // lower bound: min sec level (80 bits), upper bound: max checksum count must fit one byte
@@ -103,6 +106,8 @@ void winternitz_2_sign(const unsigned char s[LEN_BYTES(WINTERNITZ_SEC_LVL)], con
 	//*/
 	//sq++;
 
+	MMO_init(hash);
+	DM_init(f);
 
 #ifdef DEBUG
 	assert(10 <= m && m <= 21); // lower bound: min sec level (80 bits), upper bound: max checksum count must fit one byte
@@ -434,6 +439,9 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
 #ifdef DEBUG
 	assert(10 <= m && m <= 21); // lower bound: min sec level (80 bits), upper bound: max checksum count must fit one byte
 #endif
+
+	MMO_init(hash);
+	DM_init(f);
 
 	//*
 	memset(h,2,m); //TODO: change this to a true hash
@@ -928,9 +936,6 @@ int main(int argc, char *argv[]) {
 	for (i = 0; i < m; i++) {
 		s[i] = 0xA0 ^ i; // sample private key, for debugging only
 	}
-
-	MMO_init(&hash);
-	DM_init(&f);
 
 	printf("======== GEN ========\n");
 	elapsed = -clock();

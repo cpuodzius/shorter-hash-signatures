@@ -348,7 +348,7 @@ void fsprg_restart() {
 }
 //*/
 
-void prg16(short input, unsigned char seed[16], unsigned char output[16]) {
+void prg16(short input, const unsigned char seed[16], unsigned char output[16]) {
         memset(output, 0, 16);
         memcpy(output, &input, sizeof(short));
         aes_128_encrypt(output, output, seed);
