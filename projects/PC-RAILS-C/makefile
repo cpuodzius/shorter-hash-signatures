@@ -7,6 +7,8 @@ MSS_HASH_OBJS=bin/hash.o $(MSS_AES_OBJS)
 MSS_WINTERNITZ_OBJS=bin/winternitz.o $(MSS_HASH_OBJS)
 MSS_OBJS=bin/mss.o bin/util.o $(MSS_WINTERNITZ_OBJS)
 LIB_OBJS=bin/dyn_ti_aes_128.o bin/dyn_aes_128.o bin/dyn_hash.o bin/dyn_winternitz.o bin/dyn_mss.o bin/dyn_util.o
+SPONGE_PROJ_PATH=../../workspace/modules/Hash-Functions-8-16-bits
+SPONGE_OBJS=bin/sponge.o bin/keccak.o
 
 all:		mss test example libs
 
@@ -57,6 +59,17 @@ example:	src/example.c
 		################ MSS_EXAMPLE #############
 		make mss
 		$(CC) src/$@.c -o bin/$@ $(MSS_OBJS) $(CFLAGS)
+
+keccak:		$(SPONGE_PROJ_PATH)
+		$(CC) $(SPONGE_PROJ_PATH)/sponge_functions/keccak8bits.c -c -o bin/$@.o $(CFLAGS)
+
+sponge:		$(SPONGE_PROJ_PATH)
+		make keccak
+		$(CC) $(SPONGE_PROJ_PATH)/sponge8bits.c -c -o bin/$@.o $(CFLAGS)
+		################ KECCAK #############
+		mkdir bin/keccak_kat
+		7zr x $(SPONGE_PROJ_PATH)/keccak_kat/keccak_kat.7z -obin/keccak_kat
+		$(CC) $(SPONGE_PROJ_PATH)/sponge_functions/keccak_test.c -o bin/keccak -DSPONGE_DEBUG $(SPONGE_OBJS) $(CFLAGS)
 
 libs:
 		################ MSS - RAILS - LIBS #############
