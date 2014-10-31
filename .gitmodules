@@ -1,0 +1,3 @@
+[submodule "workspace/modules/Hash-Functions-8-16-bits"]
+	path = workspace/modules/Hash-Functions-8-16-bits
+	url = https://github.com/pmassolino/Hash-Functions-8-16-bits.git
