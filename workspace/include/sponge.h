@@ -1,6 +1,8 @@
 #ifndef _SPONGE_H_
 #define _SPONGE_H_
 
+#define PROCESSOR_WORD	8
+
 #if SPONGE_SBLAKE2
 #define SBLAKE2_WORD_SIZE 64 // Values supported 64,32
 #define SPONGE_STATE_SIZE_BITS (16*(SBLAKE2_WORD_SIZE))

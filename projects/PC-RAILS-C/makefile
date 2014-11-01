@@ -60,6 +60,13 @@ example:	src/example.c
 		make mss
 		$(CC) src/$@.c -o bin/$@ $(MSS_OBJS) $(CFLAGS)
 
+hmac:		src/hmac.c
+		make sponge
+		make util
+		$(CC) src/$@.c -c -o bin/$@.o $(CFLAGS)
+		################ MSS Unity Test #############
+		$(CC) src/$@.c -o bin/$@ -DHMAC_SELFTEST $(SPONGE_OBJS) bin/util.o $(CFLAGS)
+
 keccak:		$(SPONGE_PROJ_PATH)
 		$(CC) $(SPONGE_PROJ_PATH)/sponge_functions/keccak8bits.c -c -o bin/$@.o $(CFLAGS)
 

@@ -3,7 +3,7 @@
 
 #define HMAC_TAG_SIZE	16
 
-unsigned char *get_hmac(unsigned char *message, unsigned char key[]);
-unsigned char verify_hmac(unsigned char tag[HMAC_TAG_SIZE], unsigned char *message, unsigned char key[]);
+void get_hmac(char *message, unsigned char key[], unsigned char tag[HMAC_TAG_SIZE]);
+unsigned char verify_hmac(unsigned char tag[HMAC_TAG_SIZE], char *message, unsigned char key[]);
 
 #endif /* __HMAC_H */
