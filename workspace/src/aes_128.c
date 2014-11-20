@@ -128,6 +128,7 @@ void aes_128_cbc_decrypt(const unsigned char key[AES_128_KEY_SIZE], const unsign
 #endif //AES_ENC_DEC
 
 #include <stdio.h>
+#include "util.h"
 
 #if AES_SELFTEST
 
@@ -157,20 +158,33 @@ int main() {
 
 	// AES CBC
 	char plaintext[BUFFER_SIZE] = "teste do AES-CBC: Cassius gosta de Dream Theater";
-	unsigned char ciphertext[BUFFER_SIZE];
+	unsigned char ciphertext[BUFFER_SIZE], buffer[BUFFER_SIZE];
 	unsigned int size;
 	unsigned char iv[AES_128_BLOCK_SIZE] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f};
 
 	aes_128_cbc_encrypt(key, iv, plaintext, ciphertext, &size);
 
+	printf("key:\n");
+	for(i = 0; i < AES_128_KEY_SIZE; i++)
+		printf("%02X ", key[i]);
+	printf("\n");
+
 	printf("plaintext:\n");
 	printf("%s", plaintext);
+	printf("\n");
+	for(i = 0; i < strlen(plaintext); i++)
+		printf("%02X ", plaintext[i]);
 	printf("\n");
 
 	printf("ciphertext:\n");
 	for(i = 0; i < size; i++)
 		printf("%02X ", ciphertext[i]);
 	printf("\n");
+
+	base64encode(key, AES_128_KEY_SIZE, buffer, BUFFER_SIZE);
+	printf("key (base64): %s\n", buffer);
+	base64encode(ciphertext, size, buffer, BUFFER_SIZE);
+	printf("ciphertext (base64): %s\n", buffer);
 
 	aes_128_cbc_decrypt(key, iv, ciphertext, size, plaintext);
 

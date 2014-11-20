@@ -6,11 +6,12 @@ MSS_AES_OBJS=bin/mss_aes.o bin/ti_aes_128_enc.o
 MSS_HASH_OBJS=bin/hash.o $(MSS_AES_OBJS)
 MSS_WINTERNITZ_OBJS=bin/winternitz.o $(MSS_HASH_OBJS)
 MSS_OBJS=bin/mss.o bin/util.o $(MSS_WINTERNITZ_OBJS)
-LIB_OBJS=bin/dyn_ti_aes_128.o bin/dyn_aes_128.o bin/dyn_hash.o bin/dyn_winternitz.o bin/dyn_mss.o bin/dyn_util.o
 SPONGE_PROJ_PATH=../../workspace/modules/Hash-Functions-8-16-bits
 SPONGE_OBJS=bin/sponge.o bin/keccak.o
+DYN_LIB_OBJS=bin/dyn_ti_aes_128.o bin/dyn_aes_128.o bin/dyn_hash.o bin/dyn_winternitz.o bin/dyn_mss.o bin/dyn_keccak.o bin/dyn_sponge.o bin/dyn_hmac.o bin/dyn_util.o
+LIB_OBJS=bin/ti_aes_128.o bin/aes_128.o bin/hash.o bin/winternitz.o bin/mss.o bin/keccak.o bin/sponge.o bin/hmac.o bin/util.o
 
-all:		mss test example libs
+all:		mss hmac test example libs
 
 aes:		src/TI_aes_128.c  src/TI_aes_128_encr_only.c src/aes_128.c
 		################ MSS_AES #############
@@ -20,7 +21,8 @@ aes:		src/TI_aes_128.c  src/TI_aes_128_encr_only.c src/aes_128.c
 		$(CC) src/TI_aes_128.c -c -o bin/ti_aes_128.o $(CFLAGS)
 		$(CC) src/aes_128.c -c -o bin/aes_128.o -DAES_ENC_DEC -DAES_CBC_MODE $(CFLAGS)
 		################ AES Unity Test #############
-		$(CC) src/aes_128.c -o bin/aes -DAES_ENC_DEC -DAES_CBC_MODE -DAES_SELFTEST $(AES_SELFTEST_OBJS) $(CFLAGS)
+		make util
+		$(CC) src/aes_128.c -o bin/aes -DAES_ENC_DEC -DAES_CBC_MODE -DAES_SELFTEST $(AES_SELFTEST_OBJS) bin/util.o $(CFLAGS)
 
 hash:		src/hash.c
 		################ MSS_HASH #############
@@ -79,16 +81,22 @@ sponge:		$(SPONGE_PROJ_PATH)
 		$(CC) $(SPONGE_PROJ_PATH)/sponge_functions/keccak_test.c -o bin/keccak -DSPONGE_DEBUG $(SPONGE_OBJS) $(CFLAGS)
 
 libs:
+		make mss
+		make hmac
 		################ MSS - RAILS - LIBS #############
 		$(CC) $(LFLAGS) -o bin/dyn_ti_aes_128.o src/TI_aes_128.c $(CFLAGS)
 		$(CC) $(LFLAGS) -o bin/dyn_aes_128.o src/aes_128.c -DAES_ENC_DEC -DAES_CBC_MODE $(CFLAGS)
 		$(CC) $(LFLAGS) -o bin/dyn_hash.o src/hash.c $(CFLAGS)
 		$(CC) $(LFLAGS) -o bin/dyn_winternitz.o src/winternitz.c $(CFLAGS)
 		$(CC) $(LFLAGS) -o bin/dyn_mss.o src/mss.c $(CFLAGS)
+		$(CC) $(LFLAGS) -o bin/dyn_keccak.o $(SPONGE_PROJ_PATH)/sponge_functions/keccak8bits.c $(CFLAGS)
+		$(CC) $(LFLAGS) -o bin/dyn_sponge.o $(SPONGE_PROJ_PATH)/sponge8bits.c $(CFLAGS)
+		$(CC) $(LFLAGS) -o bin/dyn_mss.o src/mss.c $(CFLAGS)
+		$(CC) $(LFLAGS) -o bin/dyn_hmac.o src/hmac.c $(CFLAGS)
 		$(CC) $(LFLAGS) -o bin/dyn_util.o src/util.c $(CFLAGS)
-		$(CC) -shared -fPIC -Wl,-soname,libcrypto.so -o bin/libcrypto.so $(LIB_OBJS) -lc
+		$(CC) -shared -fPIC -Wl,-soname,libcrypto.so -o bin/libcrypto.so $(DYN_LIB_OBJS) -lc
 		ar rcs bin/libcrypto.a $(LIB_OBJS)
-		rm $(LIB_OBJS)
+		rm $(DYN_LIB_OBJS)
 
 clean:		
 		rm -rf *.o bin/* lib/*
