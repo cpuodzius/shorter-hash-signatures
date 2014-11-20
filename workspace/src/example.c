@@ -120,9 +120,13 @@ int main() {
 	for(i = 0; i < MSS_PKEY_SIZE; i++)
 		pkey_int[i] = keys_int[MSS_SKEY_SIZE + i];
 
+	sponge_state sponge;
+	unsigned char digest[2 * MSS_SEC_LVL];
+
+	sponge_hash(message, strlen(message), digest, 2 * MSS_SEC_LVL);
 	printf("Signing message (obtaining %d OTS)...", EXAMPLE_Nth_SIGNATURE);
 	for(i = 0; i < EXAMPLE_Nth_SIGNATURE; i++)
-		signature_int = mss_sign(skey_int, message);
+		signature_int = mss_sign(skey_int, digest);
 	printf(" done!\n");
 
 	base64encode(signature_int, MSS_SIGNATURE_SIZE, base64_buffer, EXAMPLE_BASE64_BUFFER_SIZE);
@@ -130,7 +134,7 @@ int main() {
 
 	printf("Verifying signature...");
 
-	if(mss_verify(signature_int, pkey_int, message))
+	if(mss_verify(signature_int, pkey_int, digest))
 		printf(" OK! - ");
 	else
 		printf(" Fail! - ");

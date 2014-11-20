@@ -63,8 +63,8 @@ struct mss_state {
 #define MSS_SIGNATURE_SIZE (MSS_NODE_SIZE + MSS_HEIGHT * MSS_NODE_SIZE + MSS_OTS_SIZE)
 
 unsigned char *mss_keygen(const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]);
-unsigned char *mss_sign(unsigned char skey[MSS_SKEY_SIZE], const char *message);
-unsigned char mss_verify(const unsigned char signature[MSS_SIGNATURE_SIZE], const unsigned char pkey[MSS_PKEY_SIZE], const char *message);
+unsigned char *mss_sign(unsigned char skey[MSS_SKEY_SIZE], const unsigned char digest[2 * MSS_SEC_LVL]);
+unsigned char mss_verify(const unsigned char signature[MSS_SIGNATURE_SIZE], const unsigned char pkey[MSS_PKEY_SIZE], const unsigned char digest[2 * MSS_SEC_LVL]);
 
 void serialize_mss_node(struct mss_node node, unsigned char buffer[MSS_NODE_SIZE]);
 void deserialize_mss_node(struct mss_node *node, const unsigned char buffer[]);
