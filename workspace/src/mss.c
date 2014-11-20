@@ -612,7 +612,7 @@ unsigned char *mss_keygen(const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
 	return keys;
 }
 
-unsigned char *mss_sign(unsigned char skey[MSS_SKEY_SIZE], const char *message) {
+unsigned char *mss_sign(unsigned char skey[MSS_SKEY_SIZE], const char digest[2 * MSS_SEC_LVL]) {
 	// Arrange
 	/* Auxiliary varibles */
 	unsigned short index;
@@ -641,7 +641,7 @@ unsigned char *mss_sign(unsigned char skey[MSS_SKEY_SIZE], const char *message) 
 
 	deserialize_mss_skey(&state, &index, seed, skey);
 
-	mss_sign_core(&state, seed, &node[0], message, strlen(message) + 1, &hash_mmo, &hash_dm, hash, index, &node[1], &node[2], ots, authpath);
+	mss_sign_core(&state, seed, &node[0], digest, 2 * MSS_SEC_LVL, &hash_mmo, &hash_dm, hash, index, &node[1], &node[2], ots, authpath);
 	index++;
 
 	serialize_mss_skey(state, index, seed, skey);
@@ -654,7 +654,7 @@ unsigned char *mss_sign(unsigned char skey[MSS_SKEY_SIZE], const char *message) 
 	return signature;
 }
 
-unsigned char mss_verify(const unsigned char signature[MSS_SIGNATURE_SIZE], const unsigned char pkey[MSS_PKEY_SIZE], const char *message) {
+unsigned char mss_verify(const unsigned char signature[MSS_SIGNATURE_SIZE], const unsigned char pkey[MSS_PKEY_SIZE], const unsigned char digest[2 * MSS_SEC_LVL]) {
 	// Arrange
 
 	unsigned char verification = MSS_ERROR;
@@ -681,7 +681,7 @@ unsigned char mss_verify(const unsigned char signature[MSS_SIGNATURE_SIZE], cons
 
 	deserialize_mss_signature(ots, &v, authpath, signature);
 
-	verification = mss_verify_core(authpath, v.value, message, strlen(message) + 1, &hash_mmo, &hash_dm, hash, v.index, ots, aux, &v, pkey);
+	verification = mss_verify_core(authpath, v.value, digest, 2 * MSS_SEC_LVL, &hash_mmo, &hash_dm, hash, v.index, ots, aux, &v, pkey);
 
 	//Assert
 	return verification;
