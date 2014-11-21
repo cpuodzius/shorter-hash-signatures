@@ -612,7 +612,7 @@ unsigned char *mss_keygen(const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
 	return keys;
 }
 
-unsigned char *mss_sign(unsigned char skey[MSS_SKEY_SIZE], const char digest[2 * MSS_SEC_LVL]) {
+unsigned char *mss_sign(unsigned char skey[MSS_SKEY_SIZE], const unsigned char digest[2 * MSS_SEC_LVL]) {
 	// Arrange
 	/* Auxiliary varibles */
 	unsigned short index;
