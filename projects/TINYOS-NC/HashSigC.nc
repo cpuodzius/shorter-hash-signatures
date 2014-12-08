@@ -3,11 +3,8 @@
 #include <stdio.h>
 #endif
 
-//#include "retain.h"
-//#include <avr/pgmspace.h>
 
-
-#include "benchmark.h"
+//#include "benchmark.h"
 #include "test.h"
 
 module HashSigC {
@@ -40,6 +37,8 @@ implementation {
 		call Leds.set(1);
 	}
 #endif
+
+#ifdef RUN_BENCHS
 
 	void run_benchs() {
 
@@ -83,6 +82,7 @@ implementation {
 		printfflush();
 #endif
 	}
+#endif //RUN_BENCHS
 
 	event void Boot.booted() {
 
@@ -100,7 +100,7 @@ implementation {
 	}
 
 	event void Timer.fired() {				
-		/*
+		///*
 		run_tests();
 		/*/
 		run_benchs();

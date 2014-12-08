@@ -1,5 +1,5 @@
+
 #include "aes_128.h"
-#include <string.h>
 
 #if !defined(AES_HW) && !defined(AES_ASM) 
 #ifdef AES_ENC_DEC
@@ -8,6 +8,8 @@
 #include "TI_aes_128_encr_only.h"
 #endif
 #endif //AES_SW
+
+#include <string.h>
 
 #ifdef DEBUG
 	#include <assert.h>
@@ -32,7 +34,7 @@ void aes_128_encrypt(unsigned char ciphertext[AES_128_BLOCK_SIZE], const unsigne
 	//for (i = 0; i < AES_128_BLOCK_SIZE; i++) printf(" %02X", plaintext[i]);
 	//printf("\n");
 
-#elif defined(PLATFORM_SENSOR) && defined(AES_ASM) && defined(PLATFORM_ATMEL)
+#elif defined(PLATFORM_SENSOR) && defined(AES_ASM) && defined(PLATFORM_AVR)
 	aes128_ctx_t ctx_mmo; // the context where the round keys are stored
 	aes128_init(key, &ctx_mmo); // generating the round keys from the 128 bit key
 	memcpy(ciphertext, plaintext, AES_128_BLOCK_SIZE);

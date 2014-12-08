@@ -3,10 +3,6 @@
 
 #include "winternitz.h"
 
-#ifdef MSS_ROM_RETAIN
-	#include "retain.h"
-#endif
-
 // Improved Merkle Signature Scheme targeting 16-bit platforms
 // 16 is the Heighest tree for this implementation (since leaf index is of type short)
 
@@ -16,7 +12,7 @@
 
 #define MSS_SEC_LVL                     WINTERNITZ_SEC_LVL
 #define MSS_HEIGHT			10
-#define MSS_K				8
+#define MSS_K				6
 
 #define odd(x)	((x) % 2)
 #if odd(MSS_HEIGHT - MSS_K)
@@ -27,7 +23,7 @@
 #define MSS_STACK_SIZE			(MSS_HEIGHT - MSS_K - 2)
 #define MSS_KEEP_SIZE			MSS_HEIGHT // Keep is used as stack during key generation
 
-#if defined(PLATFORM_TELOSB) && defined(MSS_ROM_RETAIN)
+#if defined(PLATFORM_SENSOR) && defined(MSS_ROM_RETAIN)
 #define MSS_RETAIN_SIZE			0 // retain already precomputed, load from ROM
 #else
 #define MSS_RETAIN_SIZE			((1 << MSS_K) - MSS_K - 1)

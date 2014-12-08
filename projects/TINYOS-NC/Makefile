@@ -1,7 +1,7 @@
 COMPONENT=HashSigAppC
 
-CFLAGS += -I include -I src -I resources
-CFLAGS += -DPLATFORM_TELOSB
+#CFLAGS += -I include -I src #-I resources
+CFLAGS += -I include
 
 #
 #OPTFLAGS += -O1
@@ -9,10 +9,10 @@ CFLAGS += -DPLATFORM_TELOSB
 OPTFLAGS += -O2
 #OPTFLAGS += -O0 # Too much ROM, bad flag
 
-CFLAGS += -DREAD_ENERGY
+#CFLAGS += -DREAD_ENERGY
 
-#CFLAGS += -DNEW_PRINTF_SEMANTICS
-#CFLAGS += -I $(TOSDIR)/lib/printf
+CFLAGS += -DNEW_PRINTF_SEMANTICS
+CFLAGS += -I $(TOSDIR)/lib/printf
 
 CFLAGS += -L lib
 LDFLAGS += -lhashsigs

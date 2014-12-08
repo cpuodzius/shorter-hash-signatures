@@ -2,14 +2,6 @@
 #include <string.h>
 #include "test.h"
 
-#ifdef PLATFORM_SENSOR
-#include "mmo.h"
-#include "mmo.c"
-#include "winternitz.c"
-#include "mss.c"
-#include "mmo.c"
-#endif
-
 struct mss_node nodes[2];
 struct mss_state state_test;
 struct mss_node currentLeaf_test;
@@ -55,17 +47,25 @@ int test_mss_signature() {
 	//Sign and verify for all j-th authentication paths
 	errors = 0;
 	for (j = 0; j < (1 << MSS_HEIGHT); j++) {
+#ifndef PLATFORM_SENSOR
 		printf("Testing MSS for leaf %d ...", j);
+#endif
 		mss_sign_core(&state_test, seed_test, &currentLeaf_test, (const char *)M, strlen(M)+1, &hash_mmo, &f_test, h1, j, &nodes[0], &nodes[1], sig_test, authpath_test);
 		if(mss_verify_core(authpath_test, currentLeaf_test.value, (const char *)M, strlen(M)+1, &hash_mmo, &f_test, h2, j, sig_test, aux, &currentLeaf_test, pkey_test) == MSS_OK) {
+#ifndef PLATFORM_SENSOR
 			printf(" [OK]\n");
+#endif
 		} else {
 			errors++;
+#ifndef PLATFORM_SENSOR
 			printf(" [ERROR]\n");
+#endif
 		}
 	}
 	return errors;
 }
+
+#ifndef PLATFORM_SENSOR
 
 int test_mss_serialization() {
 	unsigned short errors = 0;
@@ -138,6 +138,8 @@ int test_mss_serialization() {
 	return errors;
 }
 
+#endif //test_mss_serialization
+
 int do_test(enum TEST operation) {
 	unsigned char ret = 0;
 
@@ -145,9 +147,11 @@ int do_test(enum TEST operation) {
 		case TEST_MSS_SIGN:
 			ret = test_mss_signature();
 			break;
+#ifndef PLATFORM_SENSOR
 		case TEST_MSS_SERIALIZATION:
 			ret = test_mss_serialization();
 			break;
+#endif
 	}
 	printf("Errors: %d \n", ret);
 	return ret;

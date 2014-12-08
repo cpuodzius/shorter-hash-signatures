@@ -3,6 +3,7 @@
   #include "printf.h"
 #endif
 
+
 configuration HashSigAppC{
 }
 implementation {

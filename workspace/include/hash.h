@@ -1,5 +1,5 @@
-#ifndef __MMO_H
-#define __MMO_H
+#ifndef __HASH_H
+#define __HASH_H
 
 #include "aes_128.h"
 
@@ -31,4 +31,4 @@ void MMO_hash32(mmo_t *mmo, const unsigned char M[AES_128_BLOCK_SIZE], unsigned 
 
 void prg16(short input, const unsigned char seed[16], unsigned char output[16]);
 
-#endif // __MMO_H
+#endif // __HASH_H

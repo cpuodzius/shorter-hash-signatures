@@ -1,0 +1,4 @@
+On the MicaZ, there is one serial port for programming and one serial port for output so if you use USB0 for programming the mote, you will use USB1 for getting the output:
+
+$ make micaz install mib510,/dev/ttyUSB0
+$ java net.tinyos.tools.PrintfClient -comm serial@/dev/ttyUSB1:micaz 

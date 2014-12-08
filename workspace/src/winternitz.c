@@ -1,4 +1,4 @@
-#ifndef PLATFORM_TELOSB
+#ifndef PLATFORM_SENSOR
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -263,11 +263,19 @@ void winternitz_4_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
 	unsigned char i, j, c;
 	unsigned short checksum = 0;
 
-	//sinit(hash, WINTERNITZ_SEC_LVL);
-	//absorb(hash, v, m); // public key used as random nonce!!!
-	//absorb(hash, M, len); // followed by the message in this implementation (actually followed by the treetop key, and then by the message, in the full scheme)
-	//squeeze(hash, h, m); // NB: hash length is m here, but was 2*m in the predecessor scheme
+	//*
+	memset(h,2,m); //TODO: change this to a true hash
+	/*/
+	sinit(hash, WINTERNITZ_SEC_LVL);
+
+	absorb(hash, v, m); // public key used as random nonce!!!
+	absorb(hash, M, len); // followed by the message in this implementation (actually followed by the treetop key, and then by the message, in the full scheme)
+	squeeze(hash, h, m); // NB: hash length is m here, but was 2*m in the predecessor scheme
+	//*/
 	//sq++;
+
+	MMO_init(hash);
+	DM_init(f);
 
 #ifdef DEBUG
 	assert(10 <= m && m <= 127);
@@ -326,7 +334,7 @@ void winternitz_4_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
 		sig += 16; // signature block for next nybble
 	}
 	//printf("sig squeeze count: %d\n", sq);
-	cleanup(hash);
+	//cleanup(hash);
 }
 #endif // WINTERNITZ_W = 4
 
@@ -351,11 +359,19 @@ void winternitz_8_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
 	//int sq = 0;
 	unsigned char i, j;
 	unsigned short c, checksum = 0;
-	//sinit(hash, WINTERNITZ_SEC_LVL);
-	//absorb(hash, v, m); // public key used as random nonce!!!
-	//absorb(hash, M, len); // followed by the message in this implementation (actually followed by the treetop key, and then by the message, in the full scheme)
-	//squeeze(hash, h, m); // NB: hash length is m here, but was 2*m in the predecessor scheme
+
+	//*
+	memset(h,2,m); //TODO: change this to a true hash
+	/*/
+	sinit(hash, WINTERNITZ_SEC_LVL);
+	absorb(hash, v, m); // public key used as random nonce!!!
+	absorb(hash, M, len); // followed by the message in this implementation (actually followed by the treetop key, and then by the message, in the full scheme)
+	squeeze(hash, h, m); // NB: hash length is m here, but was 2*m in the predecessor scheme
+	//*/
 	//sq++;
+
+	MMO_init(hash);
+	DM_init(f);
 
 #ifdef DEBUG
 	assert(10 <= m && m <= 128);
@@ -399,7 +415,7 @@ void winternitz_8_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
 		sig += 16; // signature block for next unsigned char
 	}
 	//printf("sig squeeze count: %d\n", sq);
-	cleanup(hash);
+	//cleanup(hash);
 }
 #endif /* WINTERNITZ_W = 8*/
 
@@ -639,11 +655,19 @@ unsigned char winternitz_4_verify(const unsigned char v[/*m*/], const unsigned s
 	unsigned char i, j, c;
 	unsigned short checksum = 0;
 
-	//sinit(hash, WINTERNITZ_SEC_LVL);
-	//absorb(hash, v, m); // random nonce!!!
-	//absorb(hash, M, len); // followed by the treetop key in the full scheme
-	//squeeze(hash, h, m); // NB: hash length is m here, but was 2*m in the predecessor scheme
+	//*
+	memset(h,2,m); //TODO: change this to a true hash
+	/*/
+	sinit(hash, WINTERNITZ_SEC_LVL);
+
+	absorb(hash, v, m); // public key used as random nonce!!!
+	absorb(hash, M, len); // followed by the message in this implementation (actually followed by the treetop key, and then by the message, in the full scheme)
+	squeeze(hash, h, m); // NB: hash length is m here, but was 2*m in the predecessor scheme
+	//*/
 	//sq++;
+
+	MMO_init(hash);
+	DM_init(f);
 
 #ifdef DEBUG
 	assert(10 <= m && m <= 127);
@@ -783,11 +807,18 @@ unsigned char winternitz_8_verify(const unsigned char v[/*m*/], const unsigned s
 	unsigned char i, j;
 	unsigned short c, checksum = 0;
 
-	//sinit(hash, WINTERNITZ_SEC_LVL);
-	//absorb(hash, v, m); // random nonce!!!
-	//absorb(hash, M, len); // followed by the treetop key in the full scheme
-	//squeeze(hash, h, m); // NB: hash length is m here, but was 2*m in the predecessor scheme
+	//*
+	memset(h,2,m); //TODO: change this to a true hash
+	/*/
+	sinit(hash, WINTERNITZ_SEC_LVL);
+	absorb(hash, v, m); // public key used as random nonce!!!
+	absorb(hash, M, len); // followed by the message in this implementation (actually followed by the treetop key, and then by the message, in the full scheme)
+	squeeze(hash, h, m); // NB: hash length is m here, but was 2*m in the predecessor scheme
+	//*/
 	//sq++;
+
+	MMO_init(hash);
+	DM_init(f);
 
 #ifdef DEBUG
 	assert(10 <= m && m <= 128);
@@ -807,7 +838,7 @@ unsigned char winternitz_8_verify(const unsigned char v[/*m*/], const unsigned s
 #endif
 
 		for (j = 0; j < (unsigned char)c; j++) {
-			hash16(f, x, x);  // x holds the hash of its previous value
+			DM_hash16(f, x, x);  // x holds the hash of its previous value
 			//sq++;
 		}
 		//absorb(pubk, x, m);
@@ -841,7 +872,7 @@ unsigned char winternitz_8_verify(const unsigned char v[/*m*/], const unsigned s
 #endif
 
 		for (j = 0; j < (unsigned char)c; j++) {
-			hash16(f,x,x);  // x holds the hash of its previous value
+			DM_hash16(f,x,x);  // x holds the hash of its previous value
 			//sq++;
 		}
 		//absorb(pubk, x, m);

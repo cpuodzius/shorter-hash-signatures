@@ -1,7 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "mss.h"
+
+#ifdef MSS_ROM_RETAIN
+	#include "retain.h"
+#endif
+
 
 enum TREEHASH_STATE {
 	TREEHASH_NEW		= 0x20,
@@ -304,7 +310,7 @@ void _treehash_update(dm_t *hash, mmo_t *pubk, struct mss_state *state, const un
 /********* Assert *********/
 }
 
-#ifndef MSS_CALC_RETAIN
+#ifndef MSS_ROM_RETAIN
 void _retain_push(struct mss_state *state, struct mss_node *node) {
 /********* Arrange *********/
 	unsigned short index = (1 << (MSS_HEIGHT - node->height - 1)) - (MSS_HEIGHT - node->height - 1) - 1 + (node->index >> 1) - 1;
@@ -331,7 +337,7 @@ void _retain_pop(struct mss_state *state, struct mss_node *node, unsigned short 
 	assert(index < MSS_RETAIN_SIZE);
 #endif
 /********* Act *********/
-#if !defined(MSS_ROM_RETAIN) && defined(PLATFORM_TELOSB)
+#if defined(MSS_ROM_RETAIN) && defined(PLATFORM_SENSOR) && defined(PLATFORM_AVR)
 	memcpy_P(&node->height,&retain_height[index],1);
 	memcpy_P(&node->index,&retain_pos[index],1);
 	memcpy_P(node->value,&retain_values[index],NODE_VALUE_SIZE);
@@ -377,7 +383,9 @@ void _init_state(struct mss_state *state, struct mss_node *node) {
 		assert(node->index >= 3 && ((node->index & 1) == 1));
 #endif
 /********* Act *********/
+#ifndef MSS_ROM_RETAIN
 		_retain_push(state, node);
+#endif
 	}
 /********* Assert *********/
 }
@@ -689,6 +697,8 @@ unsigned char mss_verify(const unsigned char signature[MSS_SIGNATURE_SIZE], cons
 
 #endif
 
+#ifndef PLATFORM_SENSOR
+
 /***************************************************************************************************/
 /* Serialization/Deserialization																   */
 /***************************************************************************************************/
@@ -866,6 +876,8 @@ void deserialize_mss_signature(unsigned char ots[MSS_OTS_SIZE], struct mss_node 
 	for(i = 0; i < MSS_OTS_SIZE; i++)
 		ots[i] = signature[offset++];
 }
+
+#endif // serialization/deserialization methods
 
 #if defined(DEBUG) || defined(MSS_SELFTEST)
 

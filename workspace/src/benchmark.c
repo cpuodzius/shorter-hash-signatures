@@ -3,16 +3,6 @@
 #include <string.h>
 #include "benchmark.h"
 
-#ifdef PLATFORM_TELOSB
-
-#include "hash.h"
-#include "hash.c"
-#include "winternitz.c"
-#include "mss.c"
-#include "mmo.c"
-
-#endif
-
 //Merkle sign and verify aux variables
 
 unsigned char seed_bench[LEN_BYTES(MSS_SEC_LVL)] = {0xA0,0xA1,0xA2,0xA3,0xA4,0xA5,0xA6,0xA7,0xA8,0xA9,0xAA,0xAB,0xAC,0xAD,0xAE,0xAF};
@@ -36,7 +26,7 @@ unsigned char pkey_bench[NODE_VALUE_SIZE];
 struct mss_node nodes[2];
 struct mss_node currentLeaf_bench;
 struct mss_node authpath_bench[MSS_HEIGHT];
-struct state_mt state_bench;
+struct mss_state state_bench;
 mmo_t hash_mmo;
 dm_t f_bench;
 char M_bench[] = "Hello, world!";
@@ -74,11 +64,10 @@ void do_benchmark(enum BENCHMARK phase, unsigned short benchs) {
 
 		case BENCHMARK_PREPARE:
 
-			sinit(&hash_mmo, MSS_SEC_LVL);
 
 			DM_init(&f_bench);
 
-			mss_keygen(&f_bench, &hash_mmo, seed_bench, &nodes[0], &nodes[1], &state_bench, pkey_bench);
+			mss_keygen_core(&f_bench, &hash_mmo, seed_bench, &nodes[0], &nodes[1], &state_bench, pkey_bench);
 
 			break;
 
@@ -106,7 +95,7 @@ void do_benchmark(enum BENCHMARK phase, unsigned short benchs) {
 
 		case BENCHMARK_MSS_PREPARE_VERIFY:
 
-			sinit(&hash_mmo, MSS_SEC_LVL);
+			MMO_init(&hash_mmo);
 
 			DM_init(&f_bench);
 
@@ -148,11 +137,11 @@ void do_benchmark(enum BENCHMARK phase, unsigned short benchs) {
 
 				//*
 
-				sinit(&hash_mmo, WINTERNITZ_SEC_LVL);
+				MMO_init(&hash_mmo);
 
-				absorb(&hash_mmo, seed_bench, LEN_BYTES(WINTERNITZ_SEC_LVL));
+				MMO_update(&hash_mmo, seed_bench, LEN_BYTES(WINTERNITZ_SEC_LVL));
 
-				squeeze(&hash_mmo, seed_bench, LEN_BYTES(WINTERNITZ_SEC_LVL));
+				MMO_final(&hash_mmo, seed_bench);
 
 				//*/
 

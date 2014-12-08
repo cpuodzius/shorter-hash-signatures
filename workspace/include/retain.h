@@ -1,9 +1,9 @@
 #ifndef __RETAIN_H
 #define __RETAIN_H
 
-#ifdef PLATFORM_TELOSB
-    #include <avr/pgmspace.h>
-#endif
+
+#include <avr/pgmspace.h>
+
 
 // Copy ROM data to RAM:
 	//unsigned char buffer[16];
@@ -5808,7 +5808,7 @@ Our improved Merkle with W-OTS
 	};
 
 
-#endif // H = 14, K = 12, W = 2
+#endif // H = 14, K = 10, W = 2
 
 
 #if (MSS_HEIGHT == 14) && (MSS_K == 12) && (WINTERNITZ_W == 2)
