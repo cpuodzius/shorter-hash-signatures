@@ -25,12 +25,13 @@ enum TREEHASH_STATE {
 char dbg_seed_initialized = 0;
 unsigned char dbg_seed[LEN_BYTES(MSS_SEC_LVL)];
 
-unsigned char _node_valid_index(const unsigned char height, const short pos);
+unsigned char _node_valid_index(const unsigned char height, const unsigned short pos);
 unsigned char _node_valid(const struct mss_node *node);
 unsigned char _node_equal(const struct mss_node *node1, const struct mss_node *node2);
 unsigned char _is_left_node(const struct mss_node *node);
 unsigned char _is_right_node(const struct mss_node *node);
 unsigned char _node_brothers(const struct mss_node *left_node, const struct mss_node *right_node);
+unsigned char _count_trailing_zeros(const unsigned short v);
 
 #ifdef DEBUG
 #include "util.h"
@@ -62,7 +63,7 @@ void _create_leaf(dm_t *f, mmo_t *pubk, struct mss_node *node, const unsigned sh
 	else {
 		assert(memcmp(dbg_seed, seed, LEN_BYTES(MSS_SEC_LVL)) == 0);
 	}
-	// leaf_index must be a valid
+	// leaf_index must be between 0 and 2^MSS_HEIGHT-1
 	assert(_node_valid_index(0, leaf_index));
 
 	// sk has to be properly allocated
@@ -390,19 +391,32 @@ void _init_state(struct mss_state *state, struct mss_node *node) {
 /********* Assert *********/
 }
 
+unsigned char _count_trailing_zeros(const unsigned short v) {
+	unsigned short c;
+	unsigned char tz = 0;
+
+	c = v;
+	/* shift to count trailing zeros */
+	while (!(c & 0x0001)) {
+		c >>= 1;
+		tz++;
+	}
+	return tz;
+}
+
 void mss_keygen_core(dm_t *hash, mmo_t *pubk, const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], struct mss_node *node1, struct mss_node *node2, struct mss_state *state, unsigned char pkey[NODE_VALUE_SIZE]) {
 /********* Arrange *********/
 	unsigned short i, pos, index = 0;
 /********* Act *********/
 	init_state(state);
 
-	for(pos = 0; pos < (1 << MSS_HEIGHT); pos++) {
-		_create_leaf(hash, pubk, node1, pos, seed);
+	for(pos = 0; (pos < (1 << MSS_HEIGHT) - 1); pos++) {
+		_create_leaf(hash, pubk, node1, pos, seed); //node1.height <= 0
 #if defined(DEBUG)
 		mss_node_print(*node1);
 #endif
 		_init_state(state, node1);
-		while(index > 0 && state->keep[index - 1].height == node1->height) {
+		while(node1->height < _count_trailing_zeros(pos+1) ) { // Condition from algorithm 4.2 in Busold's thesis, adapted for unsigned short variables)
 			_stack_pop(state->keep, &index, node2);
 			_get_parent(hash, node2, node1, node1);
 #if defined(DEBUG)
@@ -410,8 +424,23 @@ void mss_keygen_core(dm_t *hash, mmo_t *pubk, const unsigned char seed[LEN_BYTES
 #endif
 			_init_state(state, node1);
 		}
-		_stack_push(state->keep, &index, node1);
+		if (index < MSS_HEIGHT)
+			_stack_push(state->keep, &index, node1);
 	}
+	// Problem with MSS_HEIGHT = 16 solved by adding the part below and dealing with the last leaf separated	
+	_create_leaf(hash, pubk, node1, pos, seed); //node1.height <= 0
+	_init_state(state, node1);
+	while(node1->height < (pos == 65535 ? 16 : _count_trailing_zeros(pos+1)) ) { // Condition from algorithm 4.2 in Busold's thesis, adapted for unsigned short variables)
+		_stack_pop(state->keep, &index, node2);
+		_get_parent(hash, node2, node1, node1);
+#if defined(DEBUG)
+		mss_node_print(*node1);
+#endif
+		_init_state(state, node1);
+	}
+	if (index < MSS_HEIGHT)
+		_stack_push(state->keep, &index, node1);
+	
 #if defined(DEBUG)
 	print_auth(state);
 	print_treehash(state);
@@ -436,7 +465,7 @@ void _nextAuth(struct mss_state *state, struct mss_node *current_leaf, unsigned 
 	if(tau < MSS_HEIGHT - 1 && (((s >> (tau + 1)) & 1) == 0))
 		state->keep[tau] = state->auth[tau];
 
-	if(tau == 0) { // next leaf is a right node
+	if(tau == 0) { // next leaf is a right node		
 		state->auth[0] = *current_leaf; // Leaf was already computed because our nonce
 	} else { // next leaf is a left node
 		_get_parent(hash, &state->auth[tau - 1], &state->keep[tau - 1], &state->auth[tau]);
@@ -543,7 +572,7 @@ void mss_sign_core(struct mss_state *state, unsigned char *seed, struct mss_node
 
 	for(i = 0; i < MSS_HEIGHT; i++) {
 		authpath[i].height = state->auth[i].height;
-		authpath[i].index = state->auth[i].index;
+		authpath[i].index = state->auth[i].index;		
 		memcpy(authpath[i].value, state->auth[i].value, NODE_VALUE_SIZE);
 	}
 
@@ -582,7 +611,8 @@ unsigned char mss_verify_core(struct mss_node authpath[MSS_HEIGHT], const unsign
 	return MSS_ERROR;
 }
 
-#ifndef PLATFORM_SENSOR
+#ifdef SERIALIZATION
+
 unsigned char *mss_keygen(const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
 
 	unsigned short i;
@@ -649,7 +679,7 @@ unsigned char *mss_sign(unsigned char skey[MSS_SKEY_SIZE], const unsigned char d
 
 	deserialize_mss_skey(&state, &index, seed, skey);
 
-	mss_sign_core(&state, seed, &node[0], digest, 2 * MSS_SEC_LVL, &hash_mmo, &hash_dm, hash, index, &node[1], &node[2], ots, authpath);
+	mss_sign_core(&state, seed, &node[0], (char *)digest, 2 * MSS_SEC_LVL, &hash_mmo, &hash_dm, hash, index, &node[1], &node[2], ots, authpath);
 	index++;
 
 	serialize_mss_skey(state, index, seed, skey);
@@ -689,15 +719,12 @@ unsigned char mss_verify(const unsigned char signature[MSS_SIGNATURE_SIZE], cons
 
 	deserialize_mss_signature(ots, &v, authpath, signature);
 
-	verification = mss_verify_core(authpath, v.value, digest, 2 * MSS_SEC_LVL, &hash_mmo, &hash_dm, hash, v.index, ots, aux, &v, pkey);
+	verification = mss_verify_core(authpath, v.value, (char *)digest, 2 * MSS_SEC_LVL, &hash_mmo, &hash_dm, hash, v.index, ots, aux, &v, pkey);
 
 	//Assert
 	return verification;
 }
 
-#endif
-
-#ifndef PLATFORM_SENSOR
 
 /***************************************************************************************************/
 /* Serialization/Deserialization																   */
@@ -718,7 +745,8 @@ void deserialize_mss_node(struct mss_node *node, const unsigned char buffer[]) {
   unsigned int i, offset = 0;
 
   node->height = buffer[offset++];
-  node->index = ((buffer[offset++] & 0xFF) | (buffer[offset++] << 8));
+  node->index = (buffer[offset++] & 0xFF);
+  node->index = node->index | (buffer[offset++] << 8);
 
   for(i = 0; i < LEN_BYTES(MSS_SEC_LVL); i++)
 	node->value[i] = buffer[offset++];
@@ -780,19 +808,23 @@ void serialize_mss_state(const struct mss_state state, const unsigned short inde
 void deserialize_mss_state(struct mss_state *state, unsigned short *index, const unsigned char buffer[]) {
 	int i, offset = 0;
 
-	*index = ((buffer[offset++] & 0xFF) | (buffer[offset++] << 8));
+	*index = (buffer[offset++] & 0xFF);
+	*index = *index | (buffer[offset++] << 8);
 
 	for(i = 0; i < MSS_TREEHASH_SIZE; i++)
 		state->treehash_state[i] = buffer[offset++];
 
-	state->stack_index = ((buffer[offset++] & 0xFF) | (buffer[offset++] << 8));
+	state->stack_index = (buffer[offset++] & 0xFF);
+	state->stack_index = state->stack_index | (buffer[offset++] << 8);
 
 
 	for(i = 0; i < MSS_K - 1; i++)
-		state->retain_index[i] = ((buffer[offset++] & 0xFF) | (buffer[offset++] << 8));
+		state->retain_index[i] = (buffer[offset++] & 0xFF);
+		state->retain_index[i] = state->retain_index[i] | (buffer[offset++] << 8);
 
 	for(i = 0; i < MSS_TREEHASH_SIZE; i++)
-		state->treehash_seed[i] = ((buffer[offset++] & 0xFF) | (buffer[offset++] << 8));
+		state->treehash_seed[i] = (buffer[offset++] & 0xFF);
+		state->treehash_seed[i] = state->treehash_seed[i] | (buffer[offset++] << 8);
 	
 	for(i = 0; i < MSS_TREEHASH_SIZE; i++) {
 		deserialize_mss_node(&state->treehash[i], buffer + offset);
@@ -881,11 +913,11 @@ void deserialize_mss_signature(unsigned char ots[MSS_OTS_SIZE], struct mss_node 
 
 #if defined(DEBUG) || defined(MSS_SELFTEST)
 
-unsigned char _node_valid_index(unsigned char height, short pos) {
+unsigned char _node_valid_index(const unsigned char height, const unsigned short pos) {
 	unsigned char valid_height = 0;
-	short valid_pos = 0;
+	unsigned char valid_pos = 0;
 	if(height >= 0 && height <= MSS_HEIGHT) {
-		valid_height = 1;
+		valid_height = 1;		
 		if((pos >= 0) && (pos < (1 << (MSS_HEIGHT - height))))
 			valid_pos = 1;
 	}
@@ -895,7 +927,7 @@ unsigned char _node_valid_index(unsigned char height, short pos) {
 unsigned char _node_valid(const struct mss_node *node) {
 	unsigned char valid_value_size = 0;
 	if(sizeof(node->value) == LEN_BYTES(MSS_SEC_LVL))
-		valid_value_size = 1;
+		valid_value_size = 1;	
 	return (valid_value_size && _node_valid_index(node->height, node->index));
 }
 
@@ -1042,22 +1074,26 @@ void print_retain(const struct mss_state *state) {
 
 #endif
 
+#ifdef MSS_SELFTEST
+
 #include <time.h>
 #include "util.h"
-//#include "test.h"
+#include "test.h"
 
 int main(int argc, char *argv[]) {
 
 	// Test variables
-	clock_t elapsed;
-	unsigned short i, ntest = 2;//(1 << MSS_HEIGHT);
-	elapsed = -clock();
+	//clock_t elapsed;
+	//unsigned short i, ntest = 2;//(1 << MSS_HEIGHT);
+	//elapsed = -clock();
 
-	printf("\nParameters:  n=%u, Height=%u, K=%u, W=%u \n\n", MSS_SEC_LVL, MSS_HEIGHT, MSS_K, WINTERNITZ_W);
+	printf("\nParameters:  n=%u, Height=%u, K=%u, w=%u \n\n", MSS_SEC_LVL, MSS_HEIGHT, MSS_K, WINTERNITZ_W);
 
-	//do_test(TEST_MSS_SIGN);
+	do_test(TEST_MSS_SIGN);
 	//do_test(TEST_MSS_SERIALIZATION);
-
+	
+	return 0;
+/*
 	// Execution variables
 	unsigned char seed[LEN_BYTES(MSS_SEC_LVL)] = {0xA0,0xA1,0xA2,0xA3,0xA4,0xA5,0xA6,0xA7,0xA8,0xA9,0xAA,0xAB,0xAC,0xAD,0xAE,0xAF};
 	unsigned char skey[MSS_SKEY_SIZE], pkey[MSS_PKEY_SIZE], *key_pair, signature[MSS_SIGNATURE_SIZE];
@@ -1080,16 +1116,19 @@ int main(int argc, char *argv[]) {
 
 	printf("Signing %d messages... ", ntest);
 	for(i = 0; i < ntest; i++)
-		memcpy(signature, mss_sign(skey, msg), MSS_SIGNATURE_SIZE);
+		memcpy(signature, mss_sign(skey, (unsigned char *)msg), MSS_SIGNATURE_SIZE);
 	printf("Done!\n");
 
 	printf("Signature verification... ");
-	assert(mss_verify(signature, pkey, msg));
+	assert(mss_verify(signature, pkey, (unsigned char *)msg));
 	printf("Done!\n");
 
 	elapsed += clock();
 	printf("Elapsed time: %.1f ms\n", 1000*(float)elapsed/CLOCKS_PER_SEC/ntest);
-
+	
 	return 0;
+//*/	
 }
+#endif //MSS_SELFTEST
+
 #endif

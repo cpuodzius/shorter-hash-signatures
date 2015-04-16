@@ -4,7 +4,7 @@
 #include "winternitz.h"
 
 // Improved Merkle Signature Scheme targeting 16-bit platforms
-// 16 is the Heighest tree for this implementation (since leaf index is of type short)
+// MSS_HEIGHT=16 is the heighest tree for this implementation (since leaf index is of type unsigned short)
 
 #define MSS_OK 1
 #define MSS_ERROR 0
@@ -12,7 +12,7 @@
 
 #define MSS_SEC_LVL                     WINTERNITZ_SEC_LVL
 #define MSS_HEIGHT			10
-#define MSS_K				6
+#define MSS_K				8
 
 #define odd(x)	((x) % 2)
 #if odd(MSS_HEIGHT - MSS_K)

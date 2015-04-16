@@ -11,7 +11,7 @@
 
 #define WINTERNITZ_SEC_LVL	128
 #define WINTERNITZ_W		2
-#define WINTERNITZ_N 		WINTERNITZ_SEC_LVL
+#define WINTERNITZ_N 		128
 
 #if WINTERNITZ_W > 8
 #error maximum value for w is 8 due to chosen data type in this implementation
