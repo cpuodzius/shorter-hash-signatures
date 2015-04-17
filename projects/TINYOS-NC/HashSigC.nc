@@ -3,47 +3,28 @@
 #include <stdio.h>
 #endif
 
-
-//#include "benchmark.h"
+#ifdef RUN_BENCHS
+#include "benchmark.h"
+#else
 #include "test.h"
+#endif
 
 module HashSigC {
   uses {
     interface Boot;
     interface Timer<TMilli>;
     interface Leds;
-
   }
 }
 
 implementation {
 
+#ifdef RUN_BENCHS
 	uint32_t benchs;
 
-#ifndef READ_ENERGY
-	uint32_t t1, t2;
-
-	void run_tests() {
-		uint32_t ret;
-		// Run Merkle Signature TESTS
-		call Leds.set(7);
-
-		printf("Starting tests...\n");
-		ret = do_test(TEST_MSS_SIGN); 
-		printf("Errors after tests: %lu\n", ret);
-		printf("DONE \n");
-		printfflush();
-		
-		call Leds.set(1);
-	}
-#endif
-
-#ifdef RUN_BENCHS
-
 	void run_benchs() {
-
-		// Run the uncommented benchmark		
 #ifndef READ_ENERGY
+		uint32_t t1, t2;
 		call Leds.set(7);
 
 		printf("Starting benchs...\n");		  
@@ -54,10 +35,8 @@ implementation {
 #endif
 		benchs = 1;
 		/*
-		benchs = 1000;
 		do_benchmark(BENCHMARK_AES_CALC, benchs);
 		/*
-		benchs = 1000;
 		do_benchmark(BENCHMARK_HASH_CALC, benchs);
 		/*
 		do_benchmark(BENCHMARK_WINTERNITZ_KEYGEN,benchs);
@@ -75,36 +54,49 @@ implementation {
 
 #ifndef READ_ENERGY
 		t2 = call Timer.getNow();
-		printf("Elapsed: %lu ms\n", (t2 - t1)/benchs);
+		printf("Elapsed: %lu ms\n", (t2 - t1));///benchs);
 		
 		call Leds.set(1);
 		printf("DONE \n");
 		printfflush();
 #endif
 	}
-#endif //RUN_BENCHS
+
+#else // Not RUN_BENCHS
+	void run_tests() {
+		uint32_t ret;
+		// Run Merkle Signature TESTS
+		call Leds.set(7);
+
+		printf("Starting tests...\n");
+		ret = do_test(TEST_MSS_SIGN);
+		printf("Errors after tests: %lu\n", ret);
+		printf("DONE \n");
+		printfflush();
+	
+		call Leds.set(1);
+	}
+#endif
 
 	event void Boot.booted() {
-
 #ifndef READ_ENERGY
 		call Leds.set(3);
-#endif		
+#endif
 		//do_benchmark(BENCHMARK_PREPARE, 1);
 		//do_benchmark(BENCHMARK_MSS_KEYGEN,1);
 		//do_benchmark(BENCHMARK_WINTERNITZ_SIGN,1);
 		//do_benchmark(BENCHMARK_MSS_PREPARE_VERIFY,1);
 		//do_benchmark(BENCHMARK_AES_CALC,1);
 
-
-		call Timer.startOneShot(6000);
+		call Timer.startOneShot(5000);
 	}
 
 	event void Timer.fired() {				
-		///*
-		run_tests();
-		/*/
+#ifdef RUN_BENCHS
 		run_benchs();
-		//*/
+#else
+		run_tests();
+#endif
 
 		/* Test: Retain from ROM
 		unsigned char buffer[16], b2[2];

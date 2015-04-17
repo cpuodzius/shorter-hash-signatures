@@ -1,4 +1,3 @@
-
 #include "aes_128.h"
 
 #if !defined(AES_HW) && !defined(AES_ASM) 
@@ -6,6 +5,7 @@
 #include "TI_aes_128.h"
 #else
 #include "TI_aes_128_encr_only.h"
+//#include "ti_aes.c"
 #endif
 #endif //AES_SW
 
@@ -47,6 +47,8 @@ void aes_128_encrypt(unsigned char ciphertext[AES_128_BLOCK_SIZE], const unsigne
 	aes_enc_dec(ciphertext, local_key, 0);
 #else
 	aes_encrypt(ciphertext, local_key); // ciphertext is overwritten with its final value
+	//ti_aes_encrypt(ciphertext, local_key); // (ti_aes.c) ciphertext saves the plaintext
+	
 #endif //AES_ENC_DEC
 #endif
 }

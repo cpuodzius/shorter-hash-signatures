@@ -2,6 +2,7 @@
 //#include <stdint.h>
 #include <string.h>
 #include "benchmark.h"
+#include "hash.h"
 
 //Merkle sign and verify aux variables
 
@@ -19,6 +20,8 @@ unsigned char pkey_bench[NODE_VALUE_SIZE] =        {0x49,0x69,0xed,0x13,0xe8,0x2
 unsigned char pkey_bench[NODE_VALUE_SIZE] =        {0x1e,0xd6,0xe7,0x7b,0x28,0x88,0xfa,0x2d,0x76,0xa9,0xa4,0x89,0x56,0xe8,0x94,0x8e};
 #elif MSS_HEIGHT == 15                             
 unsigned char pkey_bench[NODE_VALUE_SIZE] =        {0x4f,0xa0,0x09,0x7f,0x4e,0xca,0xf4,0xa2,0x69,0x90,0x5f,0xe0,0x30,0xc5,0x01,0xb0};
+#elif MSS_HEIGHT == 16
+unsigned char pkey_test[NODE_VALUE_SIZE] =	   {0xF3,0x3C,0x97,0x86,0xC8,0x05,0xB7,0x84,0x60,0x1D,0xA8,0x29,0x9A,0xC1,0x46,0x2C};		
 #else
 unsigned char pkey_bench[NODE_VALUE_SIZE];
 #endif
@@ -36,26 +39,17 @@ unsigned char aux[LEN_BYTES(WINTERNITZ_SEC_LVL)];
 
 
 // AES Calc variables
-
-#ifdef AES_ASM
-
 /*
+#include "aes_128.h"
 
-aes128_ctx_t ctx; // the context where the round keys are stored
-
+//aes128_ctx_t ctx; // the context where the round keys are stored
 unsigned char ciphertext_bench[16];
-
 unsigned char plaintext_bench[16] = {0x32, 0x43, 0xf6, 0xa8, 0x88, 0x5a, 0x30, 0x8d,
-
 			  	     0x31, 0x31, 0x98, 0xa2, 0xe0, 0x37, 0x07, 0x34};
-
 unsigned char key_bench[16] =  {0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
-
 				0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c};
-
 //*/
 
-#endif
 
 void do_benchmark(enum BENCHMARK phase, unsigned short benchs) {
 	unsigned short j;
@@ -64,21 +58,15 @@ void do_benchmark(enum BENCHMARK phase, unsigned short benchs) {
 
 		case BENCHMARK_PREPARE:
 
-
 			DM_init(&f_bench);
-
 			mss_keygen_core(&f_bench, &hash_mmo, seed_bench, &nodes[0], &nodes[1], &state_bench, pkey_bench);
-
 			break;
 
 		case BENCHMARK_MSS_KEYGEN:
 
 			mss_keygen_core(&f_bench, &hash_mmo, seed_bench, &nodes[0], &nodes[1], &state_bench, pkey_bench);
-
 			//print_retain(&state_bench);
-
 			//printfflush();
-
 			break;
 
 		case BENCHMARK_MSS_SIGN:
@@ -96,107 +84,71 @@ void do_benchmark(enum BENCHMARK phase, unsigned short benchs) {
 		case BENCHMARK_MSS_PREPARE_VERIFY:
 
 			MMO_init(&hash_mmo);
-
 			DM_init(&f_bench);
-
 			//mss_keygen(&f_bench, &hash_mmo, seed_bench, &nodes[0], &nodes[1], &state_bench, pkey_bench);
-
 			mss_sign_core(&state_bench, seed_bench, &currentLeaf_bench, M_bench, strlen(M_bench)+1, &hash_mmo, &f_bench, h1, 0, &nodes[0],
 				 &nodes[1], sig_bench, authpath_bench);
 
 		case BENCHMARK_MSS_VERIFY:
-		    for(j = 0; j < benchs; j++) {
-		        mss_verify_core(authpath_bench, currentLeaf_bench.value, M_bench, LEN_BYTES(WINTERNITZ_SEC_LVL), &hash_mmo, &f_bench, h2, 0, sig_bench, aux, &currentLeaf_bench, pkey_bench);
-		    }
-
+			for(j = 0; j < benchs; j++) {
+			mss_verify_core(authpath_bench, currentLeaf_bench.value, M_bench, LEN_BYTES(WINTERNITZ_SEC_LVL), &hash_mmo, &f_bench, h2, 0, sig_bench, aux, &currentLeaf_bench, pkey_bench);
+			}
 			break;
 
 		case BENCHMARK_WINTERNITZ_KEYGEN:
 
 			DM_init(&f_bench);
-
 			winternitz_keygen(seed_bench, LEN_BYTES(WINTERNITZ_SEC_LVL), &hash_mmo, &f_bench, nodes[1].value);
-
 			break;
 
 		case BENCHMARK_WINTERNITZ_SIGN:
 
 			winternitz_sign(seed_bench, nodes[1].value, LEN_BYTES(WINTERNITZ_SEC_LVL), M_bench, strlen(M_bench)+1, &hash_mmo, &f_bench, h1, sig_bench);
-
 			break;
 
 		case BENCHMARK_WINTERNITZ_VERIFY:
 
 			winternitz_verify(nodes[1].value, LEN_BYTES(WINTERNITZ_SEC_LVL), M_bench, strlen(M_bench)+1, &hash_mmo, &f_bench, h2, sig_bench, aux);
-
 			break;
 
 		case BENCHMARK_HASH_CALC:
 
 			for(j = 0; j < benchs; j++) {
-
-				//*
-
+				/*
 				MMO_init(&hash_mmo);
-
 				MMO_update(&hash_mmo, seed_bench, LEN_BYTES(WINTERNITZ_SEC_LVL));
-
 				MMO_final(&hash_mmo, seed_bench);
-
 				//*/
 
-				//hash16(&f_bench,seed_bench,seed_bench);
-
+				DM_hash16(&f_bench,seed_bench,seed_bench);
 			}
 
 			break;
 
 		case BENCHMARK_AES_CALC:
 
-			 //Expected ciphertext
-
+			//Expected ciphertext
 			//res[0] = 0x39; res[1] = 0x25; res[2] = 0x84; res[3] = 0x1d;
-
 			//res[4] = 0x02; res[5] = 0xdc; res[6] = 0x09; res[7] = 0xfb;
-
 			//res[8] = 0xdc; res[9] = 0x11; res[10] = 0x85; res[11] = 0x97;
-
 			//res[12] = 0x19; res[13] = 0x6a; res[14] = 0x0b; res[15] = 0x32;
 
-
-
 			//memcpy(local_key,key_bench,16);
-
 			//Display("key", key_bench, 16);
-
 			//Display("plain", plaintext_bench, 16);
 
-
-
-			//for(j = 0; j < benchs; j++) {
-
-			//	AES_encrypt(ciphertext_bench, plaintext_bench, key_bench);
-
-			//}
-
-
+			for(j = 0; j < benchs; j++) {
+				//aes_128_encrypt(ciphertext_bench, plaintext_bench, key_bench);
+			}
 
 			//Display("key", key_bench, 16);
-
 			//Display("plain", plaintext_bench, 16);
-
 			//Display("cipher", ciphertext_bench, 16);
-
-
 
 			//printfflush();
 
-
-
 			break;
-
 	}
-
 }
 
 
