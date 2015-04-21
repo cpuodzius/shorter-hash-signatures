@@ -18,7 +18,7 @@ int base64encode(const void* data_buf, int data_size, char* result, int result_s
 	/* increment over the length of the string, three characters at a time */
 	for (x = 0; x < data_size; x += 3) {
 		/* these three 8-bit (ASCII) characters become one 24-bit number */
-		n = data[x] << 16;
+		n = (unsigned long) data[x] << 16;
  
 		if((x+1) < data_size)
 			n += data[x+1] << 8;
@@ -27,7 +27,7 @@ int base64encode(const void* data_buf, int data_size, char* result, int result_s
 			n += data[x+2];
  
 		/* this 24-bit number gets separated into four 6-bit numbers */
-		n0 = (unsigned char)(n >> 18) & 63;
+		n0 = (unsigned char)((unsigned long)n >> 18) & 63;
 		n1 = (unsigned char)(n >> 12) & 63;
 		n2 = (unsigned char)(n >> 6) & 63;
 		n3 = (unsigned char)n & 63;
@@ -112,7 +112,7 @@ int base64decode (char *in, int in_len, unsigned char *out, int *out_len) {
             /* If the buffer is full, split it into bytes */
             if (buf & 0x1000000) {
                 if ((len += 3) > *out_len) return 1; /* buffer overflow */
-                *out++ = buf >> 16;
+                *out++ = (unsigned long) buf >> 16;
                 *out++ = buf >> 8;
                 *out++ = buf;
                 buf = 1;

@@ -2,12 +2,8 @@
 #define __AES_128_H_
 
 #if defined(PLATFORM_SENSOR) && defined(AES_ASM) && defined(PLATFORM_AVR)
-	#include <stdint.h>
-
-	#include "AES-AVR-ASM/aes_types.h"
-	#include "AES-AVR-ASM/aes128_enc.h"
-	#include "AES-AVR-ASM/aes_enc.h"
-	#include "AES-AVR-ASM/aes_keyschedule.h"
+	//#include "AES-AVR-ASM/aes.h"
+	#include "AES-AVR-ASM/rijndaelfast.h"
 #endif
 
 
