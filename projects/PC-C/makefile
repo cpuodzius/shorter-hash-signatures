@@ -39,7 +39,7 @@ test:	src/winternitz.c src/util.c src/test.c
 		make winternitz
 		make util
 		$(CC) src/$@.c -c -o bin/$@.o -DVERBOSE -DMSS_SELFTEST -DSERIALIZATION $(CFLAGS)
-		$(CC) src/mss.c -o bin/mss -DMSS_SELFTEST -DSERIALIZATION $(MSS_OBJS) bin/test.o $(CFLAGS)
+		$(CC) src/mss.c -o bin/mss -DMSS_SELFTEST -DVERBOSE -DSERIALIZATION $(MSS_OBJS) bin/test.o $(CFLAGS)
 		$(CC) src/mss.c -o bin/mss.dbg -DDEBUG -DMSS_SELFTEST -DSERIALIZATION $(MSS_OBJS) bin/test.o $(CFLAGS)
 
 example:src/example.c

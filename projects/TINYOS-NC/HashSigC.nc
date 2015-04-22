@@ -34,7 +34,7 @@ implementation {
 		t1 = call Timer.getNow();
 #endif
 		benchs = 1;
-		/*
+		/*/
 		do_benchmark(BENCHMARK_AES_CALC, benchs);
 		/*
 		do_benchmark(BENCHMARK_HASH_CALC, benchs);

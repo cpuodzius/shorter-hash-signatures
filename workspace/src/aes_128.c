@@ -34,11 +34,11 @@ void aes_128_encrypt(unsigned char ciphertext[AES_128_BLOCK_SIZE], const unsigne
 	//for (i = 0; i < AES_128_BLOCK_SIZE; i++) printf(" %02X", plaintext[i]);
 	//printf("\n");
 
-#elif defined(PLATFORM_SENSOR) && defined(AES_ASM) && defined(PLATFORM_AVR)
-	aes128_ctx_t ctx_mmo; // the context where the round keys are stored
-	aes128_init(key, &ctx_mmo); // generating the round keys from the 128 bit key
+#elif defined(PLATFORM_SENSOR) && (defined(AES_ASM_2) || defined(AES_ASM_3)) && defined(PLATFORM_AVR)
+	aes128_ctx_t aes_ctx; // the context where the round keys are stored
+	aes128_init(key, &aes_ctx); // generating the round keys from the 128 bit key
 	memcpy(ciphertext, plaintext, AES_128_BLOCK_SIZE);
-	aes128_enc(ciphertext, &ctx_mmo); // encrypting the data block
+	aes128_enc(ciphertext, &aes_ctx); // encrypting the data block
 #else
 	unsigned char local_key[AES_128_KEY_SIZE];
 	memcpy(local_key,key,AES_128_KEY_SIZE);

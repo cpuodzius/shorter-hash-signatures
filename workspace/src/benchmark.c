@@ -8,7 +8,7 @@
 
 unsigned char seed_bench[LEN_BYTES(MSS_SEC_LVL)] = {0xA0,0xA1,0xA2,0xA3,0xA4,0xA5,0xA6,0xA7,0xA8,0xA9,0xAA,0xAB,0xAC,0xAD,0xAE,0xAF};
 
-#if MSS_HEIGHT == 10
+#if   MSS_HEIGHT == 10
 unsigned char pkey_bench[NODE_VALUE_SIZE] =        {0xA6,0xC5,0xE5,0xE5,0xBB,0xEA,0x7F,0x31,0x5D,0x11,0x33,0x87,0x7A,0x95,0x45,0x74};
 #elif MSS_HEIGHT == 11
 unsigned char pkey_bench[NODE_VALUE_SIZE] =        {0xe9,0xfc,0x31,0xfc,0xc6,0x77,0xcb,0x64,0x23,0x28,0x70,0xa7,0x4c,0x64,0xc0,0x76};
@@ -21,7 +21,7 @@ unsigned char pkey_bench[NODE_VALUE_SIZE] =        {0x1e,0xd6,0xe7,0x7b,0x28,0x8
 #elif MSS_HEIGHT == 15                             
 unsigned char pkey_bench[NODE_VALUE_SIZE] =        {0x4f,0xa0,0x09,0x7f,0x4e,0xca,0xf4,0xa2,0x69,0x90,0x5f,0xe0,0x30,0xc5,0x01,0xb0};
 #elif MSS_HEIGHT == 16
-unsigned char pkey_bench[NODE_VALUE_SIZE] =	   {0xF3,0x3C,0x97,0x86,0xC8,0x05,0xB7,0x84,0x60,0x1D,0xA8,0x29,0x9A,0xC1,0x46,0x2C};		
+unsigned char pkey_bench[NODE_VALUE_SIZE] =	   	   {0xF3,0x3C,0x97,0x86,0xC8,0x05,0xB7,0x84,0x60,0x1D,0xA8,0x29,0x9A,0xC1,0x46,0x2C};		
 #else
 unsigned char pkey_bench[NODE_VALUE_SIZE];
 #endif
@@ -34,8 +34,8 @@ mmo_t hash_mmo;
 dm_t f_bench;
 char M_bench[] = "Hello, world!";
 unsigned char h1[LEN_BYTES(WINTERNITZ_N)], h2[LEN_BYTES(WINTERNITZ_N)];
-unsigned char sig_bench[WINTERNITZ_L*LEN_BYTES(WINTERNITZ_SEC_LVL)];
-unsigned char aux[LEN_BYTES(WINTERNITZ_SEC_LVL)];
+unsigned char sig_bench[WINTERNITZ_L*LEN_BYTES(WINTERNITZ_N)];
+unsigned char aux[LEN_BYTES(WINTERNITZ_N)];
 
 
 // AES Calc variables
@@ -52,7 +52,7 @@ unsigned char key_bench[16] =  {0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
 
 
 void do_benchmark(enum BENCHMARK phase, unsigned short benchs) {
-	unsigned short j;
+	unsigned long j;
 
 	switch(phase) {
 
@@ -65,19 +65,22 @@ void do_benchmark(enum BENCHMARK phase, unsigned short benchs) {
 		case BENCHMARK_MSS_KEYGEN:
 
 			mss_keygen_core(&f_bench, &hash_mmo, seed_bench, &nodes[0], &nodes[1], &state_bench, pkey_bench);
+#ifdef VERBOSE
 			//print_retain(&state_bench);
-			//printfflush();
+			//printfflush();			
+			Display("Public Key", pkey_bench, NODE_VALUE_SIZE);
+#endif				
 			break;
 
 		case BENCHMARK_MSS_SIGN:
-			for(j = 0; j < (1 << MSS_HEIGHT); j++) {
+			for(j = 0; j < ((unsigned long)1 << MSS_HEIGHT); j++) {
 			//for(j = 0; j < (1 << 10); j++) { //pt1 0..2^10-1
 			//for(j = (1 << 10); j < (1 << 11); j++) { //pt2 2^10..2^11-1
 			//for(j = 0; j < (1 << (MSS_HEIGHT-2)); j++) { //pt1 0..2^11-1
 			//for(j = (1 << (MSS_HEIGHT-2)); j < (1 << (MSS_HEIGHT-1)); j++) { //pt2 2^11...2^12-1
 			//for(j = (1 << (MSS_HEIGHT-1)); j < (1 << (MSS_HEIGHT-1)) + 2048; j++) { //pt3 2^12...2^12+2048-1
 			//for(j = (1 << (MSS_HEIGHT-1)) + 2048; j < (1 << MSS_HEIGHT); j++) { //pt4 2^12+2048...2^13-1
-			    mss_sign_core(&state_bench, seed_bench, &currentLeaf_bench, M_bench, LEN_BYTES(WINTERNITZ_SEC_LVL), &hash_mmo, &f_bench, h1, j, &nodes[0], &nodes[1], sig_bench, authpath_bench);
+				mss_sign_core(&state_bench, seed_bench, &currentLeaf_bench, M_bench, LEN_BYTES(WINTERNITZ_SEC_LVL), &hash_mmo, &f_bench, h1, j, &nodes[0], &nodes[1], sig_bench, authpath_bench);			    
 			}
 			break;
 
@@ -119,7 +122,6 @@ void do_benchmark(enum BENCHMARK phase, unsigned short benchs) {
 				MMO_update(&hash_mmo, seed_bench, LEN_BYTES(WINTERNITZ_SEC_LVL));
 				MMO_final(&hash_mmo, seed_bench);
 				//*/
-
 				DM_hash16(&f_bench,seed_bench,seed_bench);
 			}
 

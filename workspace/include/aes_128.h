@@ -1,9 +1,12 @@
 #ifndef __AES_128_H_
 #define __AES_128_H_
 
-#if defined(PLATFORM_SENSOR) && defined(AES_ASM) && defined(PLATFORM_AVR)
-	//#include "AES-AVR-ASM/aes.h"
-	#include "AES-AVR-ASM/rijndaelfast.h"
+#if defined(PLATFORM_SENSOR) && defined(PLATFORM_AVR)
+	#if defined(AES_ASM_2) 
+		#include "AVR-Crypto-Lib/aes.h"
+	#elif defined(AES_ASM_3) 
+		#include "AVRAES/rijndaelfast.h"
+	#endif
 #endif
 
 

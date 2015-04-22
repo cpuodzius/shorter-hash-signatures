@@ -4,7 +4,7 @@
 #include "mss.h"
 
 #ifdef VERBOSE
-#include "util.h"
+	#include "util.h"
 #endif
 
 struct mss_node nodes[2];
@@ -34,12 +34,13 @@ dm_t f_test;
 #endif
 unsigned char seed_test[LEN_BYTES(MSS_SEC_LVL)] = {0xA0,0xA1,0xA2,0xA3,0xA4,0xA5,0xA6,0xA7,0xA8,0xA9,0xAA,0xAB,0xAC,0xAD,0xAE,0xAF};
 unsigned char h1[LEN_BYTES(WINTERNITZ_N)], h2[LEN_BYTES(WINTERNITZ_N)];
-unsigned char sig_test[WINTERNITZ_L*LEN_BYTES(WINTERNITZ_SEC_LVL)];
-unsigned char aux[LEN_BYTES(WINTERNITZ_SEC_LVL)];
+unsigned char sig_test[WINTERNITZ_L*LEN_BYTES(WINTERNITZ_N)];
+unsigned char aux[LEN_BYTES(WINTERNITZ_N)];
 
 unsigned short test_mss_signature() {
 
-	unsigned short errors, j;
+	unsigned short errors;
+	unsigned long  j;
 
 	char M[] = "Hello, world!";
 
@@ -51,31 +52,17 @@ unsigned short test_mss_signature() {
 
 #ifdef VERBOSE
 	Display("Public Key", pkey_test, NODE_VALUE_SIZE);	
+	#ifdef DEBUG
+		print_retain(&state_test);
+	#endif	
 #endif	
-#ifdef DEBUG
-	print_retain(&state_test);
-#endif
 
 	//Sign and verify for all j-th authentication paths
 	errors = 0;
-	for (j = 0; (j < (1 << MSS_HEIGHT)-1); j++) {
+	for (j = 0; j < ((unsigned long)1 << MSS_HEIGHT); j++) {
+
 #if defined(VERBOSE) && !defined(PLATFORM_SENSOR)
-		//printf("Testing MSS for leaf %d ...", j);
-#endif
-		mss_sign_core(&state_test, seed_test, &currentLeaf_test, (const char *)M, strlen(M)+1, &hash_mmo, &f_test, h1, j, &nodes[0], &nodes[1], sig_test, authpath_test);
-		if(mss_verify_core(authpath_test, currentLeaf_test.value, (const char *)M, strlen(M)+1, &hash_mmo, &f_test, h2, j, sig_test, aux, &currentLeaf_test, pkey_test) == MSS_OK) {
-#if defined(VERBOSE) && !defined(PLATFORM_SENSOR)
-			//printf(" [OK]\n");
-#endif
-		} else {
-			errors++;
-#if defined(VERBOSE) && !defined(PLATFORM_SENSOR)
-			//printf(" [ERROR]\n");
-#endif
-		}
-	}
-#if defined(VERBOSE) && !defined(PLATFORM_SENSOR)
-		printf("Testing MSS for last leaf %d ...", j);
+		printf("Testing MSS for leaf %ld ...", j);
 #endif
 		mss_sign_core(&state_test, seed_test, &currentLeaf_test, (const char *)M, strlen(M)+1, &hash_mmo, &f_test, h1, j, &nodes[0], &nodes[1], sig_test, authpath_test);
 		if(mss_verify_core(authpath_test, currentLeaf_test.value, (const char *)M, strlen(M)+1, &hash_mmo, &f_test, h2, j, sig_test, aux, &currentLeaf_test, pkey_test) == MSS_OK) {
@@ -88,6 +75,7 @@ unsigned short test_mss_signature() {
 			printf(" [ERROR]\n");
 #endif
 		}
+	}
 
 	return errors;
 }

@@ -406,17 +406,19 @@ unsigned char _count_trailing_zeros(const unsigned short v) {
 
 void mss_keygen_core(dm_t *hash, mmo_t *pubk, const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], struct mss_node *node1, struct mss_node *node2, struct mss_state *state, unsigned char pkey[NODE_VALUE_SIZE]) {
 /********* Arrange *********/
-	unsigned short i, pos, index = 0;
+	unsigned short i, index = 0;
+	unsigned long pos;
 /********* Act *********/
 	init_state(state);
 
-	for(pos = 0; (pos < (1 << MSS_HEIGHT) - 1); pos++) {
-		_create_leaf(hash, pubk, node1, pos, seed); //node1.height <= 0
+	for(pos = 0; pos < ((unsigned long)1 << MSS_HEIGHT); pos++) {
+
+		_create_leaf(hash, pubk, node1, pos, seed); //node1.height := 0
 #if defined(DEBUG)
 		mss_node_print(*node1);
 #endif
 		_init_state(state, node1);
-		while(node1->height < _count_trailing_zeros(pos+1) ) { // Condition from algorithm 4.2 in Busold's thesis, adapted for unsigned short variables)
+		while(node1->height < (pos == 65535 ? 16 : _count_trailing_zeros(pos+1)) ) { // Condition from algorithm 4.2 in Busold's thesis, adapted for unsigned short variables)
 			_stack_pop(state->keep, &index, node2);
 			_get_parent(hash, node2, node1, node1);
 #if defined(DEBUG)
@@ -427,20 +429,7 @@ void mss_keygen_core(dm_t *hash, mmo_t *pubk, const unsigned char seed[LEN_BYTES
 		if (index < MSS_HEIGHT)
 			_stack_push(state->keep, &index, node1);
 	}
-	// Problem with MSS_HEIGHT = 16 solved by adding the part below and dealing with the last leaf separated	
-	_create_leaf(hash, pubk, node1, pos, seed); //node1.height <= 0
-	_init_state(state, node1);
-	while(node1->height < (pos == 65535 ? 16 : _count_trailing_zeros(pos+1)) ) { // Condition from algorithm 4.2 in Busold's thesis, adapted for unsigned short variables)
-		_stack_pop(state->keep, &index, node2);
-		_get_parent(hash, node2, node1, node1);
-#if defined(DEBUG)
-		mss_node_print(*node1);
-#endif
-		_init_state(state, node1);
-	}
-	if (index < MSS_HEIGHT)
-		_stack_push(state->keep, &index, node1);
-	
+
 #if defined(DEBUG)
 	print_auth(state);
 	print_treehash(state);
@@ -453,7 +442,8 @@ void mss_keygen_core(dm_t *hash, mmo_t *pubk, const unsigned char seed[LEN_BYTES
 
 void _nextAuth(struct mss_state *state, struct mss_node *current_leaf, unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], dm_t *hash, mmo_t *pubk, struct mss_node *node1, struct mss_node *node2, const unsigned short s) {
 /********* Arrange *********/
-	short tau = MSS_HEIGHT - 1, min, h, i, j, k;
+	unsigned char tau = MSS_HEIGHT - 1;
+	short min, h, i, j, k;
 /********* Act *********/
 	while((s + 1) % (1 << tau) != 0)
 		tau--;
@@ -475,7 +465,7 @@ void _nextAuth(struct mss_state *state, struct mss_node *current_leaf, unsigned 
 			//Do Treehash_h.pop()
 			state->auth[h] = state->treehash[h];
 
-			if((s + 1 + 3 * (1 << h)) < (1 << MSS_HEIGHT))
+			if( ((unsigned long)s + 1 + 3 * (1 << h)) < ((unsigned long)1 << MSS_HEIGHT) )
 				_treehash_initialize(state, h, s + 1 + 3 * (1 << h));
 			else
 				_treehash_state(state, h, TREEHASH_FINISHED);
@@ -576,7 +566,7 @@ void mss_sign_core(struct mss_state *state, unsigned char *seed, struct mss_node
 		memcpy(authpath[i].value, state->auth[i].value, NODE_VALUE_SIZE);
 	}
 
-	if(leaf_index <= (1 << MSS_HEIGHT)-2)
+	if(leaf_index <= ((unsigned long)1 << MSS_HEIGHT)-2)
 		_nextAuth(state, leaf, seed, f, mmo, node1, node2, leaf_index);
 /********* Assert *********/
 }

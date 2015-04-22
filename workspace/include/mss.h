@@ -11,8 +11,8 @@
 
 
 #define MSS_SEC_LVL                     WINTERNITZ_SEC_LVL
-#define MSS_HEIGHT			6
-#define MSS_K				2
+#define MSS_HEIGHT			10
+#define MSS_K				8
 
 #define odd(x)	((x) % 2)
 #if odd(MSS_HEIGHT - MSS_K)
