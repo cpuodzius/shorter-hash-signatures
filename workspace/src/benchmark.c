@@ -94,7 +94,7 @@ void do_benchmark(enum BENCHMARK phase, unsigned short benchs) {
 
 		case BENCHMARK_MSS_VERIFY:
 			for(j = 0; j < benchs; j++) {
-			mss_verify_core(authpath_bench, currentLeaf_bench.value, M_bench, LEN_BYTES(WINTERNITZ_SEC_LVL), &hash_mmo, &f_bench, h2, 0, sig_bench, aux, &currentLeaf_bench, pkey_bench);
+			mss_verify_core(authpath_bench, M_bench, LEN_BYTES(WINTERNITZ_SEC_LVL), &hash_mmo, &f_bench, h2, 0, sig_bench, aux, &currentLeaf_bench, pkey_bench);
 			}
 			break;
 

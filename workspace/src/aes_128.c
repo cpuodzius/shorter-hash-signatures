@@ -40,16 +40,16 @@ void aes_128_encrypt(unsigned char ciphertext[AES_128_BLOCK_SIZE], const unsigne
 	memcpy(ciphertext, plaintext, AES_128_BLOCK_SIZE);
 	aes128_enc(ciphertext, &aes_ctx); // encrypting the data block
 #else
-	unsigned char local_key[AES_128_KEY_SIZE];
+	unsigned char local_key[AES_128_KEY_SIZE];//, c[AES_128_BLOCK_SIZE];
 	memcpy(local_key,key,AES_128_KEY_SIZE);
-	memcpy(ciphertext, plaintext, AES_128_BLOCK_SIZE); // ciphertext saves the plaintext
-#ifdef AES_ENC_DEC
-	aes_enc_dec(ciphertext, local_key, 0);
-#else
-	aes_encrypt(ciphertext, local_key); // ciphertext is overwritten with its final value
-	//ti_aes_encrypt(ciphertext, local_key); // (ti_aes.c) ciphertext saves the plaintext
-	
-#endif //AES_ENC_DEC
+	memcpy(/*c*/ciphertext, plaintext, AES_128_BLOCK_SIZE); // c saves the plaintext
+	#ifdef AES_ENC_DEC
+		aes_enc_dec(c, local_key, 0);
+	#else
+		aes_encrypt(/*c*/ciphertext, local_key); // ciphertext is overwritten with its final value
+		//ti_aes_encrypt(ciphertext, local_key); // (ti_aes.c) ciphertext saves the plaintext
+		//memcpy(ciphertext, c, AES_128_BLOCK_SIZE);
+	#endif //AES_ENC_DEC
 #endif
 }
 

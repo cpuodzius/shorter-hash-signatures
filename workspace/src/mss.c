@@ -75,7 +75,10 @@ void _create_leaf(dm_t *f, mmo_t *pubk, struct mss_node *node, const unsigned sh
 /********* Act *********/
 	prg16(leaf_index, seed, sk); // sk := prg(seed,leaf_index)
 
+	// Compute and store v in node->value
 	winternitz_keygen(sk, LEN_BYTES(WINTERNITZ_SEC_LVL), pubk, f, node->value);
+	// leaf = Hash(v)
+	DM_hash16(f, node->value, node->value);
 	node->height = 0;
 	node->index = leaf_index;
 
@@ -545,12 +548,14 @@ void mss_sign_core(struct mss_state *state, unsigned char *seed, struct mss_node
 #endif
 /********* Act *********/
 	if(leaf_index % 2 == 0) {
+	// leaf is a left child
 #ifdef DEBUG
 		printf("Calc leaf in sign: %d \n",leaf_index);
 #endif
 		_create_leaf(f, mmo, leaf, leaf_index, seed);
 	}
 	else {
+	// leaf is a right child
 		leaf->height = 0;
 		leaf->index = leaf_index;
 		memcpy(leaf->value, authpath[0].value, NODE_VALUE_SIZE);
@@ -563,7 +568,7 @@ void mss_sign_core(struct mss_state *state, unsigned char *seed, struct mss_node
 	for(i = 0; i < MSS_HEIGHT; i++) {
 		authpath[i].height = state->auth[i].height;
 		authpath[i].index = state->auth[i].index;		
-		memcpy(authpath[i].value, state->auth[i].value, NODE_VALUE_SIZE);
+		memcpy(authpath[i].value, state->auth[i].value, NODE_VALUE_SIZE);		
 	}
 
 	if(leaf_index <= ((unsigned long)1 << MSS_HEIGHT)-2)
@@ -577,16 +582,15 @@ void mss_sign_core(struct mss_state *state, unsigned char *seed, struct mss_node
  *
  */
 
-unsigned char mss_verify_core(struct mss_node authpath[MSS_HEIGHT], const unsigned char *v, const char *M, unsigned short len, mmo_t *hash, dm_t *f, unsigned char *h, unsigned short leaf_index, const unsigned char *sig, unsigned char *x, struct mss_node *currentLeaf, const unsigned char merklePubKey[]) {
+unsigned char mss_verify_core(struct mss_node authpath[MSS_HEIGHT], const char *M, unsigned short len, mmo_t *hash, dm_t *f, unsigned char *h, unsigned short leaf_index, const unsigned char *sig, unsigned char *x, struct mss_node *currentLeaf, const unsigned char merklePubKey[]) {
 /********* Arrange *********/
 /********* Act *********/
-	if (winternitz_verify(v, LEN_BYTES(WINTERNITZ_N), (const char *)M, len, hash, f, h, sig, x) == WINTERNITZ_ERROR) {
-		return MSS_ERROR;
-	}
-
+	// compute v and put it in x
+	winternitz_verify(x, LEN_BYTES(WINTERNITZ_N), (const char *)M, len, hash, f, h, sig, x);
+	// current_leaf = Hash(v)
+	DM_hash16(f, x, currentLeaf->value);
 	currentLeaf->height = 0;
 	currentLeaf->index = leaf_index;
-	memcpy(currentLeaf->value, v, NODE_VALUE_SIZE);
 
 	_get_pkey(f, authpath, currentLeaf, currentLeaf->value);
 
@@ -620,7 +624,7 @@ unsigned char *mss_keygen(const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
 #endif
 	// Act
 
-	/* Initialization of Merkle–Damgård hash */
+	/* Initialization of Davies-Meyer hash */
 	//DM_init(&hash_dm);
 	
 	/* Initialization of Winternitz-MMO OTS */
@@ -709,7 +713,7 @@ unsigned char mss_verify(const unsigned char signature[MSS_SIGNATURE_SIZE], cons
 
 	deserialize_mss_signature(ots, &v, authpath, signature);
 
-	verification = mss_verify_core(authpath, v.value, (char *)digest, 2 * MSS_SEC_LVL, &hash_mmo, &hash_dm, hash, v.index, ots, aux, &v, pkey);
+	verification = mss_verify_core(authpath, (char *)digest, 2 * MSS_SEC_LVL, &hash_mmo, &hash_dm, hash, v.index, ots, aux, &v, pkey);
 
 	//Assert
 	return verification;
