@@ -1,12 +1,11 @@
 #include "aes_128.h"
 
 #if !defined(AES_HW) && !defined(AES_ASM) 
-#ifdef AES_ENC_DEC
-#include "TI_aes_128.h"
-#else
-#include "TI_aes_128_encr_only.h"
-//#include "ti_aes.c"
-#endif
+	#ifdef AES_ENC_DEC
+		#include "TI_aes_128.h"
+	#else
+		//#include "ti_aes.c"
+	#endif
 #endif //AES_SW
 
 #include <string.h>
@@ -40,15 +39,14 @@ void aes_128_encrypt(unsigned char ciphertext[AES_128_BLOCK_SIZE], const unsigne
 	memcpy(ciphertext, plaintext, AES_128_BLOCK_SIZE);
 	aes128_enc(ciphertext, &aes_ctx); // encrypting the data block
 #else
-	unsigned char local_key[AES_128_KEY_SIZE];//, c[AES_128_BLOCK_SIZE];
+	unsigned char local_key[AES_128_KEY_SIZE];
 	memcpy(local_key,key,AES_128_KEY_SIZE);
-	memcpy(/*c*/ciphertext, plaintext, AES_128_BLOCK_SIZE); // c saves the plaintext
+	memcpy(ciphertext, plaintext, AES_128_BLOCK_SIZE); // c saves the plaintext
 	#ifdef AES_ENC_DEC
-		aes_enc_dec(c, local_key, 0);
+		aes_enc_dec(ciphertext, local_key, 0); // TI_aes_128.c
 	#else
-		aes_encrypt(/*c*/ciphertext, local_key); // ciphertext is overwritten with its final value
-		//ti_aes_encrypt(ciphertext, local_key); // (ti_aes.c) ciphertext saves the plaintext
-		//memcpy(ciphertext, c, AES_128_BLOCK_SIZE);
+		//aes_encrypt(/*c*/ciphertext, local_key); TI_aes_128_encr_only.c
+		ti_aes_encrypt(ciphertext, local_key); // (ti_aes.c) ciphertext saves the plaintext
 	#endif //AES_ENC_DEC
 #endif
 }

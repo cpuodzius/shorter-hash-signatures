@@ -4,8 +4,8 @@ MSS_OBJS=bin/winternitz.o bin/hash.o bin/aes.o bin/ti_aes.o bin/util.o
 
 all:	test winternitz mss libs #example
 
-ti_aes:	src/TI_aes_128_encr_only.c
-		$(CC) src/TI_aes_128_encr_only.c -c -o bin/ti_aes.o $(CFLAGS)
+ti_aes:	src/ti_aes.c #src/TI_aes_128_encr_only.c
+		$(CC) src/ti_aes.c -c -o bin/ti_aes.o $(CFLAGS) #src/TI_aes_128_encr_only.c
 		
 aes:	src/aes_128.c
 		make ti_aes
@@ -25,7 +25,6 @@ hash:   src/hash.c
 
 util:	src/util.c
 		$(CC) src/util.c -c -o bin/util.o $(CFLAGS)
-		#$(CC) src/$@.c -c -o bin/$@.o $(CFLAGS)
 
 winternitz:	src/winternitz.c
 		make hash		
@@ -48,7 +47,7 @@ example:src/example.c
 		$(CC) src/$@.c -o bin/$@ bin/*.o $(CFLAGS)
 
 libs:
-		gcc -c -o bin/dyn_ti_aes.o src/TI_aes_128_encr_only.c $(CFLAGS) 
+		gcc -c -o bin/dyn_ti_aes.o src/ti_aes.c $(CFLAGS) #src/TI_aes_128_encr_only.c
 		gcc -c -o bin/dyn_aes.o src/aes_128.c $(CFLAGS)
 		gcc -c -o bin/dyn_hash.o src/hash.c $(CFLAGS)
 		gcc -c -o bin/dyn_util.o src/util.c $(CFLAGS)

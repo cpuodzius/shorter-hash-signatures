@@ -35,7 +35,7 @@ implementation {
 #endif
 		benchs = 1;
 		/*/
-		do_benchmark(BENCHMARK_AES_CALC, benchs);
+		do_benchmark(BENCHMARK_AES_ENC, benchs);
 		/*
 		do_benchmark(BENCHMARK_HASH_CALC, benchs);
 		/*
@@ -46,9 +46,9 @@ implementation {
 		do_benchmark(BENCHMARK_WINTERNITZ_VERIFY,benchs);
 		/*
 		do_benchmark(BENCHMARK_MSS_KEYGEN,benchs);
-		/*/
-		do_benchmark(BENCHMARK_MSS_SIGN, benchs);
 		/*
+		do_benchmark(BENCHMARK_MSS_SIGN, benchs);
+		/*/
 		do_benchmark(BENCHMARK_MSS_VERIFY,benchs);
 		//*/
 
@@ -63,13 +63,15 @@ implementation {
 	}
 
 #else // Not RUN_BENCHS
+
 	void run_tests() {
 		uint32_t ret;
 		// Run Merkle Signature TESTS
 		call Leds.set(7);
 
 		printf("Starting tests...\n");
-		ret = do_test(TEST_MSS_SIGN);
+		//ret = do_test(TEST_MSS_SIGN);
+		ret = do_test(TEST_AES_ENC);
 		printf("Errors after tests: %lu\n", ret);
 		printf("DONE \n");
 		printfflush();
@@ -85,7 +87,7 @@ implementation {
 		//do_benchmark(BENCHMARK_PREPARE, 1);
 		//do_benchmark(BENCHMARK_MSS_KEYGEN,1);
 		//do_benchmark(BENCHMARK_WINTERNITZ_SIGN,1);
-		//do_benchmark(BENCHMARK_MSS_PREPARE_VERIFY,1);
+		do_benchmark(BENCHMARK_MSS_PREPARE_VERIFY,1);
 		//do_benchmark(BENCHMARK_AES_CALC,1);
 
 		call Timer.startOneShot(5000);

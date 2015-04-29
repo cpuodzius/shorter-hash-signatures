@@ -14,21 +14,21 @@ CFLAGS += -DPLATFORM_SENSOR -DPLATFORM_AVR
 
 ## 3 Options for AES: one in C (.c files) and two in ASM (.S files)
 
-## Option 1
-#SRC+=src/TI_aes_128_encr_only.c #src/TI_aes_128_encr_only.c src/ti_aes.c src/TI_aes_128.c
+## Option 1: AES in C
+#SRC+=src/ti_aes.c  #src/TI_aes_128_encr_only.c src/ti_aes.c src/TI_aes_128.c
 
 ## Option 2
-#CFLAGS += -DAES_ASM_2
-#ASRC=src/low/AVR-Crypto-Lib/avr-asm-macros.S src/low/AVR-Crypto-Lib/aes_sbox-asm.S src/low/AVR-Crypto-Lib/aes_keyschedule-asm.S src/low/AVR-Crypto-Lib/aes_enc-asm.S
+CFLAGS += -DAES_ASM_2
+ASRC=src/low/AVR-Crypto-Lib/avr-asm-macros.S src/low/AVR-Crypto-Lib/aes_sbox-asm.S src/low/AVR-Crypto-Lib/aes_keyschedule-asm.S src/low/AVR-Crypto-Lib/aes_enc-asm.S
 
 ## Option 3
-CFLAGS += -DAES_ASM_3
-ASRC=src/low/AVRAES/rijndaelfast-keyschedule.S src/low/AVRAES/rijndaelfast.S src/low/AVRAES/rijndaelfast-sbox.S
+#CFLAGS += -DAES_ASM_3
+#ASRC=src/low/AVRAES/rijndaelfast-keyschedule.S src/low/AVRAES/rijndaelfast.S src/low/AVRAES/rijndaelfast-sbox.S
 
 #CFLAGS += -DMSS_HEIGHT=10 -DMSS_K=8 -DWINTERNITZ_W=2
-#CFLAGS += -DAES_ENC_DEC #AES in C with decryption function (ti_aes.c)
+#CFLAGS += -DAES_ENC_DEC #AES in C with decryption function (TI_aes_128.c)
 CFLAGS += -DMSS_ROM_RETAIN
-CFLAGS += -DVERBOSE
+#CFLAGS += -DVERBOSE
 
 AR=avr-ar
 ALL_ASFLAGS=-mmcu=atmega128 -I. -x assembler-with-cpp $(ASFLAGS)

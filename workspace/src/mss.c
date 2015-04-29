@@ -594,7 +594,7 @@ unsigned char mss_verify_core(struct mss_node authpath[MSS_HEIGHT], const char *
 
 	_get_pkey(f, authpath, currentLeaf, currentLeaf->value);
 
-	if (memcmp(currentLeaf->value, merklePubKey, LEN_BYTES(MSS_SEC_LVL)) == 0) {
+	if (memcmp(currentLeaf->value, merklePubKey, NODE_VALUE_SIZE) == 0) {
 #ifdef DEBUG
 		printf("Assinatura eh valida para folha %d\n", leaf_index);
 #endif // DEBUG
@@ -1084,6 +1084,7 @@ int main(int argc, char *argv[]) {
 	printf("\nParameters:  n=%u, Height=%u, K=%u, w=%u \n\n", MSS_SEC_LVL, MSS_HEIGHT, MSS_K, WINTERNITZ_W);
 
 	do_test(TEST_MSS_SIGN);
+	//do_test(TEST_AES_ENC);
 	//do_test(TEST_MSS_SERIALIZATION);
 	
 	return 0;

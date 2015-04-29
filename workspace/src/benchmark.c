@@ -37,22 +37,14 @@ unsigned char h1[LEN_BYTES(WINTERNITZ_N)], h2[LEN_BYTES(WINTERNITZ_N)];
 unsigned char sig_bench[WINTERNITZ_L*LEN_BYTES(WINTERNITZ_N)];
 unsigned char aux[LEN_BYTES(WINTERNITZ_N)];
 
-
-// AES Calc variables
-/*
-#include "aes_128.h"
-
-//aes128_ctx_t ctx; // the context where the round keys are stored
-unsigned char ciphertext_bench[16];
-unsigned char plaintext_bench[16] = {0x32, 0x43, 0xf6, 0xa8, 0x88, 0x5a, 0x30, 0x8d,
-			  	     0x31, 0x31, 0x98, 0xa2, 0xe0, 0x37, 0x07, 0x34};
-unsigned char key_bench[16] =  {0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
-				0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c};
-//*/
-
-
 void do_benchmark(enum BENCHMARK phase, unsigned short benchs) {
 	unsigned long j;
+
+	unsigned char cipher[AES_128_BLOCK_SIZE],
+			  key[AES_128_BLOCK_SIZE] =  {0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
+			              				  0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c},
+			  plain[AES_128_BLOCK_SIZE] = {0x32, 0x43, 0xf6, 0xa8, 0x88, 0x5a, 0x30, 0x8d,
+						   				   0x31, 0x31, 0x98, 0xa2, 0xe0, 0x37, 0x07, 0x34};	
 
 	switch(phase) {
 
@@ -127,27 +119,11 @@ void do_benchmark(enum BENCHMARK phase, unsigned short benchs) {
 
 			break;
 
-		case BENCHMARK_AES_CALC:
-
-			//Expected ciphertext
-			//res[0] = 0x39; res[1] = 0x25; res[2] = 0x84; res[3] = 0x1d;
-			//res[4] = 0x02; res[5] = 0xdc; res[6] = 0x09; res[7] = 0xfb;
-			//res[8] = 0xdc; res[9] = 0x11; res[10] = 0x85; res[11] = 0x97;
-			//res[12] = 0x19; res[13] = 0x6a; res[14] = 0x0b; res[15] = 0x32;
-
-			//memcpy(local_key,key_bench,16);
-			//Display("key", key_bench, 16);
-			//Display("plain", plaintext_bench, 16);
+		case BENCHMARK_AES_ENC:
 
 			for(j = 0; j < benchs; j++) {
-				//aes_128_encrypt(ciphertext_bench, plaintext_bench, key_bench);
+				aes_128_encrypt(cipher, plain, key);
 			}
-
-			//Display("key", key_bench, 16);
-			//Display("plain", plaintext_bench, 16);
-			//Display("cipher", ciphertext_bench, 16);
-
-			//printfflush();
 
 			break;
 	}
@@ -179,6 +155,7 @@ void do_benchmark(enum BENCHMARK phase, unsigned short benchs) {
             //do_benchmark(BENCHMARK_WINTERNITZ_SIGN, mark);
             //do_benchmark(BENCHMARK_WINTERNITZ_VERIFY, mark);
             //do_benchmark(BENCHMARK_HASH_CALC, mark);
+            //do_benchmark(BENCHMARK_AES_ENC, mark);
 
         }
 
