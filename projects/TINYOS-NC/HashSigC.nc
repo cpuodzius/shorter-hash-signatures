@@ -62,7 +62,7 @@ implementation {
 #endif
 	}
 
-#else // Not RUN_BENCHS
+#else // RUN_TESTS
 
 	void run_tests() {
 		uint32_t ret;
@@ -70,8 +70,8 @@ implementation {
 		call Leds.set(7);
 
 		printf("Starting tests...\n");
-		//ret = do_test(TEST_MSS_SIGN);
-		ret = do_test(TEST_AES_ENC);
+		ret = do_test(TEST_MSS_SIGN);
+		//ret = do_test(TEST_AES_ENC);
 		printf("Errors after tests: %lu\n", ret);
 		printf("DONE \n");
 		printfflush();
@@ -87,7 +87,7 @@ implementation {
 		//do_benchmark(BENCHMARK_PREPARE, 1);
 		//do_benchmark(BENCHMARK_MSS_KEYGEN,1);
 		//do_benchmark(BENCHMARK_WINTERNITZ_SIGN,1);
-		do_benchmark(BENCHMARK_MSS_PREPARE_VERIFY,1);
+		//do_benchmark(BENCHMARK_MSS_PREPARE_VERIFY,1);
 		//do_benchmark(BENCHMARK_AES_CALC,1);
 
 		call Timer.startOneShot(5000);

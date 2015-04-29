@@ -76,7 +76,7 @@ void _create_leaf(dm_t *f, mmo_t *pubk, struct mss_node *node, const unsigned sh
 	prg16(leaf_index, seed, sk); // sk := prg(seed,leaf_index)
 
 	// Compute and store v in node->value
-	winternitz_keygen(sk, LEN_BYTES(WINTERNITZ_SEC_LVL), pubk, f, node->value);
+	winternitz_keygen(sk, pubk, f, node->value);
 	// leaf = Hash(v)
 	DM_hash16(f, node->value, node->value);
 	node->height = 0;

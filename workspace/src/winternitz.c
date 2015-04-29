@@ -10,34 +10,31 @@
 #include "winternitz.h"
 
 /**
- * Compute a Winternitz public key v = H_m(x_{0}^{2^w-1}, x_{1}^{2^w-1}, ..., x_{L-1}^{2^w-1}), with L = (8/w)*m + ceil(lg((2^w-1)*m)/w), m = seclevel/8.
+ * Compute a Winternitz public key v = H_n(x_{0}^{2^w-1}, x_{1}^{2^w-1}, ..., x_{L-1}^{2^w-1}), with L = ceil(n/w) + ceil(lg((2^w-1)*(n/w))/w), n = seclevel.
  *
- * @param s		 the m-unsigned char private signing key.
- * @param m		 hash length (sec level is 8*m).
- * @param v		 the corresponding m-unsigned char verification key.
- * @param priv
+ * @param s		 the n/8-unsigned char private signing key.
  * @param hash
- * @param pubk
- * @param v
+ * @param f
+ * @param v              the resulting n/8-unsigned char verification key 
  */
-void winternitz_keygen(const unsigned char s[LEN_BYTES(WINTERNITZ_SEC_LVL)], const unsigned short m, mmo_t *pubk, dm_t *f, unsigned char v[LEN_BYTES(WINTERNITZ_SEC_LVL)]) {
+void winternitz_keygen(const unsigned char s[LEN_BYTES(WINTERNITZ_N)], mmo_t *hash, dm_t *f, unsigned char v[LEN_BYTES(WINTERNITZ_N)]) {
 	//int sq = 0;
 	unsigned char i, j;
 
-	MMO_init(pubk);
+	MMO_init(hash);
 	DM_init(f);
 
 #ifdef DEBUG
 #if WINTERNITZ_W == 2
-	assert(10 <= m && m <= 21); // lower bound: min sec level (80 bits), upper bound: max checksum count must fit one byte
+	assert(10 <= LEN_BYTES(WINTERNITZ_N) && LEN_BYTES(WINTERNITZ_N) <= 21); // lower bound: min sec level (80 bits), upper bound: max checksum count must fit one byte
 #elif WINTERNITZ_W == 4
-	// NB: for 9 <= m <= 136, the value of ceil(lg(15*2*m)/8) is simply 3 nybbles.
-	assert(10 <= m && m <= 127); // lower bound: min sec level (80 bits), upper bound: max nybble count 2*(m-1)+3 must fit one unsigned char
+	// NB: for 9 <= n/4 <= 136, the value of ceil(lg(15*2*(n/4))/4) is simply 3 nybbles.
+	assert(10 <= LEN_BYTES(WINTERNITZ_N) && LEN_BYTES(WINTERNITZ_N) <= 127); // lower bound: min sec level (80 bits), upper bound: max nybble count 2*((n/4)-1)+3 must fit one unsigned char
 	#elif WINTERNITZ_W == 8
-	// NB: for 2 <= m <= 257, the value of ceil(lg(255*m)/8) is simply 2 unsigned chars.
+	// NB: for 2 <= n/8 <= 257, the value of ceil(lg(255*(n/8))/8) is simply 2 unsigned chars.
 	//TODO: do the assert
 	#endif
-	assert((8 / WINTERNITZ_W)*(unsigned char)m + WINTERNITZ_CHECKSUM_SIZE == WINTERNITZ_L); // chunk count, including checksum
+	assert((WINTERNITZ_N/WINTERNITZ_W) + WINTERNITZ_CHECKSUM_SIZE == WINTERNITZ_L); // chunk count, including checksum
 #endif
 
 	for (i = 0; i < WINTERNITZ_L; i++) { // chunk count, including checksum
@@ -48,29 +45,28 @@ void winternitz_keygen(const unsigned char s[LEN_BYTES(WINTERNITZ_SEC_LVL)], con
 			DM_hash16(f, v, v); // v is the hash of its previous value = y_i = H^{2^w-1}(s_i)
 			//sq++;
 		}
-		//absorb(pubk, v, m);  // y_0 || ... || y_i ...
-		//memcpy(local_key,pubk->H,16);
-		aes_128_encrypt(pubk->H, v, pubk->H);
-		pubk->H[ 0] ^= v[ 0];
-		pubk->H[ 1] ^= v[ 1];
-		pubk->H[ 2] ^= v[ 2];
-		pubk->H[ 3] ^= v[ 3];
-		pubk->H[ 4] ^= v[ 4];
-		pubk->H[ 5] ^= v[ 5];
-		pubk->H[ 6] ^= v[ 6];
-		pubk->H[ 7] ^= v[ 7];
-		pubk->H[ 8] ^= v[ 8];
-		pubk->H[ 9] ^= v[ 9];
-		pubk->H[10] ^= v[10];
-		pubk->H[11] ^= v[11];
-		pubk->H[12] ^= v[12];
-		pubk->H[13] ^= v[13];
-		pubk->H[14] ^= v[14];
-		pubk->H[15] ^= v[15];
+		//absorb(hash, v, m);  // y_0 || ... || y_i ...
+		aes_128_encrypt(hash->H, v, hash->H);
+		hash->H[ 0] ^= v[ 0];
+		hash->H[ 1] ^= v[ 1];
+		hash->H[ 2] ^= v[ 2];
+		hash->H[ 3] ^= v[ 3];
+		hash->H[ 4] ^= v[ 4];
+		hash->H[ 5] ^= v[ 5];
+		hash->H[ 6] ^= v[ 6];
+		hash->H[ 7] ^= v[ 7];
+		hash->H[ 8] ^= v[ 8];
+		hash->H[ 9] ^= v[ 9];
+		hash->H[10] ^= v[10];
+		hash->H[11] ^= v[11];
+		hash->H[12] ^= v[12];
+		hash->H[13] ^= v[13];
+		hash->H[14] ^= v[14];
+		hash->H[15] ^= v[15];
 
 	}
-	//squeeze(pubk, v, m); // v is finally the public key, v = H(y_0 || y_1 || ... || y_{L-1})
-	memcpy(v, pubk->H,16);
+	//squeeze(hash, v, m); // v is finally the public key, v = H(y_0 || y_1 || ... || y_{L-1})
+	memcpy(v, hash->H,16);
 	//sq++;
 	//printf("gen squeeze count: %d\n", sq);
 	//cleanup(pubk);
@@ -461,6 +457,8 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
 
 	//*
 	memset(h,2,m); //TODO: change this to a true hash
+	//DM_hash16(f,f->AES_KEY,h);
+	//aes_128_encrypt(h,x,x);
 	/*/
 	sinit(hash, WINTERNITZ_SEC_LVL);
 	absorb(hash, v, m);   // random nonce!!!
@@ -482,7 +480,6 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
 			//sq++;
 		}
 		//absorb(hash, x, m);
-		//memcpy(local_key,hash->H,16);
 		aes_128_encrypt(hash->H, x, hash->H);
 		hash->H[ 0] ^= x[ 0];
 		hash->H[ 1] ^= x[ 1];
@@ -512,7 +509,6 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
 			//sq++;
 		}
 		//absorb(hash, x, m);
-		//memcpy(local_key,hash->H,16);
 		aes_128_encrypt(hash->H, x, hash->H);
 		hash->H[ 0] ^= x[ 0];
 		hash->H[ 1] ^= x[ 1];
@@ -542,7 +538,6 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
 			//sq++;
 		}
 		//absorb(hash, x, m);]
-		//memcpy(local_key,hash->H,16);
 		aes_128_encrypt(hash->H, x, hash->H);
 		hash->H[ 0] ^= x[ 0];
 		hash->H[ 1] ^= x[ 1];
@@ -572,7 +567,6 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
 			//sq++;
 		}
 		//absorb(hash, x, m);
-		//memcpy(local_key,hash->H,16);
 		aes_128_encrypt(hash->H, x, hash->H);
 		hash->H[ 0] ^= x[ 0];
 		hash->H[ 1] ^= x[ 1];
@@ -603,7 +597,6 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
 			//sq++;
 		}
 		//absorb(hash, x, m);
-		//memcpy(local_key,hash->H,16);
 		aes_128_encrypt(hash->H, x, hash->H);
 		hash->H[ 0] ^= x[ 0];
 		hash->H[ 1] ^= x[ 1];

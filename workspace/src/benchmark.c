@@ -32,7 +32,7 @@ struct mss_node authpath_bench[MSS_HEIGHT];
 struct mss_state state_bench;
 mmo_t hash_mmo;
 dm_t f_bench;
-char M_bench[] = "Hello, world!";
+char M_bench[16] = " --Hello, world!";
 unsigned char h1[LEN_BYTES(WINTERNITZ_N)], h2[LEN_BYTES(WINTERNITZ_N)];
 unsigned char sig_bench[WINTERNITZ_L*LEN_BYTES(WINTERNITZ_N)];
 unsigned char aux[LEN_BYTES(WINTERNITZ_N)];
@@ -80,20 +80,22 @@ void do_benchmark(enum BENCHMARK phase, unsigned short benchs) {
 
 			MMO_init(&hash_mmo);
 			DM_init(&f_bench);
-			//mss_keygen(&f_bench, &hash_mmo, seed_bench, &nodes[0], &nodes[1], &state_bench, pkey_bench);
+			//mss_keygen(&f_bench, &hash_mmo, seed_bench, &nodes[0], &nodes[1], &state_bench, pkey_bench);		
 			mss_sign_core(&state_bench, seed_bench, &currentLeaf_bench, M_bench, strlen(M_bench)+1, &hash_mmo, &f_bench, h1, 0, &nodes[0],
 				 &nodes[1], sig_bench, authpath_bench);
+			DM_hash16(&f_bench,(unsigned char*)M_bench,h2);// put a "random-looking" value on h2 
+			break;
 
 		case BENCHMARK_MSS_VERIFY:
 			for(j = 0; j < benchs; j++) {
-			mss_verify_core(authpath_bench, M_bench, LEN_BYTES(WINTERNITZ_SEC_LVL), &hash_mmo, &f_bench, h2, 0, sig_bench, aux, &currentLeaf_bench, pkey_bench);
+				mss_verify_core(authpath_bench, M_bench, LEN_BYTES(WINTERNITZ_SEC_LVL), &hash_mmo, &f_bench, h2, 0, sig_bench, aux, &currentLeaf_bench, pkey_bench);
 			}
 			break;
 
 		case BENCHMARK_WINTERNITZ_KEYGEN:
 
 			DM_init(&f_bench);
-			winternitz_keygen(seed_bench, LEN_BYTES(WINTERNITZ_SEC_LVL), &hash_mmo, &f_bench, nodes[1].value);
+			winternitz_keygen(seed_bench, &hash_mmo, &f_bench, nodes[1].value);
 			break;
 
 		case BENCHMARK_WINTERNITZ_SIGN:
