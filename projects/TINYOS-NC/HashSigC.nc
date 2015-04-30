@@ -48,9 +48,9 @@ implementation {
 		do_benchmark(BENCHMARK_WINTERNITZ_VERIFY,benchs);
 		/*
 		do_benchmark(BENCHMARK_MSS_KEYGEN,benchs);
-		/*
-		do_benchmark(BENCHMARK_MSS_SIGN, benchs);
 		/*/
+		do_benchmark(BENCHMARK_MSS_SIGN, benchs);
+		/*
 		do_benchmark(BENCHMARK_MSS_VERIFY,benchs);
 		//*/
 

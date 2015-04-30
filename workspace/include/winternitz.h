@@ -20,7 +20,7 @@
 #define WINTERNITZ_l1 ((WINTERNITZ_N + WINTERNITZ_W - 1) / WINTERNITZ_W)
 #if (WINTERNITZ_W == 2)
     #if WINTERNITZ_N == 128
-	#define WINTERNITZ_l2 (4)
+		#define WINTERNITZ_l2 (4)
     #elif WINTERNITZ_N == 256
     	#define WINTERNITZ_l2 (5)
     #endif

@@ -551,22 +551,20 @@ void mss_sign_core(struct mss_state *state, unsigned char *seed, struct mss_node
 #endif
 /********* Act *********/
 
-	//MMO_init(&hash_mss);
+	MMO_init(&hash_mss);
 	// Feed the hash to be signed with Y, i.e. H(Y,...)
-	//MMO_update(&hash_mss, Y, 16);
+	MMO_update(&hash_mss, Y, 16);
+	
 	prg16(leaf_index, seed, sk);
-
 	if(leaf_index % 2 == 0) { // leaf is a left child
 #ifdef DEBUG
 		printf("Calc leaf in sign: %d \n",leaf_index);
 #endif
-		//_create_leaf(f, mmo, leaf, leaf_index, seed);
-		//prg16(leaf_index, seed, sk); // sk := prg(seed,leaf_index)
 		// Compute and store v in leaf->value
 		winternitz_keygen(sk, hash, f, leaf->value);
 
 		// Feed the hash to be signed with v, i.e. H(Y,v,...)
-		//MMO_update(&hash_mss, leaf->value, NODE_VALUE_SIZE);
+		MMO_update(&hash_mss, leaf->value, NODE_VALUE_SIZE);
 
 		// leaf[leaf_index]->value = Hash(v)
 		DM_hash16(f, leaf->value, leaf->value);
@@ -575,15 +573,15 @@ void mss_sign_core(struct mss_state *state, unsigned char *seed, struct mss_node
 	else { // leaf is a right child and it is already available in the authentication path
 		memcpy(leaf->value, authpath[0].value, NODE_VALUE_SIZE);
 		// Feed the hash to be signed with v, i.e. H(Y,v,...)
-		//MMO_update(&hash_mss, leaf->value, NODE_VALUE_SIZE);			
+		MMO_update(&hash_mss, leaf->value, NODE_VALUE_SIZE);			
 	}
 	leaf->height = 0;
 	leaf->index = leaf_index;	
 		
 	// Feed the hash to be signed with data H(Y,v,data)
-	//MMO_update(&hash_mss, (const unsigned char *)data, data_len);
-	//MMO_final(&hash_mss,h);
-	memset(h,2,16);
+	MMO_update(&hash_mss, (const unsigned char *)data, 16);
+	MMO_final(&hash_mss,h);
+	//memset(h,2,16);
 	winternitz_sign(sk, hash, f, h, sig);
 
 	for(i = 0; i < MSS_HEIGHT; i++) {
@@ -607,18 +605,21 @@ unsigned char mss_verify_core(struct mss_node authpath[MSS_HEIGHT], const char *
 /********* Arrange *********/
 /********* Act *********/
 	
-	//MMO_init(hash);
+	MMO_init(hash);
 	// Feed the hash to be signed with Y, i.e. H(Y,...)
-	//MMO_update(hash, Y, 16);
-	// Feed the hash to be signed with v, i.e. H(Y,v,...)
-	//MMO_update(hash, x, NODE_VALUE_SIZE);
-	// Feed the hash to be signed with data H(Y,v,data)
-	//MMO_update(hash, (const unsigned char *)data, data_len);
-	//MMO_final(hash, h);
-	memset(h,2,16);
+	MMO_update(hash, Y, 16);
+	
+	//memset(h,2,16);
 
 	// compute v and put it in x
 	winternitz_verify(x, hash, f, h, sig, x);
+
+	// Feed the hash to be signed with v, i.e. H(Y,v,...)
+	MMO_update(hash, x, NODE_VALUE_SIZE);
+	// Feed the hash to be signed with data H(Y,v,data)
+	MMO_update(hash, (const unsigned char *)data, data_len);
+	MMO_final(hash, h);
+
 	// leaf = Hash(v)
 	DM_hash16(f, x, x);
 

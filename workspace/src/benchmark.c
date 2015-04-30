@@ -34,7 +34,7 @@ mmo_t hash_mmo;
 dm_t f_bench;
 char M_bench[16] = " --Hello, world!";
 unsigned char h1[LEN_BYTES(WINTERNITZ_N)], h2[LEN_BYTES(WINTERNITZ_N)];
-unsigned char sig_bench[WINTERNITZ_L*LEN_BYTES(WINTERNITZ_N)];
+unsigned char sig_bench[WINTERNITZ_L*LEN_BYTES(WINTERNITZ_SEC_LVL)];
 unsigned char aux[LEN_BYTES(WINTERNITZ_N)];
 
 void do_benchmark(enum BENCHMARK phase, unsigned short benchs) {
@@ -93,18 +93,20 @@ void do_benchmark(enum BENCHMARK phase, unsigned short benchs) {
 			break;
 
 		case BENCHMARK_WINTERNITZ_KEYGEN:
-
-			DM_init(&f_bench);
 			winternitz_keygen(seed_bench, &hash_mmo, &f_bench, nodes[1].value);
 			break;
 
 		case BENCHMARK_WINTERNITZ_SIGN:
-
+			MMO_init(&hash_mmo);
+			MMO_update(&hash_mmo,(unsigned char *)M_bench,16);
+			MMO_final(&hash_mmo,h1);
 			winternitz_sign(seed_bench, &hash_mmo, &f_bench, h1, sig_bench);
 			break;
 
 		case BENCHMARK_WINTERNITZ_VERIFY:
-
+			MMO_init(&hash_mmo);
+			MMO_update(&hash_mmo,(unsigned char *)M_bench,16);
+			MMO_final(&hash_mmo,h2);
 			winternitz_verify(nodes[1].value, &hash_mmo, &f_bench, h2, sig_bench, aux);
 			break;
 
