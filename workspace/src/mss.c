@@ -534,36 +534,57 @@ void _get_pkey(dm_t *hash, const struct mss_node auth[MSS_HEIGHT], struct mss_no
 }
 
 /**
- * s	 The pos-th winternitz private key
- * v	 The pos-th winternitz public key used as a nonce for the hash H(v,M)
+ * seed	 The initial seed for generating the private keys
+ * v	 The leaf_index-th winternitz public key used as a nonce for the hash H(Y,v,M)
  *
  */
 
-void mss_sign_core(struct mss_state *state, unsigned char *seed, struct mss_node *leaf, const char *M, unsigned short len, mmo_t *mmo, dm_t *f, unsigned char *h, unsigned short leaf_index, struct mss_node *node1, struct mss_node *node2, unsigned char *sig, struct mss_node authpath[MSS_HEIGHT]) {
+void mss_sign_core(struct mss_state *state, unsigned char *seed, struct mss_node *leaf, const char *data, unsigned short data_len, 
+				   mmo_t *hash, dm_t *f, unsigned char *h, unsigned short leaf_index,  struct mss_node *node1, struct mss_node *node2, 
+				   unsigned char *sig, struct mss_node authpath[MSS_HEIGHT], const unsigned char *Y) {
 /********* Arrange *********/
 	unsigned char i;
+	mmo_t hash_mss;
 	unsigned char sk[LEN_BYTES(MSS_SEC_LVL)];
 #if defined(DEBUG) || defined(MSS_SELFTEST)
 	assert((leaf_index >= 0) && (leaf_index < (1 << MSS_HEIGHT)));
 #endif
 /********* Act *********/
-	if(leaf_index % 2 == 0) {
-	// leaf is a left child
+
+	//MMO_init(&hash_mss);
+	// Feed the hash to be signed with Y, i.e. H(Y,...)
+	//MMO_update(&hash_mss, Y, 16);
+	prg16(leaf_index, seed, sk);
+
+	if(leaf_index % 2 == 0) { // leaf is a left child
 #ifdef DEBUG
 		printf("Calc leaf in sign: %d \n",leaf_index);
 #endif
-		_create_leaf(f, mmo, leaf, leaf_index, seed);
+		//_create_leaf(f, mmo, leaf, leaf_index, seed);
+		//prg16(leaf_index, seed, sk); // sk := prg(seed,leaf_index)
+		// Compute and store v in leaf->value
+		winternitz_keygen(sk, hash, f, leaf->value);
+
+		// Feed the hash to be signed with v, i.e. H(Y,v,...)
+		//MMO_update(&hash_mss, leaf->value, NODE_VALUE_SIZE);
+
+		// leaf[leaf_index]->value = Hash(v)
+		DM_hash16(f, leaf->value, leaf->value);
+
 	}
-	else {
-	// leaf is a right child
-		leaf->height = 0;
-		leaf->index = leaf_index;
+	else { // leaf is a right child and it is already available in the authentication path
 		memcpy(leaf->value, authpath[0].value, NODE_VALUE_SIZE);
+		// Feed the hash to be signed with v, i.e. H(Y,v,...)
+		//MMO_update(&hash_mss, leaf->value, NODE_VALUE_SIZE);			
 	}
-
-	prg16(leaf_index, seed, sk); // sk := prg16(seed,leaf_index)
-
-	winternitz_sign(sk, leaf->value, LEN_BYTES(WINTERNITZ_N), (const char *)M, len, mmo, f, h, sig);
+	leaf->height = 0;
+	leaf->index = leaf_index;	
+		
+	// Feed the hash to be signed with data H(Y,v,data)
+	//MMO_update(&hash_mss, (const unsigned char *)data, data_len);
+	//MMO_final(&hash_mss,h);
+	memset(h,2,16);
+	winternitz_sign(sk, hash, f, h, sig);
 
 	for(i = 0; i < MSS_HEIGHT; i++) {
 		authpath[i].height = state->auth[i].height;
@@ -572,7 +593,7 @@ void mss_sign_core(struct mss_state *state, unsigned char *seed, struct mss_node
 	}
 
 	if(leaf_index <= ((unsigned long)1 << MSS_HEIGHT)-2)
-		_nextAuth(state, leaf, seed, f, mmo, node1, node2, leaf_index);
+		_nextAuth(state, leaf, seed, f, hash, node1, node2, leaf_index);
 /********* Assert *********/
 }
 
@@ -582,19 +603,28 @@ void mss_sign_core(struct mss_state *state, unsigned char *seed, struct mss_node
  *
  */
 
-unsigned char mss_verify_core(struct mss_node authpath[MSS_HEIGHT], const char *M, unsigned short len, mmo_t *hash, dm_t *f, unsigned char *h, unsigned short leaf_index, const unsigned char *sig, unsigned char *x, struct mss_node *currentLeaf, const unsigned char merklePubKey[]) {
+unsigned char mss_verify_core(struct mss_node authpath[MSS_HEIGHT], const char *data, unsigned short data_len, mmo_t *hash, dm_t *f, unsigned char *h, unsigned short leaf_index, const unsigned char *sig, unsigned char *x, struct mss_node *currentLeaf, const unsigned char *Y) {
 /********* Arrange *********/
 /********* Act *********/
+	
+	//MMO_init(hash);
+	// Feed the hash to be signed with Y, i.e. H(Y,...)
+	//MMO_update(hash, Y, 16);
+	// Feed the hash to be signed with v, i.e. H(Y,v,...)
+	//MMO_update(hash, x, NODE_VALUE_SIZE);
+	// Feed the hash to be signed with data H(Y,v,data)
+	//MMO_update(hash, (const unsigned char *)data, data_len);
+	//MMO_final(hash, h);
+	memset(h,2,16);
+
 	// compute v and put it in x
-	winternitz_verify(x, LEN_BYTES(WINTERNITZ_N), (const char *)M, len, hash, f, h, sig, x);
-	// current_leaf = Hash(v)
-	DM_hash16(f, x, currentLeaf->value);
-	currentLeaf->height = 0;
-	currentLeaf->index = leaf_index;
+	winternitz_verify(x, hash, f, h, sig, x);
+	// leaf = Hash(v)
+	DM_hash16(f, x, x);
 
-	_get_pkey(f, authpath, currentLeaf, currentLeaf->value);
+	_get_pkey(f, authpath, currentLeaf, x);
 
-	if (memcmp(currentLeaf->value, merklePubKey, NODE_VALUE_SIZE) == 0) {
+	if (memcmp(currentLeaf->value, Y, NODE_VALUE_SIZE) == 0) {
 #ifdef DEBUG
 		printf("Assinatura eh valida para folha %d\n", leaf_index);
 #endif // DEBUG
@@ -644,13 +674,13 @@ unsigned char *mss_keygen(const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]) {
 	return keys;
 }
 
-unsigned char *mss_sign(unsigned char skey[MSS_SKEY_SIZE], const unsigned char digest[2 * MSS_SEC_LVL]) {
+unsigned char *mss_sign(unsigned char skey[MSS_SKEY_SIZE], const unsigned char digest[2 * MSS_SEC_LVL], const unsigned char *pkey) {
 	// Arrange
 	/* Auxiliary varibles */
 	unsigned short index;
 	struct mss_node node[3];
 	unsigned char hash[LEN_BYTES(WINTERNITZ_N)];
-	unsigned char ots[MSS_OTS_SIZE];
+	unsigned char ots[MSS_OTS_SIZE];	
 
 	mmo_t hash_mmo;
 	dm_t hash_dm;
@@ -673,7 +703,7 @@ unsigned char *mss_sign(unsigned char skey[MSS_SKEY_SIZE], const unsigned char d
 
 	deserialize_mss_skey(&state, &index, seed, skey);
 
-	mss_sign_core(&state, seed, &node[0], (char *)digest, 2 * MSS_SEC_LVL, &hash_mmo, &hash_dm, hash, index, &node[1], &node[2], ots, authpath);
+	mss_sign_core(&state, seed, &node[0], (char *)digest, 2 * MSS_SEC_LVL, &hash_mmo, &hash_dm, hash, index, &node[1], &node[2], ots, authpath,pkey);
 	index++;
 
 	serialize_mss_skey(state, index, seed, skey);

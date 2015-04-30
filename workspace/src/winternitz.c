@@ -28,10 +28,10 @@ void winternitz_keygen(const unsigned char s[LEN_BYTES(WINTERNITZ_N)], mmo_t *ha
 #if WINTERNITZ_W == 2
 	assert(10 <= LEN_BYTES(WINTERNITZ_N) && LEN_BYTES(WINTERNITZ_N) <= 21); // lower bound: min sec level (80 bits), upper bound: max checksum count must fit one byte
 #elif WINTERNITZ_W == 4
-	// NB: for 9 <= n/4 <= 136, the value of ceil(lg(15*2*(n/4))/4) is simply 3 nybbles.
+	// NB: for 9 <= n/w <= 136, the value of ceil(lg(15*2*(n/w))/w) is simply 3 nybbles.
 	assert(10 <= LEN_BYTES(WINTERNITZ_N) && LEN_BYTES(WINTERNITZ_N) <= 127); // lower bound: min sec level (80 bits), upper bound: max nybble count 2*((n/4)-1)+3 must fit one unsigned char
 	#elif WINTERNITZ_W == 8
-	// NB: for 2 <= n/8 <= 257, the value of ceil(lg(255*(n/8))/8) is simply 2 unsigned chars.
+	// NB: for 2 <= n/w <= 257, the value of ceil(lg(255*(n/w))/w) is simply 2 unsigned chars.
 	//TODO: do the assert
 	#endif
 	assert((WINTERNITZ_N/WINTERNITZ_W) + WINTERNITZ_CHECKSUM_SIZE == WINTERNITZ_L); // chunk count, including checksum
@@ -69,38 +69,22 @@ void winternitz_keygen(const unsigned char s[LEN_BYTES(WINTERNITZ_N)], mmo_t *ha
 	memcpy(v, hash->H,16);
 	//sq++;
 	//printf("gen squeeze count: %d\n", sq);
-	//cleanup(pubk);
 }
 
 #if WINTERNITZ_W == 2
 
 /**
- * Sign H(v, M) under private key s, yielding (x_{0:0}, x_{0:1}, x_{0:2}, x_{0:3}, ..., x_{(m-1):0}, x_{(m-1):1}, x_{(m-1):2}, x_{(m-1):3})
+ * Sign the value under private key s, yielding (x_{0:0}, x_{0:1}, x_{0:2}, x_{0:3}, ..., x_{(N/8-1):0}, x_{(N/8-1):1}, x_{(N/8-1):2}, x_{(N/8-1):3})
  *
- * @param s		 the m-byte private signing key.
- * @param v		 the corresponding m-byte verification key, used here as the random nonce.
- * @param m		 hash length in bytes (sec level is 8*m).
- * @param M
- * @param len
- * @param priv
+ * @param s		 the N/8-byte private signing key.
  * @param hash
- * @param h		 buffer for message hash
+ * @param h		 buffer containing the messsage hash to be signed, computed outside as h = H(Y,v,data)
  * @param sig
  */
-void winternitz_2_sign(const unsigned char s[LEN_BYTES(WINTERNITZ_SEC_LVL)], const unsigned char v[LEN_BYTES(WINTERNITZ_SEC_LVL)], const unsigned short m, const char *M, unsigned short len, mmo_t *hash, dm_t *f, unsigned char h[/*m*/], unsigned char sig[/*4*(m+1)*m*/] /* 4*(m+1) m-byte blocks */) {
+void winternitz_2_sign(const unsigned char s[LEN_BYTES(WINTERNITZ_N)], mmo_t *hash, dm_t *f, unsigned char h[/*(N/8)*/], unsigned char sig[/*4*(N/8+1)*N/8*/] /* 4*((N/8)+1) (N/8)-byte blocks */) {
 	//int sq = 0;
 	unsigned char i;
 	unsigned short checksum = 0;
-
-	//*
-	memset(h,2,m); //TODO: change this to a true hash
-	/*/
-	sinit(hash, WINTERNITZ_SEC_LVL);
-	absorb(hash, v, m); // public key used as random nonce!!!
-	absorb(hash, M, len); // followed by the message in this implementation (actually followed by the treetop key, and then by the message, in the full scheme)
-	squeeze(hash, h, m); // NB: hash length is m here, but was 2*m in the predecessor scheme
-	//*/
-	//sq++;
 
 	MMO_init(hash);
 	DM_init(f);
@@ -209,7 +193,7 @@ void winternitz_2_sign(const unsigned char s[LEN_BYTES(WINTERNITZ_SEC_LVL)], con
 
 	// checksum part:
 	for (i = 0; i < WINTERNITZ_l2; i++) { // checksum
-		memset(sig, 0, 16); sig[0] = (m << 2) + i; // H(s, 4m + i) // i-th chunk index
+		memset(sig, 0, 16); sig[0] = (LEN_BYTES(WINTERNITZ_N) << 2) + i; // H(s, 4*(n/8) + i) // i-th chunk index
 		aes_128_encrypt(sig, sig, (unsigned char *)s);  //sig = s_i = AES_s(i) // sig holds the private block for i-th checksum chunk
 		//sq++;
 		switch (checksum & 3) { // 3 chunk
@@ -233,7 +217,6 @@ void winternitz_2_sign(const unsigned char s[LEN_BYTES(WINTERNITZ_SEC_LVL)], con
 		sig += 16; // signature block for next nybble
 	}
 	//printf("sig squeeze count: %d\n", sq);
-	//cleanup(hash);
 }
 #endif // WINTERNITZ_W == 2
 
@@ -241,44 +224,27 @@ void winternitz_2_sign(const unsigned char s[LEN_BYTES(WINTERNITZ_SEC_LVL)], con
 #if WINTERNITZ_W == 4
 
 /**
- * Sign H(v, M) under private key s, yielding (x_{0:lo}, x_{0:hi}, ..., x_{(m-1):lo}, x_{(m-1):hi})
+ * Sign h = H(Y, v, M) under private key s, yielding (x_{0:lo}, x_{0:hi}, ..., x_{(N/8-1):lo}, x_{(N/8-1):hi})
  *
- * @param s the m-unsigned char private signing key.
- * @param v the corresponding m-unsigned char verification key, used here as the random nonce.
- * @param m hash length (sec level is 8*m).
- * @param M
- * @param len
- * @param priv
+ * @param s 	the N/8-unsigned char private signing key.
  * @param hash
- * @param h buffer for message hash
+ * @param h 	buffer containing message hash to be signed, computed outside as h = Hash(Y,v,data)
  * @param sig
  */
-void winternitz_4_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/], const unsigned short m, const char *M, unsigned short len,
-					   mmo_t *hash, dm_t *f, unsigned char h[/*m*/], unsigned char sig[/*(2*m+3)*m*/] /* 2m+3 m-unsigned char blocks */) {
+void winternitz_4_sign(const unsigned char s[/*N/8*/], mmo_t *hash, dm_t *f, unsigned char h[/*N/8*/], unsigned char sig[/*(2*N/8+3)*N/8*/] /* 2(N/8)+3 (N/8)-unsigned char blocks */) {
 	//int sq = 0;
 	unsigned char i, j, c;
 	unsigned short checksum = 0;
-
-	//*
-	memset(h,2,m); //TODO: change this to a true hash
-	/*/
-	sinit(hash, WINTERNITZ_SEC_LVL);
-
-	absorb(hash, v, m); // public key used as random nonce!!!
-	absorb(hash, M, len); // followed by the message in this implementation (actually followed by the treetop key, and then by the message, in the full scheme)
-	squeeze(hash, h, m); // NB: hash length is m here, but was 2*m in the predecessor scheme
-	//*/
-	//sq++;
 
 	MMO_init(hash);
 	DM_init(f);
 
 #ifdef DEBUG
-	assert(10 <= m && m <= 127);
+	assert(10 <= LEN_BYTES(WINTERNITZ_N) && LEN_BYTES(WINTERNITZ_N) <= 127);
 #endif
 
 	// data part:
-	for (i = 0; i < (unsigned char)m; i++) { // NB: hash length is m here, but was 2*m in the predecessor scheme
+	for (i = 0; i < LEN_BYTES(WINTERNITZ_N); i++) { // NB: hash length is N here, but was 2*N in the predecessor scheme
 		// lo part:
 		memset(sig, 0, 16); sig[0] = (i << 1) + 0; // H(s, 2i + 0) // lo nybble tag
 		aes_128_encrypt(sig, sig, (unsigned char *)s); // sig holds the private block s_{2i} for i-th "lo" nybble
@@ -314,7 +280,7 @@ void winternitz_4_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
 	}
 	// checksum part:
 	for (i = 0; i < 3; i++) { // checksum
-		memset(sig, 0, 16); sig[0] = (m << 1) + i; // H(s, 2m + i) // lo nybble tag
+		memset(sig, 0, 16); sig[0] = (LEN_BYTES(WINTERNITZ_N) << 1) + i; // H(s, 2m + i) // lo nybble tag
 		aes_128_encrypt(sig, sig, (unsigned char *)s); // sig holds the private block for i-th checksum nybble
 		//sq++;
 		c = checksum & 15; // least significant nybble
@@ -337,45 +303,29 @@ void winternitz_4_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
 #if WINTERNITZ_W == 8
 
 /**
- * Sign H(v, M)under private key s, yielding (x_{0}, x_{1}, ..., x_{m-1})
+ * Sign h = H(Y, v, M) under private key s, yielding (x_{0}, x_{1}, ..., x_{N/8-1})
  *
- * @param s the m-unsigned char private signing key.
- * @param v the corresponding m-unsigned char verification key, used here as the random nonce.
- * @param m hash length (sec level is 8*m).
- * @param M
- * @param len
- * @param priv
+ * @param s 	the N/8-unsigned char private signing key.
  * @param hash
- * @param h buffer for message hash
+ * @param h 	buffer containing the message hash, computed outside as h = H(Y,v,data)
  * @param sig
  */
-void winternitz_8_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/], const unsigned short m, const char *M, unsigned short len,
-					   mmo_t *hash, dm_t *f, unsigned char h[/*m*/], unsigned char sig[/*(m+2)*m*/] /* m+2 m-unsigned char blocks */) {
+void winternitz_8_sign(const unsigned char s[/*m*/], mmo_t *hash, dm_t *f, unsigned char h[/*m*/], unsigned char sig[/*(N/8+2)*N/8*/] /* N/8+2 N/8-unsigned char blocks */) {
 
 	//int sq = 0;
 	unsigned char i, j;
 	unsigned short c, checksum = 0;
 
-	//*
-	memset(h,2,m); //TODO: change this to a true hash
-	/*/
-	sinit(hash, WINTERNITZ_SEC_LVL);
-	absorb(hash, v, m); // public key used as random nonce!!!
-	absorb(hash, M, len); // followed by the message in this implementation (actually followed by the treetop key, and then by the message, in the full scheme)
-	squeeze(hash, h, m); // NB: hash length is m here, but was 2*m in the predecessor scheme
-	//*/
-	//sq++;
-
 	MMO_init(hash);
 	DM_init(f);
 
 #ifdef DEBUG
-	assert(10 <= m && m <= 128);
+	assert(10 <= LEN_BYTES(WINTERNITZ_N) && LEN_BYTES(WINTERNITZ_N) <= 128);
 #endif
 
 	// data part:
 
-	for (i = 0; i < (unsigned char)m; i++) { // NB: hash length is m here, but was 2*m in the predecessor scheme
+	for (i = 0; i < LEN_BYTES(WINTERNITZ_N); i++) { // NB: hash length is N here, but was 2*N in the predecessor scheme
 		// process 8-bit chunk
 		memset(sig, 0, 16); sig[0] = i; // H(s, i) // byte tag
 		aes_128_encrypt(sig, sig, (unsigned char *)s); // sig holds the private block i-th byte
@@ -394,7 +344,7 @@ void winternitz_8_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
 	}
 	// checksum part:
 	for (i = 0; i < WINTERNITZ_CHECKSUM_SIZE; i++) {
-		memset(sig, 0, 16); sig[0] = m + i; // H(s, m + i) // byte tag
+		memset(sig, 0, 16); sig[0] = LEN_BYTES(WINTERNITZ_N) + i; // H(s, m + i) // byte tag
 		aes_128_encrypt(sig, sig, (unsigned char *)s); // sig holds the private block for i-th checksum unsigned char
 		//sq++;
 		c = checksum & 255; // least significant unsigned char
@@ -411,68 +361,50 @@ void winternitz_8_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/
 		sig += 16; // signature block for next unsigned char
 	}
 	//printf("sig squeeze count: %d\n", sq);
-	//cleanup(hash);
 }
 #endif /* WINTERNITZ_W = 8*/
 
 
-void winternitz_sign(const unsigned char s[/*m*/], const unsigned char v[/*m*/], const unsigned short m, const char *M, unsigned short len,
-					 mmo_t *hash, dm_t *f, unsigned char h[/*m*/], unsigned char sig[/*(m+2)*m*/] /* m+2 m-unsigned char blocks */) {
+void winternitz_sign(const unsigned char s[], mmo_t *hash, dm_t *f, unsigned char h[], unsigned char sig[]) {
 
 #if WINTERNITZ_W == 2
-	winternitz_2_sign(s, v, m, M, len, hash, f, h, sig);
+	winternitz_2_sign(s, hash, f, h, sig);
 #elif WINTERNITZ_W == 4
-	winternitz_4_sign(s, v, m, M, len, hash, f, h, sig);
+	winternitz_4_sign(s, hash, f, h, sig);
 #elif WINTERNITZ_W == 8
-	winternitz_8_sign(s, v, m, M, len, hash, f, h, sig);
+	winternitz_8_sign(s, hash, f, h, sig);
 #endif
 }
 
 #if WINTERNITZ_W == 2
 /**
- * Verify a signature on H(v, M)
+ * Verify a signature on H(Y,v,data)
  *
- * @param v the m-byte verification key, used here as the random nonce as well.
+ * @param v the N/8-byte verification key, used here as the random nonce as well.
  * @param y
- * @param m
- * @param M
- * @param len
  * @param pubk
  * @param hash
  * @param h
- * @param y the signature
+ * @param sig the signature
  * @param x scratch (should match v at the end)
  */
-unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned short m, const char *M, unsigned short len, mmo_t *hash, dm_t *f, unsigned char h[/*m*/], const unsigned char sig[/*(2*m+3)*m*/] /* 2m+3 m-byte blocks */, unsigned char x[/*m*/]) {
+unsigned char winternitz_2_verify(const unsigned char v[/*N/8*/], mmo_t *hash, dm_t *f, unsigned char h[/*N/8*/], const unsigned char sig[/*(2*(N/8)+3)*m*/] /* 2(N/8)+3 (N/8)-byte blocks */, unsigned char x[/*N/8*/]) {
 	//int sq = 0;
 	unsigned char i, j, c;
 	unsigned short checksum = 0;
 
 #ifdef DEBUG
-	assert(10 <= m && m <= 21); // lower bound: min sec level (80 bits), upper bound: max checksum count must fit one byte
+	assert(10 <= LEN_BYTES(WINTERNITZ_N) && LEN_BYTES(WINTERNITZ_N) <= 21); // lower bound: min sec level (80 bits), upper bound: max checksum count must fit one byte
 #endif
 
 	MMO_init(hash);
 	DM_init(f);
 
-	//*
-	memset(h,2,m); //TODO: change this to a true hash
-	//DM_hash16(f,f->AES_KEY,h);
-	//aes_128_encrypt(h,x,x);
-	/*/
-	sinit(hash, WINTERNITZ_SEC_LVL);
-	absorb(hash, v, m);   // random nonce!!!
-	absorb(hash, M, len); // followed by the treetop key in the full scheme
-	squeeze(hash, h, m);  // NB: digest length is m here, but was 2*m in the predecessor scheme
-	//*/
-	//sq++;
-
 	// data part:
-	//sinit(hash, WINTERNITZ_SEC_LVL);
 
-	for (i = 0; i < LEN_BYTES(WINTERNITZ_N); i++) { // NB: hash length is m here, but was 2*m in the predecessor scheme
+	for (i = 0; i < LEN_BYTES(WINTERNITZ_N); i++) { // NB: hash length is N here, but was 2*N in the predecessor scheme
 		// 0 part:
-		memcpy(x, sig, m); // x holds now the current signature block
+		memcpy(x, sig, LEN_BYTES(WINTERNITZ_N)); // x holds now the current signature block
 		c = 3 - ((h[i] >> 0) & 3); // chunk
 		checksum += (unsigned short)c;
 		for (j = 0; j < c; j++) {
@@ -501,7 +433,7 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
 		sig += 16; // next signature block
 
 		// 1 part:
-		memcpy(x, sig, m); // x holds now the current signature block
+		memcpy(x, sig, LEN_BYTES(WINTERNITZ_N)); // x holds now the current signature block
 		c = 3 - ((h[i] >> 2) & 3); // chunk
 		checksum += (unsigned short)c;
 		for (j = 0; j < c; j++) {
@@ -530,7 +462,7 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
 		sig += 16; // next signature block
 
 		// 2 part:
-		memcpy(x, sig, m); // x holds now the current signature block
+		memcpy(x, sig, LEN_BYTES(WINTERNITZ_N)); // x holds now the current signature block
 		c = 3 - ((h[i] >> 4) & 3); // chunk
 		checksum += (unsigned short)c;
 		for (j = 0; j < c; j++) {
@@ -559,7 +491,7 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
 		sig += 16; // next signature block
 
 		// 3 part:
-		memcpy(x, sig, m); // x holds now the current signature block
+		memcpy(x, sig, LEN_BYTES(WINTERNITZ_N)); // x holds now the current signature block
 		c = 3 - ((h[i] >> 6) & 3); // chunk
 		checksum += (unsigned short)c;
 		for (j = 0; j < c; j++) {
@@ -589,7 +521,7 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
 	}
 	// checksum part:
 	for (i = 0; i < WINTERNITZ_l2; i++) { // checksum
-		memcpy(x, sig, m); // x holds now the current signature block
+		memcpy(x, sig, LEN_BYTES(WINTERNITZ_N)); // x holds now the current signature block
 		c = 3 - (checksum & 3); // chunk
 		checksum >>= 2;
 		for (j = 0; j < c; j++) {
@@ -622,56 +554,40 @@ unsigned char winternitz_2_verify(const unsigned char v[/*m*/], const unsigned s
 
 	//sq++;
 	//printf("ver squeeze count: %d\n", sq);
-	//cleanup(hash);
-	return (memcmp(x, v, m) == 0 ? WINTERNITZ_OK : WINTERNITZ_ERROR);
+	return (memcmp(x, v, LEN_BYTES(WINTERNITZ_N)) == 0 ? WINTERNITZ_OK : WINTERNITZ_ERROR);
 }
 #endif // WINTERNITZ_W == 2
 
 #if WINTERNITZ_W == 4
 
 /**
- * Verify a signature on H(v, M)
+ * Verify a signature on h = H(Y,v,M)
  *
  * @param v the m-unsigned char verification key, used here as the random nonce as well.
  * @param y
- * @param m
- * @param M
- * @param len
- * @param pubk
  * @param hash
- * @param h
- * @param y the signature
+ * @param f
+ * @param h  the message hash buffer to be signed, computed outside as h = H(Y,v,data)
+ * @param sig the signature
  * @param x scratch (should match v at the end)
  */
-unsigned char winternitz_4_verify(const unsigned char v[/*m*/], const unsigned short m, const char *M, unsigned short len, mmo_t *hash, dm_t *f, unsigned char h[/*m*/], const unsigned char *sig, unsigned char *x) {
+unsigned char winternitz_4_verify(const unsigned char v[/*N/8*/], mmo_t *hash, dm_t *f, unsigned char h[/*N/8*/], const unsigned char *sig, unsigned char *x) {
 	//int sq = 0;
 	unsigned char i, j, c;
 	unsigned short checksum = 0;
-
-	//*
-	memset(h,2,m); //TODO: change this to a true hash
-	/*/
-	sinit(hash, WINTERNITZ_SEC_LVL);
-
-	absorb(hash, v, m); // public key used as random nonce!!!
-	absorb(hash, M, len); // followed by the message in this implementation (actually followed by the treetop key, and then by the message, in the full scheme)
-	squeeze(hash, h, m); // NB: hash length is m here, but was 2*m in the predecessor scheme
-	//*/
-	//sq++;
 
 	MMO_init(hash);
 	DM_init(f);
 
 #ifdef DEBUG
-	assert(10 <= m && m <= 127);
+	assert(10 <= LEN_BYTES(WINTERNITZ_N) && LEN_BYTES(WINTERNITZ_N) <= 127);
 #endif
 
 	// data part:
-	//sinit(hash, WINTERNITZ_SEC_LVL);
 
-	for (i = 0; i < (unsigned char)m; i++) { // NB: hash length is m here, but was 2*m in the predecessor scheme
+	for (i = 0; i < LEN_BYTES(WINTERNITZ_N); i++) { // NB: hash length is m here, but was 2*m in the predecessor scheme
 		// lo part:
-		memcpy(x, sig, m); // x holds now the i-th signature block
+		memcpy(x, sig, LEN_BYTES(WINTERNITZ_N)); // x holds now the i-th signature block
 		c = 15 - (h[i] & 15); // lo nybble
 		checksum += (unsigned short)c;
 
@@ -704,7 +620,7 @@ unsigned char winternitz_4_verify(const unsigned char v[/*m*/], const unsigned s
 		sig += 16; // next signature block
 
 		// hi part:
-		memcpy(x, sig, m); // x is now the i-th signature block
+		memcpy(x, sig, LEN_BYTES(WINTERNITZ_N)); // x is now the i-th signature block
 		c = 15 - (h[i] >>  4); // hi nybble
 		checksum += (unsigned short)c;
 
@@ -738,7 +654,7 @@ unsigned char winternitz_4_verify(const unsigned char v[/*m*/], const unsigned s
 	}
 	// checksum part:
 	for (i = 0; i < 3; i++) { // checksum
-		memcpy(x, sig, m); // x holds now the i-th signature block
+		memcpy(x, sig, LEN_BYTES(WINTERNITZ_N)); // x holds now the i-th signature block
 		c = 15 - (checksum & 15); // least significant nybble
 		checksum >>= 4;
 
@@ -774,55 +690,39 @@ unsigned char winternitz_4_verify(const unsigned char v[/*m*/], const unsigned s
 	memcpy(x, hash->H, 16);
 	//sq++;
 	//printf("ver squeeze count: %d\n", sq);
-	//cleanup(hash);
-	return (memcmp(x, v, m) == 0 ? WINTERNITZ_OK : WINTERNITZ_ERROR);
+	return (memcmp(x, v, LEN_BYTES(WINTERNITZ_N)) == 0 ? WINTERNITZ_OK : WINTERNITZ_ERROR);
 }
 #endif /* WINTERNITZ_W = 4*/
 
 #if WINTERNITZ_W == 8
 
 /**
- * Verify a signature on H(v, M)
+ * Verify a signature on h = H(Y,v, M)
  *
- * @param v the m-unsigned char verification key, used here as the random nonce as well.
- * @param y
- * @param m
- * @param M
- * @param len
- * @param pubk
+ * @param v the N/8-unsigned char verification key, used here as the random nonce as well.
  * @param hash
- * @param h
- * @param y the signature
+ * @param f
+ * @param h the message hash buffer to be signed, computed outside as h = H(Y,v,data)
+ * @param sig the signature
  * @param x scratch (should match v at the end)
  */
-unsigned char winternitz_8_verify(const unsigned char v[/*m*/], const unsigned short m, const char *M, unsigned short len, mmo_t *hash, dm_t *f, unsigned char h[/*m*/], const unsigned char sig[/*(m+2)*m*/] /* m+2 m-unsigned char blocks */, unsigned char x[/*m*/]) {
+unsigned char winternitz_8_verify(const unsigned char v[/*N/8*/], mmo_t *hash, dm_t *f, unsigned char h[/*m*/], const unsigned char sig[/*(N/8+2)*N/8*/] /* N/8+2 N/8-unsigned char blocks */, unsigned char x[/*N/8*/]) {
 	//int sq = 0;
 	unsigned char i, j;
 	unsigned short c, checksum = 0;
-
-	//*
-	memset(h,2,m); //TODO: change this to a true hash
-	/*/
-	sinit(hash, WINTERNITZ_SEC_LVL);
-	absorb(hash, v, m); // public key used as random nonce!!!
-	absorb(hash, M, len); // followed by the message in this implementation (actually followed by the treetop key, and then by the message, in the full scheme)
-	squeeze(hash, h, m); // NB: hash length is m here, but was 2*m in the predecessor scheme
-	//*/
-	//sq++;
 
 	MMO_init(hash);
 	DM_init(f);
 
 #ifdef DEBUG
-	assert(10 <= m && m <= 128);
+	assert(10 <= LEN_BYTES(WINTERNITZ_N) && LEN_BYTES(WINTERNITZ_N) <= 128);
 #endif
 
 	// data part:
-	//sinit(hash, WINTERNITZ_SEC_LVL);
 
-	for (i = 0; i < (unsigned char)m; i++) { // NB: hash length is m here, but was 2*m in the predecessor scheme
+	for (i = 0; i < LEN_BYTES(WINTERNITZ_N); i++) { // NB: hash length is N here, but was 2*N in the predecessor scheme
 		// process unsigned char
-		memcpy(x, sig, m); // x holds now the i-th signature block
+		memcpy(x, sig,  LEN_BYTES(WINTERNITZ_N)); // x holds now the i-th signature block
 		c = 255 - (unsigned char)h[i]; // unsigned char
 		checksum += (unsigned char)c;
 
@@ -856,7 +756,7 @@ unsigned char winternitz_8_verify(const unsigned char v[/*m*/], const unsigned s
 	}
 	// checksum part:
 	for (i = 0; i < WINTERNITZ_CHECKSUM_SIZE; i++) {
-		memcpy(x, sig, m); // x holds now the i-th signature block
+		memcpy(x, sig, LEN_BYTES(WINTERNITZ_N)); // x holds now the i-th signature block
 		c = 255 - (unsigned char)(checksum & 255); // least significant unsigned char
 		checksum >>= 8;
 
@@ -892,19 +792,17 @@ unsigned char winternitz_8_verify(const unsigned char v[/*m*/], const unsigned s
 	memcpy(x, hash->H, 16);
 	//sq++;
 	//printf("ver squeeze count: %d\n", sq);
-	//cleanup(hash);
-	return (memcmp(x, v, m) == 0 ? WINTERNITZ_OK : WINTERNITZ_ERROR);
+	return (memcmp(x, v, LEN_BYTES(WINTERNITZ_N)) == 0 ? WINTERNITZ_OK : WINTERNITZ_ERROR);
 }
-#endif /*WINTERNITZ_W = 8*/
+#endif // WINTERNITZ_W = 8
 
-unsigned char winternitz_verify(const unsigned char v[], const unsigned short m, const char *M, unsigned short len, mmo_t *hash,
-								dm_t *f, unsigned char h[], const unsigned char sig[], unsigned char *x) {
+unsigned char winternitz_verify(const unsigned char v[],  mmo_t *hash, dm_t *f, unsigned char h[], const unsigned char sig[], unsigned char *x) {
 #if WINTERNITZ_W == 2
-	return winternitz_2_verify(v, m, M, len, hash, f, h, sig, x);
+	return winternitz_2_verify(v, hash, f, h, sig, x);
 #elif WINTERNITZ_W == 4
-	return winternitz_4_verify(v, m, M, len, hash, f, h, sig, x);
+	return winternitz_4_verify(v, hash, f, h, sig, x);
 #elif WINTERNITZ_W == 8
-	return winternitz_8_verify(v, m, M, len, hash, f, h, sig, x);
+	return winternitz_8_verify(v, hash, f, h, sig, x);
 #endif
 	return WINTERNITZ_ERROR;
 }
@@ -937,15 +835,15 @@ taking the missing nodes from the authentication path $Q^{(j)}$. Accept iff $q_1
 
 int main(int argc, char *argv[]) {
 
-	unsigned char m = LEN_BYTES(WINTERNITZ_SEC_LVL);
+	unsigned char n = LEN_BYTES(WINTERNITZ_N);
 	mmo_t hash;
 	dm_t f;
-	unsigned char s[m]; // the m-unsigned char private signing key.
-	unsigned char v[m]; // the corresponding m-unsigned char verification key.
-	char M[] = "Hello, world!";
-	unsigned char h[m]; // m-unsigned char message hash.
-	unsigned char sig[WINTERNITZ_L*m];
-	unsigned char x[m]; // scratch (should match v at the end)
+	unsigned char s[n]; // the n-unsigned char private signing key.
+	unsigned char v[m]; // the corresponding n-unsigned char verification key.
+	char M[16] = " --Hello, world!";
+	unsigned char h[m]; // n-unsigned char message hash.
+	unsigned char sig[WINTERNITZ_L*n];
+	unsigned char x[n]; // scratch (should match v at the end)
 	unsigned char ok;
 	unsigned char i;
 	clock_t elapsed;
@@ -957,7 +855,7 @@ int main(int argc, char *argv[]) {
 	//	sizeof(priv) + sizeof(hash) + sizeof(pubk) + sizeof(s) + sizeof(v) + sizeof(M) + sizeof(h) + sizeof(sig) + sizeof(x));
 	printf("sig size: %u unsigned chars.\n\n", (unsigned int) sizeof(sig));
 
-	for (i = 0; i < m; i++) {
+	for (i = 0; i < n; i++) {
 		s[i] = 0xA0 ^ i; // sample private key, for debugging only
 	}
 
@@ -965,7 +863,7 @@ int main(int argc, char *argv[]) {
 	elapsed = -clock();
 	//display("priv", s, m);
 	for (test = 0; test < tests; test++) {
-		winternitz_keygen(s, m, &hash, &f, v);
+		winternitz_keygen(s, n, &hash, &f, v);
 	}
 	elapsed += clock();
 	printf("Elapsed time: %.1f us\n", 1000000*(float)elapsed/CLOCKS_PER_SEC/tests);
@@ -974,7 +872,7 @@ int main(int argc, char *argv[]) {
 	printf("======== SIG ========\n");
 	elapsed = -clock();
 	 for (test = 0; test < tests; test++) {
-		winternitz_sign(s, v, m, (const char *)M, strlen(M)+1, &hash, &f, h, sig);
+		winternitz_sign(s, &hash, &f, h, sig);
 	}
 	elapsed += clock();
 	printf("Elapsed time: %.1f us\n", 1000000*(float)elapsed/CLOCKS_PER_SEC/tests);
@@ -986,7 +884,7 @@ int main(int argc, char *argv[]) {
 	printf("======== VER ========\n");
 	elapsed = -clock();
 	 for (test = 0; test < tests; test++) {
-		ok = winternitz_verify(v, m, (const char *)M, strlen(M)+1, &hash, &f, h, sig, x);
+		ok = winternitz_verify(v, &hash, &f, h, sig, x);
 	}
 	elapsed += clock();
 	printf("Elapsed time: %.1f us\n", 1000000*(float)elapsed/CLOCKS_PER_SEC/tests);

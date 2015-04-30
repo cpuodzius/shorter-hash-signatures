@@ -11,8 +11,8 @@
 
 
 #define MSS_SEC_LVL                     WINTERNITZ_SEC_LVL
-#define MSS_HEIGHT			10
-#define MSS_K			        8	
+#define MSS_HEIGHT			4
+#define MSS_K			        2
 
 #define odd(x)	((x) % 2)
 #if odd(MSS_HEIGHT - MSS_K)
@@ -59,7 +59,7 @@ struct mss_state {
 #define MSS_SIGNATURE_SIZE (MSS_NODE_SIZE + MSS_HEIGHT * MSS_NODE_SIZE + MSS_OTS_SIZE)
 
 unsigned char *mss_keygen(const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)]);
-unsigned char *mss_sign(unsigned char skey[MSS_SKEY_SIZE], const unsigned char digest[2 * MSS_SEC_LVL]);
+unsigned char *mss_sign(unsigned char skey[MSS_SKEY_SIZE], const unsigned char digest[2 * MSS_SEC_LVL], const unsigned char *pkey);
 unsigned char mss_verify(const unsigned char signature[MSS_SIGNATURE_SIZE], const unsigned char pkey[MSS_PKEY_SIZE], const unsigned char digest[2 * MSS_SEC_LVL]);
 
 void serialize_mss_node(struct mss_node node, unsigned char buffer[MSS_NODE_SIZE]);
@@ -77,7 +77,7 @@ void deserialize_mss_signature(unsigned char ots[MSS_OTS_SIZE], struct mss_node 
 #endif
 
 void mss_keygen_core(dm_t *hash, mmo_t *mmo, const unsigned char seed[LEN_BYTES(MSS_SEC_LVL)], struct mss_node *node1, struct mss_node *node2, struct mss_state *state, unsigned char pkey[NODE_VALUE_SIZE]);
-void mss_sign_core(struct mss_state *state, unsigned char *seed, struct mss_node *leaf, const char *msg, unsigned short len, mmo_t *mmo, dm_t *f, unsigned char *h, unsigned short leaf_index, struct mss_node *node1, struct mss_node *node2, unsigned char *ots, struct mss_node authpath[MSS_HEIGHT]);
+void mss_sign_core(struct mss_state *state, unsigned char *seed, struct mss_node *leaf, const char *msg, unsigned short len, mmo_t *mmo, dm_t *f, unsigned char *h, unsigned short leaf_index, struct mss_node *node1, struct mss_node *node2, unsigned char *ots, struct mss_node authpath[MSS_HEIGHT], const unsigned char *Y);
 unsigned char mss_verify_core(struct mss_node authpath[MSS_HEIGHT], const char *msg, unsigned short len, mmo_t *mmo, dm_t *f, unsigned char *h, unsigned short leaf_index, const unsigned char *ots, unsigned char *x, struct mss_node *current_leaf, const unsigned char pkey[NODE_VALUE_SIZE]);
 
 #ifdef DEBUG

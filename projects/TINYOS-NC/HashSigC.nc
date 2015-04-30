@@ -37,6 +37,8 @@ implementation {
 		/*/
 		do_benchmark(BENCHMARK_AES_ENC, benchs);
 		/*
+		do_benchmark(BENCHMARK_HASH16_CALC, benchs);
+		/*
 		do_benchmark(BENCHMARK_HASH_CALC, benchs);
 		/*
 		do_benchmark(BENCHMARK_WINTERNITZ_KEYGEN,benchs);
@@ -84,11 +86,13 @@ implementation {
 #ifndef READ_ENERGY
 		call Leds.set(3);
 #endif
+
 		//do_benchmark(BENCHMARK_PREPARE, 1);
 		//do_benchmark(BENCHMARK_MSS_KEYGEN,1);
 		//do_benchmark(BENCHMARK_WINTERNITZ_SIGN,1);
 		//do_benchmark(BENCHMARK_MSS_PREPARE_VERIFY,1);
 		//do_benchmark(BENCHMARK_AES_CALC,1);
+
 
 		call Timer.startOneShot(5000);
 	}

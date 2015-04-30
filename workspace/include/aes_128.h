@@ -15,7 +15,7 @@
 #define AES_128_KEY_SIZE	16
 
 void aes_128_encrypt(unsigned char ciphertext[AES_128_BLOCK_SIZE], const unsigned char plaintext[AES_128_BLOCK_SIZE], const unsigned char key[AES_128_KEY_SIZE]);
-
+void ti_aes_encrypt(unsigned char *state, unsigned char *key);
 
 #ifndef PLATFORM_SENSOR
 
