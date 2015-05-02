@@ -166,84 +166,23 @@ void MMO_hash16(mmo_t *mmo, const unsigned char M[16], unsigned char tag[16]) {
 	memcpy(tag, mmo->H, 16);
 }
 
-void MMO_hash32(mmo_t *mmo, const unsigned char M[32], unsigned char tag[16]) {
-    unsigned char *H = mmo->H;
-    //unsigned char *ZZ = mmo->M;
+void MMO_hash32(mmo_t *mmo, const unsigned char M1[16], const unsigned char M2[16], unsigned char tag[16]) {
+    unsigned char i;
+    
+    memset(mmo->H, 0, 16);
+    memset(&mmo->H[0], 1, 1); // A fixed and different IV from MMO_hash16
+ 
+    aes_128_encrypt(mmo->H, M1, mmo->H);
+    for(i=0; i<16; i++) {
+        mmo->H[i] ^= M1[i];
+    }
+    
+    aes_128_encrypt(mmo->H, M2, mmo->H);
+    for(i=0; i<16; i++) {
+        mmo->H[i] ^= M2[i];
+    }
 
-    memset(H, 0, 16);
-    memset(&H[0], 2, 1);
-    //memcpy(local_key,H,16);
-    aes_128_encrypt(H, M, H);
-
-    H[ 0] ^= M[ 0];
-    H[ 1] ^= M[ 1];
-    H[ 2] ^= M[ 2];
-    H[ 3] ^= M[ 3];
-    H[ 4] ^= M[ 4];
-    H[ 5] ^= M[ 5];
-    H[ 6] ^= M[ 6];
-    H[ 7] ^= M[ 7];
-    H[ 8] ^= M[ 8];
-    H[ 9] ^= M[ 9];
-    H[10] ^= M[10];
-    H[11] ^= M[11];
-    H[12] ^= M[12];
-    H[13] ^= M[13];
-    H[14] ^= M[14];
-    H[15] ^= M[15];
-
-    M += 16;
-    //memcpy(local_key,H,16);
-    aes_128_encrypt(H, M, H);
-
-    H[ 0] ^= M[ 0];
-    H[ 1] ^= M[ 1];
-    H[ 2] ^= M[ 2];
-    H[ 3] ^= M[ 3];
-    H[ 4] ^= M[ 4];
-    H[ 5] ^= M[ 5];
-    H[ 6] ^= M[ 6];
-    H[ 7] ^= M[ 7];
-    H[ 8] ^= M[ 8];
-    H[ 9] ^= M[ 9];
-    H[10] ^= M[10];
-    H[11] ^= M[11];
-    H[12] ^= M[12];
-    H[13] ^= M[13];
-    H[14] ^= M[14];
-    H[15] ^= M[15];
-
-/*
-    // compute padding:
-    memset(ZZ, 0, 16);
-    ZZ[ 0] = 0x80; // padding toggle
-    ZZ[14] = 0x01; // 256-bit length
-
-    //aes_128_encrypt(H, ZZ, H);
-	cc2420_aes_set_key(H, 0);
-	memcpy(H, ZZ, 16); // H saves the plaintext which will be overwritten in aes_cipher
-	cc2420_aes_cipher(H, 16, 0); // H will be overwritten with the ciphertext
-
-    //
-    H[ 0] ^= ZZ[ 0];
-    H[ 1] ^= ZZ[ 1];
-    H[ 2] ^= ZZ[ 2];
-    H[ 3] ^= ZZ[ 3];
-    H[ 4] ^= ZZ[ 4];
-    H[ 5] ^= ZZ[ 5];
-    H[ 6] ^= ZZ[ 6];
-    H[ 7] ^= ZZ[ 7];
-    H[ 8] ^= ZZ[ 8];
-    H[ 9] ^= ZZ[ 9];
-    H[10] ^= ZZ[10];
-    H[11] ^= ZZ[11];
-    H[12] ^= ZZ[12];
-    H[13] ^= ZZ[13];
-    H[14] ^= ZZ[14];
-    H[15] ^= ZZ[15];
-    //*/
-
-    memcpy(tag, H, 16);
+    memcpy(tag, mmo->H, 16);
 }
 
 void DM_init(dm_t *dm) {

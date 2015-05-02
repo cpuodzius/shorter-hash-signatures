@@ -22,7 +22,7 @@ void MMO_init(mmo_t *mmo);
 void MMO_update(mmo_t *mmo, const unsigned char *M, unsigned int m);
 void MMO_final(mmo_t *mmo, unsigned char tag[AES_128_BLOCK_SIZE]);
 void MMO_hash16(mmo_t *mmo, const unsigned char M[AES_128_BLOCK_SIZE], unsigned char tag[AES_128_BLOCK_SIZE]);
-void MMO_hash32(mmo_t *mmo, const unsigned char M[AES_128_BLOCK_SIZE], unsigned char tag[AES_128_BLOCK_SIZE]);
+void MMO_hash32(mmo_t *mmo, const unsigned char M1[AES_128_BLOCK_SIZE], const unsigned char M2[AES_128_BLOCK_SIZE], unsigned char tag[AES_128_BLOCK_SIZE]);
 
 //forward secure pseudo-random generator
 //short fsprg_counter = 0;

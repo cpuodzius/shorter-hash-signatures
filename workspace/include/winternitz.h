@@ -38,7 +38,7 @@
 
 void winternitz_keygen(const unsigned char s[LEN_BYTES(WINTERNITZ_N)], mmo_t *hash1, mmo_t *hash2, unsigned char v[LEN_BYTES(WINTERNITZ_N)]);
 void winternitz_sign(const unsigned char s[LEN_BYTES(WINTERNITZ_N)], mmo_t *hash, unsigned char h[], unsigned char sig[]);
-unsigned char winternitz_verify(const unsigned char v[], mmo_t *hash1, dm_t *hash2, unsigned char h[], const unsigned char sig[], unsigned char x[]);
+unsigned char winternitz_verify(const unsigned char v[], mmo_t *hash1, mmo_t *hash2, unsigned char h[], const unsigned char sig[], unsigned char x[]);
 
 
 #endif // __WINTERNITZ_H

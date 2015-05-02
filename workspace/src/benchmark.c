@@ -30,8 +30,7 @@ struct mss_node nodes[2];
 struct mss_node currentLeaf_bench;
 struct mss_node authpath_bench[MSS_HEIGHT];
 struct mss_state state_bench;
-mmo_t hash_mmo;
-dm_t f_bench;
+mmo_t hash1, hash2;
 char M_bench[16] = " --Hello, world!";
 unsigned char h1[LEN_BYTES(WINTERNITZ_N)], h2[LEN_BYTES(WINTERNITZ_N)];
 unsigned char sig_bench[WINTERNITZ_L*LEN_BYTES(WINTERNITZ_SEC_LVL)];
@@ -49,14 +48,13 @@ void do_benchmark(enum BENCHMARK phase, unsigned short benchs) {
 	switch(phase) {
 
 		case BENCHMARK_PREPARE:
-
-			DM_init(&f_bench);
-			mss_keygen_core(&f_bench, &hash_mmo, seed_bench, &nodes[0], &nodes[1], &state_bench, pkey_bench);
+			MMO_init(&hash1);
+			MMO_init(&hash2);
+			mss_keygen_core(&hash1, &hash2, seed_bench, &nodes[0], &nodes[1], &state_bench, pkey_bench);
 			break;
 
 		case BENCHMARK_MSS_KEYGEN:
-
-			mss_keygen_core(&f_bench, &hash_mmo, seed_bench, &nodes[0], &nodes[1], &state_bench, pkey_bench);
+			mss_keygen_core(&hash1, &hash2, seed_bench, &nodes[0], &nodes[1], &state_bench, pkey_bench);
 #ifdef VERBOSE
 			//print_retain(&state_bench);
 			//printfflush();			
@@ -72,58 +70,57 @@ void do_benchmark(enum BENCHMARK phase, unsigned short benchs) {
 			//for(j = (1 << (MSS_HEIGHT-2)); j < (1 << (MSS_HEIGHT-1)); j++) { //pt2 2^11...2^12-1
 			//for(j = (1 << (MSS_HEIGHT-1)); j < (1 << (MSS_HEIGHT-1)) + 2048; j++) { //pt3 2^12...2^12+2048-1
 			//for(j = (1 << (MSS_HEIGHT-1)) + 2048; j < (1 << MSS_HEIGHT); j++) { //pt4 2^12+2048...2^13-1
-				mss_sign_core(&state_bench, seed_bench, &currentLeaf_bench, M_bench, LEN_BYTES(WINTERNITZ_SEC_LVL), &hash_mmo, &f_bench, h1, j, &nodes[0], &nodes[1], sig_bench, authpath_bench, pkey_bench);			    
+				mss_sign_core(&state_bench, seed_bench, &currentLeaf_bench, M_bench, LEN_BYTES(WINTERNITZ_SEC_LVL), &hash1, &hash2, h1, j, &nodes[0], &nodes[1], sig_bench, authpath_bench, pkey_bench);			    
 			}
 			break;
 
 		case BENCHMARK_MSS_PREPARE_VERIFY:
 
-			MMO_init(&hash_mmo);
-			DM_init(&f_bench);
+			MMO_init(&hash1);
+			MMO_init(&hash2);
 			//mss_keygen(&f_bench, &hash_mmo, seed_bench, &nodes[0], &nodes[1], &state_bench, pkey_bench);		
-			mss_sign_core(&state_bench, seed_bench, &currentLeaf_bench, M_bench, strlen(M_bench)+1, &hash_mmo, &f_bench, h1, 0, &nodes[0],
+			mss_sign_core(&state_bench, seed_bench, &currentLeaf_bench, M_bench, strlen(M_bench)+1, &hash1, &hash2, h1, 0, &nodes[0],
 				 &nodes[1], sig_bench, authpath_bench,pkey_bench);
-			DM_hash16(&f_bench,(unsigned char*)M_bench,h2);// put a "random-looking" value on h2 
+			MMO_hash16(&hash1,(unsigned char*)M_bench,h2);// put a "random-looking" value on h2 
 			break;
 
 		case BENCHMARK_MSS_VERIFY:
 			for(j = 0; j < benchs; j++) {
-				mss_verify_core(authpath_bench, M_bench, LEN_BYTES(WINTERNITZ_N), &hash_mmo, &f_bench, h2, 0, sig_bench, aux, &currentLeaf_bench, pkey_bench);
+				mss_verify_core(authpath_bench, M_bench, LEN_BYTES(WINTERNITZ_N), &hash1, &hash2, h2, 0, sig_bench, aux, &currentLeaf_bench, pkey_bench);
 			}
 			break;
 
 		case BENCHMARK_WINTERNITZ_KEYGEN:
-			winternitz_keygen(seed_bench, &hash_mmo, &f_bench, nodes[1].value);
+			winternitz_keygen(seed_bench, &hash1, &hash2, nodes[1].value);
 			break;
 
 		case BENCHMARK_WINTERNITZ_SIGN:
-			MMO_init(&hash_mmo);
-			MMO_update(&hash_mmo,(unsigned char *)M_bench,16);
-			MMO_final(&hash_mmo,h1);
-			winternitz_sign(seed_bench, &hash_mmo, &f_bench, h1, sig_bench);
+			MMO_init(&hash1);
+			MMO_update(&hash1,(unsigned char *)M_bench,16);
+			MMO_final(&hash1,h1);
+			winternitz_sign(seed_bench, &hash1, h1, sig_bench);
 			break;
 
 		case BENCHMARK_WINTERNITZ_VERIFY:
-			MMO_init(&hash_mmo);
-			MMO_update(&hash_mmo,(unsigned char *)M_bench,16);
-			MMO_final(&hash_mmo,h2);
-			winternitz_verify(nodes[1].value, &hash_mmo, &f_bench, h2, sig_bench, aux);
+			MMO_init(&hash1);
+			MMO_update(&hash1,(unsigned char *)M_bench,16);
+			MMO_final(&hash1,h2);
+			winternitz_verify(nodes[1].value, &hash1, &hash2, h2, sig_bench, aux);
 			break;
 
 		case BENCHMARK_HASH16_CALC:
 
 			for(j = 0; j < benchs; j++) {
-				DM_hash16(&f_bench,seed_bench,seed_bench);
-				//MMO_hash16(&f_bench,seed_bench,seed_bench);
+				MMO_hash16(&hash1,seed_bench,seed_bench);
 			}
 
 			break;
 		case BENCHMARK_HASH_CALC:
 
 			for(j = 0; j < benchs; j++) {
-				MMO_init(&hash_mmo);
-				MMO_update(&hash_mmo, seed_bench, LEN_BYTES(WINTERNITZ_SEC_LVL));
-				MMO_final(&hash_mmo, seed_bench);
+				MMO_init(&hash1);
+				MMO_update(&hash1, seed_bench, LEN_BYTES(WINTERNITZ_SEC_LVL));
+				MMO_final(&hash1, seed_bench);
 			}
 
 			break;			

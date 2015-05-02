@@ -385,7 +385,7 @@ void winternitz_sign(const unsigned char s[], mmo_t *hash1, unsigned char h[], u
  * @param sig the signature
  * @param x scratch (should match v at the end)
  */
-unsigned char winternitz_2_verify(const unsigned char v[/*N/8*/], mmo_t *hash1, mmo_t *hash2, dm_t *f, unsigned char h[/*N/8*/], const unsigned char sig[/*(2*(N/8)+3)*m*/] /* 2(N/8)+3 (N/8)-byte blocks */, unsigned char x[/*N/8*/]) {
+unsigned char winternitz_2_verify(const unsigned char v[/*N/8*/], mmo_t *hash1, mmo_t *hash2, unsigned char h[/*N/8*/], const unsigned char sig[/*(2*(N/8)+3)*m*/] /* 2(N/8)+3 (N/8)-byte blocks */, unsigned char x[/*N/8*/]) {
 	//int sq = 0;
 	unsigned char i, j, c;
 	unsigned short checksum = 0;

@@ -50,7 +50,7 @@ unsigned short test_mss_signature() {
 	DM_init(&f_test);
 
 	// Compute Merkle Public Key and TreeHash state
-	mss_keygen_core(&f_test, &hash1, seed_test, &nodes[0], &nodes[1], &state_test, pkey_test);
+	mss_keygen_core(&hash1, &hash2, seed_test, &nodes[0], &nodes[1], &state_test, pkey_test);
 
 #ifdef VERBOSE
 	Display("Public Key", pkey_test, NODE_VALUE_SIZE);	
@@ -66,9 +66,9 @@ unsigned short test_mss_signature() {
 #if defined(VERBOSE) && !defined(PLATFORM_SENSOR)
 		printf("Testing MSS for leaf %ld ...", j);
 #endif
-		mss_sign_core(&state_test, seed_test, &currentLeaf_test, (const char *)M, strlen(M), &hash1, &f_test, h1, j, &nodes[0], &nodes[1], sig_test, authpath_test, pkey_test);
+		mss_sign_core(&state_test, seed_test, &currentLeaf_test, (const char *)M, strlen(M), &hash1, &hash2, h1, j, &nodes[0], &nodes[1], sig_test, authpath_test, pkey_test);
 		//Display("",sig_test,16);
-		if(mss_verify_core(authpath_test, (const char *)M, strlen(M), &hash1, &f_test, h2, j, sig_test, aux, &currentLeaf_test, pkey_test) == MSS_OK) {
+		if(mss_verify_core(authpath_test, (const char *)M, strlen(M), &hash1, &hash2, h2, j, sig_test, aux, &currentLeaf_test, pkey_test) == MSS_OK) {
 #if defined(VERBOSE) && !defined(PLATFORM_SENSOR)
 			printf(" [OK]\n");
 #endif
