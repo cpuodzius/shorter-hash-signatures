@@ -36,9 +36,9 @@
 //#define GET_CHUNK(x, startbit) ((x & (unsigned)( (unsigned)((1 << WINTERNITZ_W) - 1) << startbit)) >> startbit)
 #define LEN_BYTES(len_bits) ((len_bits+7)/8)
 
-void winternitz_keygen(const unsigned char s[LEN_BYTES(WINTERNITZ_N)], mmo_t *hash, dm_t *f, unsigned char v[LEN_BYTES(WINTERNITZ_N)]);
-void winternitz_sign(const unsigned char s[LEN_BYTES(WINTERNITZ_N)], mmo_t *hash, dm_t *f, unsigned char h[], unsigned char sig[]);
-unsigned char winternitz_verify(const unsigned char v[], mmo_t *hash, dm_t *f, unsigned char h[], const unsigned char sig[], unsigned char x[]);
+void winternitz_keygen(const unsigned char s[LEN_BYTES(WINTERNITZ_N)], mmo_t *hash1, mmo_t *hash2, unsigned char v[LEN_BYTES(WINTERNITZ_N)]);
+void winternitz_sign(const unsigned char s[LEN_BYTES(WINTERNITZ_N)], mmo_t *hash, unsigned char h[], unsigned char sig[]);
+unsigned char winternitz_verify(const unsigned char v[], mmo_t *hash1, dm_t *hash2, unsigned char h[], const unsigned char sig[], unsigned char x[]);
 
 
 #endif // __WINTERNITZ_H
