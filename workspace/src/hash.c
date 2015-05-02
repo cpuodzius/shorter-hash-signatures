@@ -156,31 +156,83 @@ void MMO_final(mmo_t *mmo, unsigned char tag[16]) {
 }
 
 void MMO_hash16(mmo_t *mmo, const unsigned char M[16], unsigned char tag[16]) {
-    unsigned char i;
+    //unsigned char i;
     memset(mmo->H, 0, 16); //IV = 0 as suggested in "Hash-based Signatures on Smart Cards", Busold 2012
     aes_128_encrypt(mmo->H, M, mmo->H);
 
-	for(i=0; i<16; i++) {
-		mmo->H[i] ^= M[i];
-	}    
-	memcpy(tag, mmo->H, 16);
+    //for(i=0; i<16; i++) {
+    //	mmo->H[i] ^= M[i];
+    //}    
+   
+    mmo->H[ 0] ^= M[ 0];
+    mmo->H[ 1] ^= M[ 1];
+    mmo->H[ 2] ^= M[ 2];
+    mmo->H[ 3] ^= M[ 3];
+    mmo->H[ 4] ^= M[ 4];
+    mmo->H[ 5] ^= M[ 5];
+    mmo->H[ 6] ^= M[ 6];
+    mmo->H[ 7] ^= M[ 7];
+    mmo->H[ 8] ^= M[ 8];
+    mmo->H[ 9] ^= M[ 9];
+    mmo->H[10] ^= M[10];
+    mmo->H[11] ^= M[11];
+    mmo->H[12] ^= M[12];
+    mmo->H[13] ^= M[13];
+    mmo->H[14] ^= M[14];
+    mmo->H[15] ^= M[15];
+
+
+    memcpy(tag, mmo->H, 16);
 }
 
 void MMO_hash32(mmo_t *mmo, const unsigned char M1[16], const unsigned char M2[16], unsigned char tag[16]) {
-    unsigned char i;
+    //unsigned char i;
     
     memset(mmo->H, 0, 16);
     memset(&mmo->H[0], 1, 1); // A fixed and different IV from MMO_hash16
  
     aes_128_encrypt(mmo->H, M1, mmo->H);
-    for(i=0; i<16; i++) {
-        mmo->H[i] ^= M1[i];
-    }
+//    for(i=0; i<16; i++) {
+//        mmo->H[i] ^= M1[i];
+//    }
+    mmo->H[ 0] ^= M1[ 0];
+    mmo->H[ 1] ^= M1[ 1];
+    mmo->H[ 2] ^= M1[ 2];
+    mmo->H[ 3] ^= M1[ 3];
+    mmo->H[ 4] ^= M1[ 4];
+    mmo->H[ 5] ^= M1[ 5];
+    mmo->H[ 6] ^= M1[ 6];
+    mmo->H[ 7] ^= M1[ 7];
+    mmo->H[ 8] ^= M1[ 8];
+    mmo->H[ 9] ^= M1[ 9];
+    mmo->H[10] ^= M1[10];
+    mmo->H[11] ^= M1[11];
+    mmo->H[12] ^= M1[12];
+    mmo->H[13] ^= M1[13];
+    mmo->H[14] ^= M1[14];
+    mmo->H[15] ^= M1[15];
     
     aes_128_encrypt(mmo->H, M2, mmo->H);
-    for(i=0; i<16; i++) {
-        mmo->H[i] ^= M2[i];
-    }
+//    for(i=0; i<16; i++) {
+//        mmo->H[i] ^= M2[i];
+//    }
+    mmo->H[ 0] ^= M2[ 0];
+    mmo->H[ 1] ^= M2[ 1];
+    mmo->H[ 2] ^= M2[ 2];
+    mmo->H[ 3] ^= M2[ 3];
+    mmo->H[ 4] ^= M2[ 4];
+    mmo->H[ 5] ^= M2[ 5];
+    mmo->H[ 6] ^= M2[ 6];
+    mmo->H[ 7] ^= M2[ 7];
+    mmo->H[ 8] ^= M2[ 8];
+    mmo->H[ 9] ^= M2[ 9];
+    mmo->H[10] ^= M2[10];
+    mmo->H[11] ^= M2[11];
+    mmo->H[12] ^= M2[12];
+    mmo->H[13] ^= M2[13];
+    mmo->H[14] ^= M2[14];
+    mmo->H[15] ^= M2[15];
+
 
     memcpy(tag, mmo->H, 16);
 }

@@ -581,7 +581,7 @@ void mss_sign_core(struct mss_state *state, unsigned char *seed, struct mss_node
 	// Feed the hash to be signed with data H(Y,v,data)
 	MMO_update(&hash_mss, (const unsigned char *)data, 16);
 	MMO_final(&hash_mss,h);
-	//memset(h,2,16);
+
 	winternitz_sign(sk, hash1, h, sig);
 
 	for(i = 0; i < MSS_HEIGHT; i++) {
