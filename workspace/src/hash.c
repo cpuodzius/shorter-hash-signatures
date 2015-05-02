@@ -6,6 +6,8 @@
 	#include <assert.h>
 #endif
 
+unsigned char IV_MMO[16] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+
 void MMO_init(mmo_t *mmo) {
     mmo->t = 16; // one AES block
     mmo->n = 0;
@@ -157,8 +159,9 @@ void MMO_final(mmo_t *mmo, unsigned char tag[16]) {
 
 void MMO_hash16(mmo_t *mmo, const unsigned char M[16], unsigned char tag[16]) {
     //unsigned char i;
-    memset(mmo->H, 0, 16); //IV = 0 as suggested in "Hash-based Signatures on Smart Cards", Busold 2012
-    aes_128_encrypt(mmo->H, M, mmo->H);
+  
+    //memset(mmo->H, 0, 16); //IV = 0 as suggested in "Hash-based Signatures on Smart Cards", Busold 2012
+    aes_128_encrypt(mmo->H, M, IV_MMO);
 
     //for(i=0; i<16; i++) {
     //	mmo->H[i] ^= M[i];
@@ -180,7 +183,6 @@ void MMO_hash16(mmo_t *mmo, const unsigned char M[16], unsigned char tag[16]) {
     mmo->H[13] ^= M[13];
     mmo->H[14] ^= M[14];
     mmo->H[15] ^= M[15];
-
 
     memcpy(tag, mmo->H, 16);
 }

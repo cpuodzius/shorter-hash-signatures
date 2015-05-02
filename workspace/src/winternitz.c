@@ -39,7 +39,7 @@ void winternitz_keygen(const unsigned char s[LEN_BYTES(WINTERNITZ_N)], mmo_t *ha
 
 	for (i = 0; i < WINTERNITZ_L; i++) { // chunk count, including checksum
 		memset(v, 0, 16); v[0] = i; // H(s, i) // i = byte tag
-		aes_128_encrypt(v, v, (unsigned char*)s); // v = s_i = private block for i-th byte
+		aes_128_encrypt(v, v, s); // v = s_i = private block for i-th byte
 		//sq++;
 		for (j = 0; j < (1 << WINTERNITZ_W) - 1; j++) {
 			MMO_hash16(hash1, v, v); // v is the hash of its previous value = y_i = H^{2^w-1}(s_i)
@@ -96,7 +96,7 @@ void winternitz_2_sign(const unsigned char s[LEN_BYTES(WINTERNITZ_N)], mmo_t *ha
 	for (i = 0; i < LEN_BYTES(WINTERNITZ_N); i++) { // NB: hash length is N=128, but was N=256 in the predecessor scheme
 		// 0 part:
 		memset(sig, 0, 16); sig[0] = (i << 2) + 0; // H(s, 4i + 0) // 0 chunk index
-		aes_128_encrypt(sig, sig, (unsigned char *)s); //sig = s_i = AES_s(i) // sig holds the private block for i-th "0" chunk
+		aes_128_encrypt(sig, sig, s); //sig = s_i = AES_s(i) // sig holds the private block for i-th "0" chunk
 		//sq++;
 		checksum += 3;
 		switch ((h[i]	 ) & 3) { // 0 chunk
@@ -120,7 +120,7 @@ void winternitz_2_sign(const unsigned char s[LEN_BYTES(WINTERNITZ_N)], mmo_t *ha
 
 		// 1 part:
 		memset(sig, 0, 16); sig[0] = (i << 2) + 1; // H(s, 4i + 1) // 1 chunk index
-		aes_128_encrypt(sig, sig, (unsigned char *)s); //sig = s_i = AES_s(i) // sig holds the private block for i-th "1" chunk
+		aes_128_encrypt(sig, sig, s); //sig = s_i = AES_s(i) // sig holds the private block for i-th "1" chunk
 		//sq++;
 		checksum += 3;
 		switch ((h[i] >> 2) & 3) { // 1 chunk
@@ -144,7 +144,7 @@ void winternitz_2_sign(const unsigned char s[LEN_BYTES(WINTERNITZ_N)], mmo_t *ha
 
 		// 2 part:
 		memset(sig, 0, 16); sig[0] = (i << 2) + 2; // H(s, 4i + 2) // 2 chunk index
-		aes_128_encrypt(sig, sig, (unsigned char *)s); //sig = s_i = AES_s(i) // sig holds the private block for i-th "2" chunk
+		aes_128_encrypt(sig, sig, s); //sig = s_i = AES_s(i) // sig holds the private block for i-th "2" chunk
 		//sq++;
 		checksum += 3;
 		switch ((h[i] >> 4) & 3) { // 2 chunk
@@ -167,7 +167,7 @@ void winternitz_2_sign(const unsigned char s[LEN_BYTES(WINTERNITZ_N)], mmo_t *ha
 
 		// 3 part:
 		memset(sig, 0, 16); sig[0] = (i << 2) + 3; // H(s, 4i + 3) // 3 chunk index
-		aes_128_encrypt(sig, sig, (unsigned char *)s); //sig = s_i = AES_s(i) // sig holds the private block for i-th "3" chunk
+		aes_128_encrypt(sig, sig, s); //sig = s_i = AES_s(i) // sig holds the private block for i-th "3" chunk
 		//sq++;
 		checksum += 3;
 		switch ((h[i] >> 6) & 3) { // 3 chunk
@@ -193,7 +193,7 @@ void winternitz_2_sign(const unsigned char s[LEN_BYTES(WINTERNITZ_N)], mmo_t *ha
 	// checksum part:
 	for (i = 0; i < WINTERNITZ_l2; i++) { // checksum
 		memset(sig, 0, 16); sig[0] = (LEN_BYTES(WINTERNITZ_N) << 2) + i; // H(s, 4*(N/8) + i) // i-th chunk index
-		aes_128_encrypt(sig, sig, (unsigned char *)s);  //sig = s_i = AES_s(i) // sig holds the private block for i-th checksum chunk
+		aes_128_encrypt(sig, sig, s);  //sig = s_i = AES_s(i) // sig holds the private block for i-th checksum chunk
 		//sq++;
 		switch (checksum & 3) { // 3 chunk
 		case 3:
