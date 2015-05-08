@@ -27,7 +27,7 @@ ASRC=src/low/AVRAES/rijndaelfast-keyschedule.S src/low/AVRAES/rijndaelfast.S src
 
 #CFLAGS += -DMSS_HEIGHT=10 -DMSS_K=8 -DWINTERNITZ_W=2
 #CFLAGS += -DAES_ENC_DEC #AES in C with decryption function (TI_aes_128.c)
-CFLAGS += -DMSS_ROM_RETAIN
+#CFLAGS += -DMSS_ROM_RETAIN
 #CFLAGS += -DVERBOSE
 
 AR=avr-ar

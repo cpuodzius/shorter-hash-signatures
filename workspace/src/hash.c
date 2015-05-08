@@ -44,22 +44,18 @@ void MMO_update(mmo_t *mmo, const unsigned char *M, unsigned int m) {
 	//memcpy(local_key,mmo->H,16);
         aes_128_encrypt(mmo->H, mmo->M, mmo->H);
 
-        mmo->H[ 0] ^= mmo->M[ 0];
-        mmo->H[ 1] ^= mmo->M[ 1];
-        mmo->H[ 2] ^= mmo->M[ 2];
-        mmo->H[ 3] ^= mmo->M[ 3];
-        mmo->H[ 4] ^= mmo->M[ 4];
-        mmo->H[ 5] ^= mmo->M[ 5];
-        mmo->H[ 6] ^= mmo->M[ 6];
-        mmo->H[ 7] ^= mmo->M[ 7];
-        mmo->H[ 8] ^= mmo->M[ 8];
-        mmo->H[ 9] ^= mmo->M[ 9];
-        mmo->H[10] ^= mmo->M[10];
-        mmo->H[11] ^= mmo->M[11];
-        mmo->H[12] ^= mmo->M[12];
-        mmo->H[13] ^= mmo->M[13];
-        mmo->H[14] ^= mmo->M[14];
-        mmo->H[15] ^= mmo->M[15];
+#ifdef PLATFORM_SENSOR
+        // This is faster than XORing each byte at a time
+        ((int32_t *)mmo->H)[0] ^= ((int32_t *)mmo->M)[0];
+        ((int32_t *)mmo->H)[1] ^= ((int32_t *)mmo->M)[1];
+        ((int32_t *)mmo->H)[2] ^= ((int32_t *)mmo->M)[2];
+        ((int32_t *)mmo->H)[3] ^= ((int32_t *)mmo->M)[3];    
+#else    
+        unsigned char i;
+        for(i=0; i < (16 / sizeof(int));i++) { 
+            ((int*)mmo->H)[i] ^= ((int*)mmo->M)[i];
+        }
+#endif   
 
         // proceed to the next block:
         m -= mmo->t;
@@ -92,25 +88,19 @@ void MMO_final(mmo_t *mmo, unsigned char tag[16]) {
             *ZZ++ = 0x00; // fill remainder of block with zero padding
             mmo->t--;
         }
-	//memcpy(local_key,mmo->H,16);
         aes_128_encrypt(mmo->H, mmo->M, mmo->H);
 
-        mmo->H[ 0] ^= mmo->M[ 0];
-        mmo->H[ 1] ^= mmo->M[ 1];
-        mmo->H[ 2] ^= mmo->M[ 2];
-        mmo->H[ 3] ^= mmo->M[ 3];
-        mmo->H[ 4] ^= mmo->M[ 4];
-        mmo->H[ 5] ^= mmo->M[ 5];
-        mmo->H[ 6] ^= mmo->M[ 6];
-        mmo->H[ 7] ^= mmo->M[ 7];
-        mmo->H[ 8] ^= mmo->M[ 8];
-        mmo->H[ 9] ^= mmo->M[ 9];
-        mmo->H[10] ^= mmo->M[10];
-        mmo->H[11] ^= mmo->M[11];
-        mmo->H[12] ^= mmo->M[12];
-        mmo->H[13] ^= mmo->M[13];
-        mmo->H[14] ^= mmo->M[14];
-        mmo->H[15] ^= mmo->M[15];
+#ifdef PLATFORM_SENSOR
+        // This is faster than XORing each byte at a time
+        ((int32_t *)mmo->H)[0] ^= ((int32_t *)mmo->M)[0];
+        ((int32_t *)mmo->H)[1] ^= ((int32_t *)mmo->M)[1];
+        ((int32_t *)mmo->H)[2] ^= ((int32_t *)mmo->M)[2];
+        ((int32_t *)mmo->H)[3] ^= ((int32_t *)mmo->M)[3];    
+#else   
+        for(i=0; i < (16 / sizeof(int));i++) { 
+            ((int*)mmo->H)[i] ^= ((int*)mmo->M)[i];
+        }
+#endif   
 
         mmo->t = 16; // start new block
         ZZ = mmo->M;
@@ -134,22 +124,17 @@ void MMO_final(mmo_t *mmo, unsigned char tag[16]) {
 	//memcpy(local_key,mmo->H,16);
 	aes_128_encrypt(mmo->H, mmo->M, mmo->H);
 
-    mmo->H[ 0] ^= mmo->M[ 0];
-    mmo->H[ 1] ^= mmo->M[ 1];
-    mmo->H[ 2] ^= mmo->M[ 2];
-    mmo->H[ 3] ^= mmo->M[ 3];
-    mmo->H[ 4] ^= mmo->M[ 4];
-    mmo->H[ 5] ^= mmo->M[ 5];
-    mmo->H[ 6] ^= mmo->M[ 6];
-    mmo->H[ 7] ^= mmo->M[ 7];
-    mmo->H[ 8] ^= mmo->M[ 8];
-    mmo->H[ 9] ^= mmo->M[ 9];
-    mmo->H[10] ^= mmo->M[10];
-    mmo->H[11] ^= mmo->M[11];
-    mmo->H[12] ^= mmo->M[12];
-    mmo->H[13] ^= mmo->M[13];
-    mmo->H[14] ^= mmo->M[14];
-    mmo->H[15] ^= mmo->M[15];
+#ifdef PLATFORM_SENSOR
+    // This is faster than XORing each byte at a time
+    ((int32_t *)mmo->H)[0] ^= ((int32_t *)mmo->M)[0];
+    ((int32_t *)mmo->H)[1] ^= ((int32_t *)mmo->M)[1];
+    ((int32_t *)mmo->H)[2] ^= ((int32_t *)mmo->M)[2];
+    ((int32_t *)mmo->H)[3] ^= ((int32_t *)mmo->M)[3];    
+#else    
+    for(i=0; i < (16 / sizeof(int));i++) { 
+        ((int*)mmo->H)[i] ^= ((int*)mmo->M)[i];
+    }
+#endif   
 
     memcpy(tag, mmo->H, 16);
 
@@ -158,124 +143,60 @@ void MMO_final(mmo_t *mmo, unsigned char tag[16]) {
 }
 
 void MMO_hash16(mmo_t *mmo, const unsigned char M[16], unsigned char tag[16]) {
-    //unsigned char i;
+    unsigned char i;
   
-    //memset(mmo->H, 0, 16); //IV = 0 as suggested in "Hash-based Signatures on Smart Cards", Busold 2012
+    //IV=0 already initialized as suggested in "Hash-based Signatures on Smart Cards", Busold 2012    
     aes_128_encrypt(mmo->H, M, IV_MMO);
 
-    //for(i=0; i<16; i++) {
-    //	mmo->H[i] ^= M[i];
-    //}    
-   
-    mmo->H[ 0] ^= M[ 0];
-    mmo->H[ 1] ^= M[ 1];
-    mmo->H[ 2] ^= M[ 2];
-    mmo->H[ 3] ^= M[ 3];
-    mmo->H[ 4] ^= M[ 4];
-    mmo->H[ 5] ^= M[ 5];
-    mmo->H[ 6] ^= M[ 6];
-    mmo->H[ 7] ^= M[ 7];
-    mmo->H[ 8] ^= M[ 8];
-    mmo->H[ 9] ^= M[ 9];
-    mmo->H[10] ^= M[10];
-    mmo->H[11] ^= M[11];
-    mmo->H[12] ^= M[12];
-    mmo->H[13] ^= M[13];
-    mmo->H[14] ^= M[14];
-    mmo->H[15] ^= M[15];
+#ifdef PLATFORM_SENSOR
+    // This is faster than XORing each byte at a time
+    ((int32_t *)mmo->H)[0] ^= ((int32_t *)M)[0];
+    ((int32_t *)mmo->H)[1] ^= ((int32_t *)M)[1];
+    ((int32_t *)mmo->H)[2] ^= ((int32_t *)M)[2];
+    ((int32_t *)mmo->H)[3] ^= ((int32_t *)M)[3];    
+#else    
+    for(i=0; i < (16 / sizeof(int));i++) { 
+        ((int*)mmo->H)[i] ^= ((int*)M)[i];
+    }
+#endif    
 
     memcpy(tag, mmo->H, 16);
 }
 
 void MMO_hash32(mmo_t *mmo, const unsigned char M1[16], const unsigned char M2[16], unsigned char tag[16]) {
-    //unsigned char i;
-    
+        
     memset(mmo->H, 0, 16);
     memset(&mmo->H[0], 1, 1); // A fixed and different IV from MMO_hash16
  
     aes_128_encrypt(mmo->H, M1, mmo->H);
-//    for(i=0; i<16; i++) {
-//        mmo->H[i] ^= M1[i];
-//    }
-    mmo->H[ 0] ^= M1[ 0];
-    mmo->H[ 1] ^= M1[ 1];
-    mmo->H[ 2] ^= M1[ 2];
-    mmo->H[ 3] ^= M1[ 3];
-    mmo->H[ 4] ^= M1[ 4];
-    mmo->H[ 5] ^= M1[ 5];
-    mmo->H[ 6] ^= M1[ 6];
-    mmo->H[ 7] ^= M1[ 7];
-    mmo->H[ 8] ^= M1[ 8];
-    mmo->H[ 9] ^= M1[ 9];
-    mmo->H[10] ^= M1[10];
-    mmo->H[11] ^= M1[11];
-    mmo->H[12] ^= M1[12];
-    mmo->H[13] ^= M1[13];
-    mmo->H[14] ^= M1[14];
-    mmo->H[15] ^= M1[15];
-    
-    aes_128_encrypt(mmo->H, M2, mmo->H);
-//    for(i=0; i<16; i++) {
-//        mmo->H[i] ^= M2[i];
-//    }
-    mmo->H[ 0] ^= M2[ 0];
-    mmo->H[ 1] ^= M2[ 1];
-    mmo->H[ 2] ^= M2[ 2];
-    mmo->H[ 3] ^= M2[ 3];
-    mmo->H[ 4] ^= M2[ 4];
-    mmo->H[ 5] ^= M2[ 5];
-    mmo->H[ 6] ^= M2[ 6];
-    mmo->H[ 7] ^= M2[ 7];
-    mmo->H[ 8] ^= M2[ 8];
-    mmo->H[ 9] ^= M2[ 9];
-    mmo->H[10] ^= M2[10];
-    mmo->H[11] ^= M2[11];
-    mmo->H[12] ^= M2[12];
-    mmo->H[13] ^= M2[13];
-    mmo->H[14] ^= M2[14];
-    mmo->H[15] ^= M2[15];
 
+#ifdef PLATFORM_SENSOR    
+    ((int32_t *)mmo->H)[0] ^= ((int32_t *)M1)[0];
+    ((int32_t *)mmo->H)[1] ^= ((int32_t *)M1)[1];
+    ((int32_t *)mmo->H)[2] ^= ((int32_t *)M1)[2];
+    ((int32_t *)mmo->H)[3] ^= ((int32_t *)M1)[3];
+#else
+    unsigned char i;
+    for(i=0; i < (16 / sizeof(int));i++) { 
+        ((int*)mmo->H)[i] ^= ((int*)M1)[i];
+    }
+#endif
+
+    aes_128_encrypt(mmo->H, M2, mmo->H);
+
+#ifdef PLATFORM_SENSOR
+    // This is faster than XORing each byte at a time
+    ((int32_t *)mmo->H)[0] ^= ((int32_t *)M2)[0];
+    ((int32_t *)mmo->H)[1] ^= ((int32_t *)M2)[1];
+    ((int32_t *)mmo->H)[2] ^= ((int32_t *)M2)[2];
+    ((int32_t *)mmo->H)[3] ^= ((int32_t *)M2)[3];
+#else
+    for(i=0; i < (16 / sizeof(int));i++) { 
+        ((int*)mmo->H)[i] ^= ((int*)M2)[i];
+    }
+#endif
 
     memcpy(tag, mmo->H, 16);
-}
-
-void DM_init(dm_t *dm) {
-    memset(dm->AES_KEY, 0, 16);
-}
-
-void DM_hash16(dm_t *dm, const unsigned char M[], unsigned char tag[16]) {
-    aes_128_encrypt(tag, M, dm->AES_KEY);
-}
-
-void DM_hash32(dm_t *dm, const unsigned char M0[16], const unsigned char M1[16], unsigned char tag[16]) {
-
-    unsigned char tmp[16];
-
-    memcpy(tmp, M1, 16); // this was need because M1 and tag are the same memory address from merkle's algorithm
-
-    dm->AES_KEY[0] = 1;
-    aes_128_encrypt(tag, M0, dm->AES_KEY);
-    tag[0] ^= 0x01;
-    dm->AES_KEY[0] = 0;
-
-    aes_128_encrypt(tmp, tmp, tag);
-
-    tag[ 0] ^= tmp[ 0];
-    tag[ 1] ^= tmp[ 1];
-    tag[ 2] ^= tmp[ 2];
-    tag[ 3] ^= tmp[ 3];
-    tag[ 4] ^= tmp[ 4];
-    tag[ 5] ^= tmp[ 5];
-    tag[ 6] ^= tmp[ 6];
-    tag[ 7] ^= tmp[ 7];
-    tag[ 8] ^= tmp[ 8];
-    tag[ 9] ^= tmp[ 9];
-    tag[10] ^= tmp[10];
-    tag[11] ^= tmp[11];
-    tag[12] ^= tmp[12];
-    tag[13] ^= tmp[13];
-    tag[14] ^= tmp[14];
-    tag[15] ^= tmp[15];
 }
 
 /*

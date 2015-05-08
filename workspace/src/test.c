@@ -13,7 +13,7 @@ struct mss_state state_test;
 struct mss_node currentLeaf_test;
 struct mss_node authpath_test[MSS_HEIGHT];
 mmo_t hash1, hash2;
-dm_t f_test;
+
 #if defined(MSS_ROM_RETAIN)
 	#if MSS_HEIGHT == 10
 		unsigned char pkey_test[NODE_VALUE_SIZE] =	{0x86,0x29,0x44,0xFD,0xFE,0x51,0x59,0x1F,0xC1,0xFE,0x0E,0x4A,0x0A,0x9B,0xBD,0x39};
@@ -47,7 +47,6 @@ unsigned short test_mss_signature() {
 
 	MMO_init(&hash1);
 	MMO_init(&hash2);
-	DM_init(&f_test);
 
 	// Compute Merkle Public Key and TreeHash state
 	mss_keygen_core(&hash1, &hash2, seed_test, &nodes[0], &nodes[1], &state_test, pkey_test);

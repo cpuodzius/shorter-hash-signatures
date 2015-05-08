@@ -20,6 +20,10 @@
 void winternitz_keygen(const unsigned char s[LEN_BYTES(WINTERNITZ_N)], mmo_t *hash1, mmo_t *hash2, unsigned char v[LEN_BYTES(WINTERNITZ_N)]) {
 	//int sq = 0;
 	unsigned char i, j;
+#ifndef PLATFORM_SENSOR
+	unsigned ii;
+#endif	
+
 
 	//MMO_init(hash1); //Not necessary, the IV is set inside MMO_hash16 function.
 	MMO_init(hash2);
@@ -47,22 +51,18 @@ void winternitz_keygen(const unsigned char s[LEN_BYTES(WINTERNITZ_N)], mmo_t *ha
 		}
 		//absorb(hash2, v, LEN_BYTES(WINTERNITZ_N));  // y_0 || ... || y_i ...
 		aes_128_encrypt(hash2->H, v, hash2->H);
-		hash2->H[ 0] ^= v[ 0];
-		hash2->H[ 1] ^= v[ 1];
-		hash2->H[ 2] ^= v[ 2];
-		hash2->H[ 3] ^= v[ 3];
-		hash2->H[ 4] ^= v[ 4];
-		hash2->H[ 5] ^= v[ 5];
-		hash2->H[ 6] ^= v[ 6];
-		hash2->H[ 7] ^= v[ 7];
-		hash2->H[ 8] ^= v[ 8];
-		hash2->H[ 9] ^= v[ 9];
-		hash2->H[10] ^= v[10];
-		hash2->H[11] ^= v[11];
-		hash2->H[12] ^= v[12];
-		hash2->H[13] ^= v[13];
-		hash2->H[14] ^= v[14];
-		hash2->H[15] ^= v[15];
+
+#ifdef PLATFORM_SENSOR
+    	// This is faster than XORing each byte at a time
+	    ((int32_t *)hash2->H)[0] ^= ((int32_t *)v)[0];
+	    ((int32_t *)hash2->H)[1] ^= ((int32_t *)v)[1];
+	    ((int32_t *)hash2->H)[2] ^= ((int32_t *)v)[2];
+	    ((int32_t *)hash2->H)[3] ^= ((int32_t *)v)[3];
+#else    
+	    for(ii=0; ii < (16 / sizeof(int));ii++) { 
+	        ((int*)hash2->H)[ii] ^= ((int*)v)[ii];
+	    }
+#endif
 
 	}
 	//squeeze(hash2, v, LEN_BYTES(WINTERNITZ_N)); // v is finally the public key, v = H(y_0 || y_1 || ... || y_{L-1})
@@ -390,6 +390,10 @@ unsigned char winternitz_2_verify(const unsigned char v[/*N/8*/], mmo_t *hash1, 
 	unsigned char i, j, c;
 	unsigned short checksum = 0;
 
+#ifndef PLATFORM_SENSOR
+	unsigned ii;
+#endif	
+
 #ifdef DEBUG
 	assert(10 <= LEN_BYTES(WINTERNITZ_N) && LEN_BYTES(WINTERNITZ_N) <= 21); // lower bound: min sec level (80 bits), upper bound: max checksum count must fit one byte
 #endif
@@ -410,22 +414,17 @@ unsigned char winternitz_2_verify(const unsigned char v[/*N/8*/], mmo_t *hash1, 
 		}
 		//absorb(hash2, x, LEN_BYTES(WINTERNITZ_N));
 		aes_128_encrypt(hash2->H, x, hash2->H);
-		hash2->H[ 0] ^= x[ 0];
-		hash2->H[ 1] ^= x[ 1];
-		hash2->H[ 2] ^= x[ 2];
-		hash2->H[ 3] ^= x[ 3];
-		hash2->H[ 4] ^= x[ 4];
-		hash2->H[ 5] ^= x[ 5];
-		hash2->H[ 6] ^= x[ 6];
-		hash2->H[ 7] ^= x[ 7];
-		hash2->H[ 8] ^= x[ 8];
-		hash2->H[ 9] ^= x[ 9];
-		hash2->H[10] ^= x[10];
-		hash2->H[11] ^= x[11];
-		hash2->H[12] ^= x[12];
-		hash2->H[13] ^= x[13];
-		hash2->H[14] ^= x[14];
-		hash2->H[15] ^= x[15];
+#ifdef PLATFORM_SENSOR
+    	// This is faster than XORing each byte at a time
+	    ((int32_t *)hash2->H)[0] ^= ((int32_t *)x)[0];
+	    ((int32_t *)hash2->H)[1] ^= ((int32_t *)x)[1];
+	    ((int32_t *)hash2->H)[2] ^= ((int32_t *)x)[2];
+	    ((int32_t *)hash2->H)[3] ^= ((int32_t *)x)[3];
+#else    
+	    for(ii=0; ii < (16 / sizeof(int));ii++) { 
+	        ((int*)hash2->H)[ii] ^= ((int*)x)[ii];
+	    }
+#endif
 
 		sig += 16; // next signature block
 
@@ -439,22 +438,17 @@ unsigned char winternitz_2_verify(const unsigned char v[/*N/8*/], mmo_t *hash1, 
 		}
 		//absorb(hash, x, LEN_BYTES(WINTERNITZ_N));
 		aes_128_encrypt(hash2->H, x, hash2->H);
-		hash2->H[ 0] ^= x[ 0];
-		hash2->H[ 1] ^= x[ 1];
-		hash2->H[ 2] ^= x[ 2];
-		hash2->H[ 3] ^= x[ 3];
-		hash2->H[ 4] ^= x[ 4];
-		hash2->H[ 5] ^= x[ 5];
-		hash2->H[ 6] ^= x[ 6];
-		hash2->H[ 7] ^= x[ 7];
-		hash2->H[ 8] ^= x[ 8];
-		hash2->H[ 9] ^= x[ 9];
-		hash2->H[10] ^= x[10];
-		hash2->H[11] ^= x[11];
-		hash2->H[12] ^= x[12];
-		hash2->H[13] ^= x[13];
-		hash2->H[14] ^= x[14];
-		hash2->H[15] ^= x[15];
+#ifdef PLATFORM_SENSOR
+    	// This is faster than XORing each byte at a time
+	    ((int32_t *)hash2->H)[0] ^= ((int32_t *)x)[0];
+	    ((int32_t *)hash2->H)[1] ^= ((int32_t *)x)[1];
+	    ((int32_t *)hash2->H)[2] ^= ((int32_t *)x)[2];
+	    ((int32_t *)hash2->H)[3] ^= ((int32_t *)x)[3];
+#else   
+	    for(ii=0; ii < (16 / sizeof(int));ii++) { 
+	        ((int*)hash2->H)[ii] ^= ((int*)x)[ii];
+	    }
+#endif
 
 		sig += 16; // next signature block
 
@@ -468,22 +462,17 @@ unsigned char winternitz_2_verify(const unsigned char v[/*N/8*/], mmo_t *hash1, 
 		}
 		//absorb(hash2, x, LEN_BYTES(WINTERNITZ_N));
 		aes_128_encrypt(hash2->H, x, hash2->H);
-		hash2->H[ 0] ^= x[ 0];
-		hash2->H[ 1] ^= x[ 1];
-		hash2->H[ 2] ^= x[ 2];
-		hash2->H[ 3] ^= x[ 3];
-		hash2->H[ 4] ^= x[ 4];
-		hash2->H[ 5] ^= x[ 5];
-		hash2->H[ 6] ^= x[ 6];
-		hash2->H[ 7] ^= x[ 7];
-		hash2->H[ 8] ^= x[ 8];
-		hash2->H[ 9] ^= x[ 9];
-		hash2->H[10] ^= x[10];
-		hash2->H[11] ^= x[11];
-		hash2->H[12] ^= x[12];
-		hash2->H[13] ^= x[13];
-		hash2->H[14] ^= x[14];
-		hash2->H[15] ^= x[15];
+#ifdef PLATFORM_SENSOR
+    	// This is faster than XORing each byte at a time
+	    ((int32_t *)hash2->H)[0] ^= ((int32_t *)x)[0];
+	    ((int32_t *)hash2->H)[1] ^= ((int32_t *)x)[1];
+	    ((int32_t *)hash2->H)[2] ^= ((int32_t *)x)[2];
+	    ((int32_t *)hash2->H)[3] ^= ((int32_t *)x)[3];
+#else    
+	    for(ii=0; ii < (16 / sizeof(int));ii++) { 
+	        ((int*)hash2->H)[ii] ^= ((int*)x)[ii];
+	    }
+#endif
 
 		sig += 16; // next signature block
 
@@ -497,22 +486,17 @@ unsigned char winternitz_2_verify(const unsigned char v[/*N/8*/], mmo_t *hash1, 
 		}
 		//absorb(hash2, x, LEN_BYTES(WINTERNITZ_N));
 		aes_128_encrypt(hash2->H, x, hash2->H);
-		hash2->H[ 0] ^= x[ 0];
-		hash2->H[ 1] ^= x[ 1];
-		hash2->H[ 2] ^= x[ 2];
-		hash2->H[ 3] ^= x[ 3];
-		hash2->H[ 4] ^= x[ 4];
-		hash2->H[ 5] ^= x[ 5];
-		hash2->H[ 6] ^= x[ 6];
-		hash2->H[ 7] ^= x[ 7];
-		hash2->H[ 8] ^= x[ 8];
-		hash2->H[ 9] ^= x[ 9];
-		hash2->H[10] ^= x[10];
-		hash2->H[11] ^= x[11];
-		hash2->H[12] ^= x[12];
-		hash2->H[13] ^= x[13];
-		hash2->H[14] ^= x[14];
-		hash2->H[15] ^= x[15];
+#ifdef PLATFORM_SENSOR
+    	// This is faster than XORing each byte at a time
+	    ((int32_t *)hash2->H)[0] ^= ((int32_t *)x)[0];
+	    ((int32_t *)hash2->H)[1] ^= ((int32_t *)x)[1];
+	    ((int32_t *)hash2->H)[2] ^= ((int32_t *)x)[2];
+	    ((int32_t *)hash2->H)[3] ^= ((int32_t *)x)[3];
+#else    
+	    for(ii=0; ii < (16 / sizeof(int));ii++) { 
+	        ((int*)hash2->H)[ii] ^= ((int*)x)[ii];
+	    }
+#endif
 
 		sig += 16; // next signature block
 	}
@@ -527,22 +511,17 @@ unsigned char winternitz_2_verify(const unsigned char v[/*N/8*/], mmo_t *hash1, 
 		}
 		//absorb(hash2, x, LEN_BYTES(WINTERNITZ_N));
 		aes_128_encrypt(hash2->H, x, hash2->H);
-		hash2->H[ 0] ^= x[ 0];
-		hash2->H[ 1] ^= x[ 1];
-		hash2->H[ 2] ^= x[ 2];
-		hash2->H[ 3] ^= x[ 3];
-		hash2->H[ 4] ^= x[ 4];
-		hash2->H[ 5] ^= x[ 5];
-		hash2->H[ 6] ^= x[ 6];
-		hash2->H[ 7] ^= x[ 7];
-		hash2->H[ 8] ^= x[ 8];
-		hash2->H[ 9] ^= x[ 9];
-		hash2->H[10] ^= x[10];
-		hash2->H[11] ^= x[11];
-		hash2->H[12] ^= x[12];
-		hash2->H[13] ^= x[13];
-		hash2->H[14] ^= x[14];
-		hash2->H[15] ^= x[15];
+#ifdef PLATFORM_SENSOR
+    	// This is faster than XORing each byte at a time
+	    ((int32_t *)hash2->H)[0] ^= ((int32_t *)x)[0];
+	    ((int32_t *)hash2->H)[1] ^= ((int32_t *)x)[1];
+	    ((int32_t *)hash2->H)[2] ^= ((int32_t *)x)[2];
+	    ((int32_t *)hash2->H)[3] ^= ((int32_t *)x)[3];
+#else    
+	    for(ii=0; ii < (16 / sizeof(int));ii++) { 
+	        ((int*)hash2->H)[ii] ^= ((int*)x)[ii];
+	    }
+#endif
 
 		sig += 16; // next signature block
 	}
@@ -597,22 +576,18 @@ unsigned char winternitz_4_verify(const unsigned char v[/*N/8*/], mmo_t *hash1, 
 		}
 		//absorb(hash2, x, LEN_BYTES(WINTERNITZ_N));
 		aes_128_encrypt(hash2->H, x, hash2->H);
-		hash2->H[ 0] ^= x[ 0];
-		hash2->H[ 1] ^= x[ 1];
-		hash2->H[ 2] ^= x[ 2];
-		hash2->H[ 3] ^= x[ 3];
-		hash2->H[ 4] ^= x[ 4];
-		hash2->H[ 5] ^= x[ 5];
-		hash2->H[ 6] ^= x[ 6];
-		hash2->H[ 7] ^= x[ 7];
-		hash2->H[ 8] ^= x[ 8];
-		hash2->H[ 9] ^= x[ 9];
-		hash2->H[10] ^= x[10];
-		hash2->H[11] ^= x[11];
-		hash2->H[12] ^= x[12];
-		hash2->H[13] ^= x[13];
-		hash2->H[14] ^= x[14];
-		hash2->H[15] ^= x[15];
+#ifdef PLATFORM_SENSOR
+    	// This is faster than XORing each byte at a time
+	    ((int32_t *)hash2->H)[0] ^= ((int32_t *)x)[0];
+	    ((int32_t *)hash2->H)[1] ^= ((int32_t *)x)[1];
+	    ((int32_t *)hash2->H)[2] ^= ((int32_t *)x)[2];
+	    ((int32_t *)hash2->H)[3] ^= ((int32_t *)x)[3];
+#else    
+	    unsigned ii;
+	    for(ii=0; ii < (16 / sizeof(int));ii++) { 
+	        ((int*)hash2->H)[ii] ^= ((int*)x)[ii];
+	    }
+#endif
 		sig += 16; // next signature block
 
 		// hi part:
@@ -630,22 +605,18 @@ unsigned char winternitz_4_verify(const unsigned char v[/*N/8*/], mmo_t *hash1, 
 		}
 		//absorb(hash2, x, LEN_BYTES(WINTERNITZ_N));
 		aes_128_encrypt(hash2->H, x, hash2->H);
-		hash2->H[ 0] ^= x[ 0];
-		hash2->H[ 1] ^= x[ 1];
-		hash2->H[ 2] ^= x[ 2];
-		hash2->H[ 3] ^= x[ 3];
-		hash2->H[ 4] ^= x[ 4];
-		hash2->H[ 5] ^= x[ 5];
-		hash2->H[ 6] ^= x[ 6];
-		hash2->H[ 7] ^= x[ 7];
-		hash2->H[ 8] ^= x[ 8];
-		hash2->H[ 9] ^= x[ 9];
-		hash2->H[10] ^= x[10];
-		hash2->H[11] ^= x[11];
-		hash2->H[12] ^= x[12];
-		hash2->H[13] ^= x[13];
-		hash2->H[14] ^= x[14];
-		hash2->H[15] ^= x[15];
+#ifdef PLATFORM_SENSOR
+    	// This is faster than XORing each byte at a time
+	    ((int32_t *)hash2->H)[0] ^= ((int32_t *)x)[0];
+	    ((int32_t *)hash2->H)[1] ^= ((int32_t *)x)[1];
+	    ((int32_t *)hash2->H)[2] ^= ((int32_t *)x)[2];
+	    ((int32_t *)hash2->H)[3] ^= ((int32_t *)x)[3];
+#else    
+	    unsigned ii;
+	    for(ii=0; ii < (16 / sizeof(int));ii++) { 
+	        ((int*)hash2->H)[ii] ^= ((int*)x)[ii];
+	    }
+#endif
 		sig += 16; // next signature block
 	}
 	// checksum part:
@@ -664,22 +635,18 @@ unsigned char winternitz_4_verify(const unsigned char v[/*N/8*/], mmo_t *hash1, 
 		}
 		//absorb(hash2, x, LEN_BYTES(WINTERNITZ_N));
 		aes_128_encrypt(hash2->H, x, hash2->H);
-		hash2->H[ 0] ^= x[ 0];
-		hash2->H[ 1] ^= x[ 1];
-		hash2->H[ 2] ^= x[ 2];
-		hash2->H[ 3] ^= x[ 3];
-		hash2->H[ 4] ^= x[ 4];
-		hash2->H[ 5] ^= x[ 5];
-		hash2->H[ 6] ^= x[ 6];
-		hash2->H[ 7] ^= x[ 7];
-		hash2->H[ 8] ^= x[ 8];
-		hash2->H[ 9] ^= x[ 9];
-		hash2->H[10] ^= x[10];
-		hash2->H[11] ^= x[11];
-		hash2->H[12] ^= x[12];
-		hash2->H[13] ^= x[13];
-		hash2->H[14] ^= x[14];
-		hash2->H[15] ^= x[15];
+#ifdef PLATFORM_SENSOR
+    	// This is faster than XORing each byte at a time
+	    ((int32_t *)hash2->H)[0] ^= ((int32_t *)x)[0];
+	    ((int32_t *)hash2->H)[1] ^= ((int32_t *)x)[1];
+	    ((int32_t *)hash2->H)[2] ^= ((int32_t *)x)[2];
+	    ((int32_t *)hash2->H)[3] ^= ((int32_t *)x)[3];
+#else    
+	    unsigned ii;
+	    for(ii=0; ii < (16 / sizeof(int));ii++) { 
+	        ((int*)hash2->H)[ii] ^= ((int*)x)[ii];
+	    }
+#endif
 		sig += 16; // next signature block
 	}
 	//squeeze(hash2, x, LEN_BYTES(WINTERNITZ_SEC_LVL)); // x should be the public key v
@@ -732,22 +699,19 @@ unsigned char winternitz_8_verify(const unsigned char v[/*N/8*/], mmo_t *hash1, 
 		}
 		//absorb(hash2, x, LEN_BYTES(WINTERNITZ_SEC_LVL));
 		aes_128_encrypt(hash2->H, x, hash2->H);
-		hash2->H[ 0] ^= x[ 0];
-		hash2->H[ 1] ^= x[ 1];
-		hash2->H[ 2] ^= x[ 2];
-		hash2->H[ 3] ^= x[ 3];
-		hash2->H[ 4] ^= x[ 4];
-		hash2->H[ 5] ^= x[ 5];
-		hash2->H[ 6] ^= x[ 6];
-		hash2->H[ 7] ^= x[ 7];
-		hash2->H[ 8] ^= x[ 8];
-		hash2->H[ 9] ^= x[ 9];
-		hash2->H[10] ^= x[10];
-		hash2->H[11] ^= x[11];
-		hash2->H[12] ^= x[12];
-		hash2->H[13] ^= x[13];
-		hash2->H[14] ^= x[14];
-		hash2->H[15] ^= x[15];
+#ifdef PLATFORM_SENSOR
+    	// This is faster than XORing each byte at a time
+	    ((int32_t *)hash2->H)[0] ^= ((int32_t *)x)[0];
+	    ((int32_t *)hash2->H)[1] ^= ((int32_t *)x)[1];
+	    ((int32_t *)hash2->H)[2] ^= ((int32_t *)x)[2];
+	    ((int32_t *)hash2->H)[3] ^= ((int32_t *)x)[3];
+#else    
+	    unsigned ii;
+	    for(ii=0; ii < (16 / sizeof(int));ii++) { 
+	        ((int*)hash2->H)[ii] ^= ((int*)x)[ii];
+	    }
+#endif
+
 		sig += 16; // next signature block
 	}
 	// checksum part:
@@ -766,22 +730,19 @@ unsigned char winternitz_8_verify(const unsigned char v[/*N/8*/], mmo_t *hash1, 
 		}
 		//absorb(hash2, x, LEN_BYTES(WINTERNITZ_N));
 		aes_128_encrypt(hash2->H, x, hash2->H);
-		hash2->H[ 0] ^= x[ 0];
-		hash2->H[ 1] ^= x[ 1];
-		hash2->H[ 2] ^= x[ 2];
-		hash2->H[ 3] ^= x[ 3];
-		hash2->H[ 4] ^= x[ 4];
-		hash2->H[ 5] ^= x[ 5];
-		hash2->H[ 6] ^= x[ 6];
-		hash2->H[ 7] ^= x[ 7];
-		hash2->H[ 8] ^= x[ 8];
-		hash2->H[ 9] ^= x[ 9];
-		hash2->H[10] ^= x[10];
-		hash2->H[11] ^= x[11];
-		hash2->H[12] ^= x[12];
-		hash2->H[13] ^= x[13];
-		hash2->H[14] ^= x[14];
-		hash2->H[15] ^= x[15];
+#ifdef PLATFORM_SENSOR
+    	// This is faster than XORing each byte at a time
+	    ((int32_t *)hash2->H)[0] ^= ((int32_t *)x)[0];
+	    ((int32_t *)hash2->H)[1] ^= ((int32_t *)x)[1];
+	    ((int32_t *)hash2->H)[2] ^= ((int32_t *)x)[2];
+	    ((int32_t *)hash2->H)[3] ^= ((int32_t *)x)[3];
+#else    
+	    unsigned ii;
+	    for(ii=0; ii < (16 / sizeof(int));ii++) { 
+	        ((int*)hash2->H)[ii] ^= ((int*)x)[ii];
+	    }
+#endif
+
 		sig += 16; // next signature block
 	}
 	//squeeze(hash2, x, LEN_BYTES(WINTERNITZ_N)); // x should be the public key v

@@ -60,6 +60,7 @@ void do_benchmark(enum BENCHMARK phase, unsigned short benchs) {
 			//printfflush();			
 			Display("Public Key", pkey_bench, NODE_VALUE_SIZE);
 #endif				
+			//Display("Public Key", pkey_bench, NODE_VALUE_SIZE);
 			break;
 
 		case BENCHMARK_MSS_SIGN:
@@ -113,7 +114,7 @@ void do_benchmark(enum BENCHMARK phase, unsigned short benchs) {
 			for(j = 0; j < benchs; j++) {
 				MMO_hash16(&hash1,seed_bench,seed_bench);
 			}
-
+			//Display("HASH16:", seed_bench, 16);			
 			break;
 		case BENCHMARK_HASH_CALC:
 
