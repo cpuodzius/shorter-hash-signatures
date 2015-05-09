@@ -51,7 +51,7 @@ implementation {
 		/*/
 		do_benchmark(BENCHMARK_MSS_SIGN, benchs);
 		/*
-		do_benchmark(BENCHMARK_MSS_VERIFY,benchs);
+		do_benchmark(BENCHMARK_MSS_VERIFY,benchs); // Must call BENCHMARK_MSS_PREPARE_VERIFY in booted event before
 		//*/
 
 #ifndef READ_ENERGY
@@ -71,10 +71,10 @@ implementation {
 		// Run Merkle Signature TESTS
 		call Leds.set(7);
 
-		printf("Starting tests...\n");
+		printf("Start tests..\n");
 		ret = do_test(TEST_MSS_SIGN);
 		//ret = do_test(TEST_AES_ENC);
-		printf("Errors after tests: %lu\n", ret);
+		printf("Errors after: %lu\n", ret);
 		printf("DONE \n");
 		printfflush();
 	

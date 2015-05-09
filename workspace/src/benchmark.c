@@ -32,19 +32,19 @@ struct mss_node authpath_bench[MSS_HEIGHT];
 struct mss_state state_bench;
 mmo_t hash1, hash2;
 char M_bench[16] = " --Hello, world!";
-unsigned char h1[LEN_BYTES(WINTERNITZ_N)], h2[LEN_BYTES(WINTERNITZ_N)];
-unsigned char sig_bench[WINTERNITZ_L*LEN_BYTES(WINTERNITZ_SEC_LVL)];
+unsigned char h[LEN_BYTES(WINTERNITZ_N)];
+unsigned char sig_bench[WINTERNITZ_L*LEN_BYTES(WINTERNITZ_N)];
 unsigned char aux[LEN_BYTES(WINTERNITZ_N)];
 
 void do_benchmark(enum BENCHMARK phase, unsigned short benchs) {
 	unsigned long j;
-
-	unsigned char cipher[AES_128_BLOCK_SIZE],
-			  key[AES_128_BLOCK_SIZE] =  {0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
-			              				  0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c},
-			  plain[AES_128_BLOCK_SIZE] = {0x32, 0x43, 0xf6, 0xa8, 0x88, 0x5a, 0x30, 0x8d,
+/* Uncommend if BENCHMARK_AES_ENC will be used
+	unsigned char 	cipher[AES_128_BLOCK_SIZE],
+			key[AES_128_BLOCK_SIZE] =  {0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
+		        			  0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c},
+			plain[AES_128_BLOCK_SIZE] = {0x32, 0x43, 0xf6, 0xa8, 0x88, 0x5a, 0x30, 0x8d,
 						   				   0x31, 0x31, 0x98, 0xa2, 0xe0, 0x37, 0x07, 0x34};	
-
+//*/
 	switch(phase) {
 
 		case BENCHMARK_PREPARE:
@@ -60,18 +60,19 @@ void do_benchmark(enum BENCHMARK phase, unsigned short benchs) {
 			//printfflush();			
 			Display("Public Key", pkey_bench, NODE_VALUE_SIZE);
 #endif				
-			//Display("Public Key", pkey_bench, NODE_VALUE_SIZE);
+			Display("Public Key", pkey_bench, NODE_VALUE_SIZE);
 			break;
 
 		case BENCHMARK_MSS_SIGN:
 			for(j = 0; j < ((unsigned long)1 << MSS_HEIGHT); j++) {
+			//for(j = 31744; j < 33791; j++) { //for H=16
 			//for(j = 0; j < (1 << 10); j++) { //pt1 0..2^10-1
 			//for(j = (1 << 10); j < (1 << 11); j++) { //pt2 2^10..2^11-1
 			//for(j = 0; j < (1 << (MSS_HEIGHT-2)); j++) { //pt1 0..2^11-1
 			//for(j = (1 << (MSS_HEIGHT-2)); j < (1 << (MSS_HEIGHT-1)); j++) { //pt2 2^11...2^12-1
 			//for(j = (1 << (MSS_HEIGHT-1)); j < (1 << (MSS_HEIGHT-1)) + 2048; j++) { //pt3 2^12...2^12+2048-1
 			//for(j = (1 << (MSS_HEIGHT-1)) + 2048; j < (1 << MSS_HEIGHT); j++) { //pt4 2^12+2048...2^13-1
-				mss_sign_core(&state_bench, seed_bench, &currentLeaf_bench, M_bench, LEN_BYTES(WINTERNITZ_SEC_LVL), &hash1, &hash2, h1, j, &nodes[0], &nodes[1], sig_bench, authpath_bench, pkey_bench);			    
+				mss_sign_core(&state_bench, seed_bench, &currentLeaf_bench, M_bench, LEN_BYTES(WINTERNITZ_SEC_LVL), &hash1, &hash2, h, j, &nodes[0], &nodes[1], sig_bench, authpath_bench, pkey_bench);			    
 			}
 			break;
 
@@ -80,14 +81,14 @@ void do_benchmark(enum BENCHMARK phase, unsigned short benchs) {
 			MMO_init(&hash1);
 			MMO_init(&hash2);
 			//mss_keygen(&f_bench, &hash_mmo, seed_bench, &nodes[0], &nodes[1], &state_bench, pkey_bench);		
-			mss_sign_core(&state_bench, seed_bench, &currentLeaf_bench, M_bench, strlen(M_bench)+1, &hash1, &hash2, h1, 0, &nodes[0],
+			mss_sign_core(&state_bench, seed_bench, &currentLeaf_bench, M_bench, strlen(M_bench)+1, &hash1, &hash2, h, 0, &nodes[0],
 				 &nodes[1], sig_bench, authpath_bench,pkey_bench);
-			MMO_hash16(&hash1,(unsigned char*)M_bench,h2);// put a "random-looking" value on h2 
+			MMO_hash16(&hash1,(unsigned char*)M_bench,h);// put a "random-looking" value on h2 
 			break;
 
 		case BENCHMARK_MSS_VERIFY:
 			for(j = 0; j < benchs; j++) {
-				mss_verify_core(authpath_bench, M_bench, LEN_BYTES(WINTERNITZ_N), &hash1, &hash2, h2, 0, sig_bench, aux, &currentLeaf_bench, pkey_bench);
+				mss_verify_core(authpath_bench, M_bench, LEN_BYTES(WINTERNITZ_N), &hash1, &hash2, h, 0, sig_bench, aux, &currentLeaf_bench, pkey_bench);
 			}
 			break;
 
@@ -98,26 +99,24 @@ void do_benchmark(enum BENCHMARK phase, unsigned short benchs) {
 		case BENCHMARK_WINTERNITZ_SIGN:
 			MMO_init(&hash1);
 			MMO_update(&hash1,(unsigned char *)M_bench,16);
-			MMO_final(&hash1,h1);
-			winternitz_sign(seed_bench, &hash1, h1, sig_bench);
+			MMO_final(&hash1,h);
+			winternitz_sign(seed_bench, &hash1, h, sig_bench);
 			break;
 
 		case BENCHMARK_WINTERNITZ_VERIFY:
 			MMO_init(&hash1);
 			MMO_update(&hash1,(unsigned char *)M_bench,16);
-			MMO_final(&hash1,h2);
-			winternitz_verify(nodes[1].value, &hash1, &hash2, h2, sig_bench, aux);
+			MMO_final(&hash1,h);
+			winternitz_verify(nodes[1].value, &hash1, &hash2, h, sig_bench, aux);
 			break;
 
 		case BENCHMARK_HASH16_CALC:
-
 			for(j = 0; j < benchs; j++) {
 				MMO_hash16(&hash1,seed_bench,seed_bench);
 			}
 			//Display("HASH16:", seed_bench, 16);			
 			break;
 		case BENCHMARK_HASH_CALC:
-
 			for(j = 0; j < benchs; j++) {
 				MMO_init(&hash1);
 				MMO_update(&hash1, seed_bench, LEN_BYTES(WINTERNITZ_SEC_LVL));
@@ -127,9 +126,12 @@ void do_benchmark(enum BENCHMARK phase, unsigned short benchs) {
 			break;			
 
 		case BENCHMARK_AES_ENC:
+			
+	       		//memcpy(cipher, plaintext, AES_128_BLOCK_SIZE);
+        		//aes128_enc(ciphertext, &aes_ctx); // encrypting the data block
 
 			for(j = 0; j < benchs; j++) {
-				aes_128_encrypt(cipher, plain, key);
+			//	aes_128_encrypt(cipher, plain, key);
 			}
 
 			break;

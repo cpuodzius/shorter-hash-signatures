@@ -2,7 +2,7 @@
 #include <string.h>
 #include "test.h"
 #include "mss.h"
-//#include "aes_128.h"
+
 
 #ifdef VERBOSE
 	#include "util.h"
@@ -67,7 +67,7 @@ unsigned short test_mss_signature() {
 #endif
 		mss_sign_core(&state_test, seed_test, &currentLeaf_test, (const char *)M, strlen(M), &hash1, &hash2, h1, j, &nodes[0], &nodes[1], sig_test, authpath_test, pkey_test);
 		//Display("",sig_test,16);
-		if(mss_verify_core(authpath_test, (const char *)M, strlen(M), &hash1, &hash2, h2, j, sig_test, aux, &currentLeaf_test, pkey_test) == MSS_OK) {
+		if(mss_verify_core(authpath_test, (const char *)M, strlen(M), &hash1, &hash2, h1, j, sig_test, aux, &currentLeaf_test, pkey_test) == MSS_OK) {
 #if defined(VERBOSE) && !defined(PLATFORM_SENSOR)
 			printf(" [OK]\n");
 #endif
@@ -90,7 +90,7 @@ int test_AES128() {
 				  plain[AES_128_BLOCK_SIZE] = {0x32, 0x43, 0xf6, 0xa8, 0x88, 0x5a, 0x30, 0x8d,
 							   				   0x31, 0x31, 0x98, 0xa2, 0xe0, 0x37, 0x07, 0x34};
 	unsigned char expectedCipher[AES_128_BLOCK_SIZE] = {0x39, 0x25, 0x84, 0x1d, 0x02, 0xdc, 0x09, 0xfb, 
-													    0xdc, 0x11, 0x85, 0x97, 0x19, 0x6a, 0x0b, 0x32};
+							    0xdc, 0x11, 0x85, 0x97, 0x19, 0x6a, 0x0b, 0x32};
 
 	aes_128_encrypt(cipher, plain, key);
 

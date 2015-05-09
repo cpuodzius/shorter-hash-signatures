@@ -609,8 +609,6 @@ unsigned char mss_verify_core(struct mss_node authpath[MSS_HEIGHT], const char *
 	// Feed the hash to be signed with Y, i.e. H(Y,...)
 	MMO_update(&hash_mss, Y, 16);
 	
-	//memset(h,2,16);
-
 	// compute v and put it in x
 	winternitz_verify(x, hash1, hash2, h, sig, x);
 
